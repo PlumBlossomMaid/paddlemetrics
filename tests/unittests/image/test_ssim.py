@@ -1,0 +1,415 @@
+from functools import partial
+
+import numpy as np
+import paddle
+import pytest
+from pytorch_msssim import ssim
+from skimage.metrics import structural_similarity
+from unittests import NUM_BATCHES, NUM_PROCESSES, USE_PYTEST_POOL, _Input
+from unittests._helpers import _IS_WINDOWS, seed_all
+from unittests._helpers.testers import MetricTester
+from unittests.conftest import setup_ddp
+
+from paddlemetrics.functional import structural_similarity_index_measure
+from paddlemetrics.image import StructuralSimilarityIndexMeasure
+
+seed_all(42)
+BATCH_SIZE = 2
+_inputs = []
+for size, channel, coef, dtype in [
+    (12, 3, 0.9, paddle.float32),
+    (13, 1, 0.8, paddle.float32),
+    (14, 1, 0.7, paddle.float64),
+    (13, 3, 0.6, paddle.float32),
+]:
+    preds2d = paddle.rand(NUM_BATCHES, BATCH_SIZE, channel, size, size, dtype=dtype)
+    _inputs.append(_Input(preds=preds2d, target=preds2d * coef))
+    preds3d = paddle.rand(
+        NUM_BATCHES, BATCH_SIZE, channel, size, size, size, dtype=dtype
+    )
+    _inputs.append(_Input(preds=preds3d, target=preds3d * coef))
+
+
+def _reference_skimage_ssim(
+    preds,
+    target,
+    data_range,
+    sigma,
+    kernel_size=None,
+    return_ssim_image=False,
+    gaussian_weights=True,
+    reduction_arg="elementwise_mean",
+):
+    if isinstance(data_range, tuple):
+        preds = preds.clamp(min=data_range[0], max=data_range[1])
+        target = target.clamp(min=data_range[0], max=data_range[1])
+        data_range = data_range[1] - data_range[0]
+    if len(preds.shape) == 4:
+        c, h, w = preds.shape[-3:]
+        sk_preds = preds.view(-1, c, h, w).permute(0, 2, 3, 1).numpy()
+        sk_target = target.view(-1, c, h, w).permute(0, 2, 3, 1).numpy()
+    elif len(preds.shape) == 5:
+        c, d, h, w = preds.shape[-4:]
+        sk_preds = preds.view(-1, c, d, h, w).permute(0, 2, 3, 4, 1).numpy()
+        sk_target = target.view(-1, c, d, h, w).permute(0, 2, 3, 4, 1).numpy()
+    results = paddle.zeros(sk_preds.shape[0], dtype=target.dtype)
+    if not return_ssim_image:
+        for i in range(sk_preds.shape[0]):
+            res = structural_similarity(
+                sk_target[i],
+                sk_preds[i],
+                data_range=data_range,
+                multichannel=True,
+                gaussian_weights=gaussian_weights,
+                win_size=kernel_size,
+                sigma=sigma,
+                use_sample_covariance=False,
+                full=return_ssim_image,
+                channel_axis=-1,
+            )
+            results[i] = paddle.from_numpy(np.asarray(res)).astype(preds.dtype)
+        return results if reduction_arg != "sum" else results.sum()
+    fullimages = paddle.zeros(target.shape, dtype=target.dtype)
+    for i in range(sk_preds.shape[0]):
+        res, fullimage = structural_similarity(
+            sk_target[i],
+            sk_preds[i],
+            data_range=data_range,
+            multichannel=True,
+            gaussian_weights=gaussian_weights,
+            win_size=kernel_size,
+            sigma=sigma,
+            use_sample_covariance=False,
+            full=return_ssim_image,
+        )
+        results[i] = paddle.from_numpy(res).astype(preds.dtype)
+        fullimage = paddle.from_numpy(fullimage).astype(preds.dtype)
+        if len(preds.shape) == 4:
+            fullimages[i] = fullimage.permute(2, 0, 1)
+        elif len(preds.shape) == 5:
+            fullimages[i] = fullimage.permute(3, 0, 1, 2)
+    return results, fullimages
+
+
+def _reference_msssim_ssim(
+    preds, target, data_range, sigma, kernel_size=11, reduction_arg="elementwise_mean"
+):
+    results = ssim(
+        target,
+        preds,
+        data_range=data_range,
+        win_size=kernel_size,
+        win_sigma=sigma,
+        size_average=False,
+    )
+    return results if reduction_arg != "sum" else results.sum()
+
+
+@pytest.mark.parametrize(("preds", "target"), [(i.preds, i.target) for i in _inputs])
+@pytest.mark.parametrize("sigma", [1.5, 0.5])
+class TestSSIM(MetricTester):
+    """Test class for `StructuralSimilarityIndexMeasure` metric."""
+
+    atol = 0.006
+
+    @pytest.mark.parametrize("data_range", [1.0, (0.1, 1.0)])
+    @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
+    def test_ssim_sk(self, preds, target, sigma, data_range, ddp):
+        """Test class implementation of metricvs skimage."""
+        self.run_class_metric_test(
+            ddp,
+            preds,
+            target,
+            metric_class=StructuralSimilarityIndexMeasure,
+            reference_metric=partial(
+                _reference_skimage_ssim,
+                data_range=data_range,
+                sigma=sigma,
+                kernel_size=None,
+            ),
+            metric_args={"data_range": data_range, "sigma": sigma},
+        )
+
+    @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
+    def test_ssim_pt(self, preds, target, sigma, ddp):
+        """Test class implementation of metric vs pytorch_msssim."""
+        self.run_class_metric_test(
+            ddp,
+            preds,
+            target,
+            metric_class=StructuralSimilarityIndexMeasure,
+            reference_metric=partial(
+                _reference_msssim_ssim, data_range=1.0, sigma=sigma
+            ),
+            metric_args={"data_range": 1.0, "sigma": sigma},
+        )
+
+    @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
+    def test_ssim_without_gaussian_kernel(self, preds, target, sigma, ddp):
+        """Test class implementation of metric with gaussian kernel."""
+        self.run_class_metric_test(
+            ddp,
+            preds,
+            target,
+            metric_class=StructuralSimilarityIndexMeasure,
+            reference_metric=partial(
+                _reference_skimage_ssim, data_range=1.0, sigma=sigma, kernel_size=None
+            ),
+            metric_args={"gaussian_kernel": False, "data_range": 1.0, "sigma": sigma},
+        )
+
+    @pytest.mark.parametrize("reduction_arg", ["sum", "elementwise_mean", None])
+    def test_ssim_functional_sk(self, preds, target, sigma, reduction_arg):
+        """Test functional implementation of metric vs skimage."""
+        self.run_functional_metric_test(
+            preds,
+            target,
+            metric_functional=structural_similarity_index_measure,
+            reference_metric=partial(
+                _reference_skimage_ssim,
+                data_range=1.0,
+                sigma=sigma,
+                kernel_size=None,
+                reduction_arg=reduction_arg,
+            ),
+            metric_args={"data_range": 1.0, "sigma": sigma, "reduction": reduction_arg},
+        )
+
+    @pytest.mark.parametrize("reduction_arg", ["sum", "elementwise_mean", None])
+    def test_ssim_functional_pt(self, preds, target, sigma, reduction_arg):
+        """Test functional implementation of metric vs pytorch_msssim."""
+        self.run_functional_metric_test(
+            preds,
+            target,
+            metric_functional=structural_similarity_index_measure,
+            reference_metric=partial(
+                _reference_msssim_ssim,
+                data_range=1.0,
+                sigma=sigma,
+                reduction_arg=reduction_arg,
+            ),
+            metric_args={"data_range": 1.0, "sigma": sigma, "reduction": reduction_arg},
+        )
+
+    @pytest.mark.xfail(
+        reason="SSIM metric does not support cpu + half precision", strict=False
+    )
+    def test_ssim_half_cpu(self, preds, target, sigma):
+        """Test dtype support of the metric on CPU."""
+        self.run_precision_test_cpu(
+            preds,
+            target,
+            StructuralSimilarityIndexMeasure,
+            structural_similarity_index_measure,
+            {"data_range": 1.0},
+        )
+
+    @pytest.mark.skipif(not paddle.cuda.is_available(), reason="test requires cuda")
+    def test_ssim_half_gpu(self, preds, target, sigma):
+        """Test dtype support of the metric on GPU."""
+        self.run_precision_test_gpu(
+            preds,
+            target,
+            StructuralSimilarityIndexMeasure,
+            structural_similarity_index_measure,
+            {"data_range": 1.0},
+        )
+
+
+@pytest.mark.parametrize(
+    ("pred", "target", "kernel", "sigma", "match"),
+    [
+        (
+            [1, 1, 16, 16],
+            [1, 1, 16, 16],
+            [11, 11],
+            [1.5],
+            "`kernel_size` has dimension 2, but expected to be two less that target dimensionality.*",
+        ),
+        (
+            [1, 16, 16],
+            [1, 16, 16],
+            [11, 11],
+            [1.5, 1.5],
+            "Expected `preds` and `target` to have BxCxHxW or BxCxDxHxW shape.*",
+        ),
+        (
+            [1, 1, 16, 16],
+            [1, 1, 16, 16],
+            [11],
+            [1.5, 1.5],
+            "`kernel_size` has dimension 1, but expected to be two less that target dimensionality.*",
+        ),
+        (
+            [1, 1, 16, 16],
+            [1, 1, 16, 16],
+            [11],
+            [1.5],
+            "`kernel_size` has dimension 1, but expected to be two less that target dimensionality.*",
+        ),
+        (
+            [1, 1, 16, 16],
+            [1, 1, 16, 16],
+            [11, 0],
+            [1.5, 1.5],
+            "Expected `kernel_size` to have odd positive number.*",
+        ),
+        (
+            [1, 1, 16, 16],
+            [1, 1, 16, 16],
+            [11, 10],
+            [1.5, 1.5],
+            "Expected `kernel_size` to have odd positive number.*",
+        ),
+        (
+            [1, 1, 16, 16],
+            [1, 1, 16, 16],
+            [11, -11],
+            [1.5, 1.5],
+            "Expected `kernel_size` to have odd positive number.*",
+        ),
+        (
+            [1, 1, 16, 16],
+            [1, 1, 16, 16],
+            [11, 11],
+            [1.5, 0],
+            "Expected `sigma` to have positive number.*",
+        ),
+        (
+            [1, 1, 16, 16],
+            [1, 1, 16, 16],
+            [11, 11],
+            [1.5, -1.5],
+            "Expected `sigma` to have positive number.*",
+        ),
+    ],
+)
+def test_ssim_invalid_inputs(pred, target, kernel, sigma, match):
+    """Test for invalid input.
+
+    Checks that that an value errors are raised if input sizes are different, kernel length and sigma does not match
+    size or invalid values are provided.
+
+    """
+    pred = paddle.rand(pred)
+    target = paddle.rand(target)
+    with pytest.raises(ValueError, match=match):
+        structural_similarity_index_measure(
+            pred, target, kernel_size=kernel, sigma=sigma
+        )
+
+
+@pytest.mark.parametrize(
+    ("sigma", "kernel_size", "result"),
+    [
+        ((0.25, 0.5), None, paddle.tensor(0.20977394)),
+        ((0.5, 0.25), None, paddle.tensor(0.13884821)),
+        (None, (3, 5), paddle.tensor(0.05032664)),
+        (None, (5, 3), paddle.tensor(0.03472072)),
+    ],
+)
+def test_ssim_unequal_kernel_size(sigma, kernel_size, result):
+    """Test the case where kernel_size[0] != kernel_size[1]."""
+    preds = paddle.tensor(
+        [
+            [
+                [
+                    [1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0],
+                    [1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0],
+                    [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                    [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+                    [0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0],
+                    [0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0],
+                    [1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0],
+                ]
+            ]
+        ]
+    )
+    target = paddle.tensor(
+        [
+            [
+                [
+                    [1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0],
+                    [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0],
+                    [1.0, 1.0, 1.0, 0.0, 1.0, 0.0, 1.0],
+                    [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0],
+                    [1.0, 1.0, 1.0, 1.0, 0.0, 1.0, 1.0],
+                    [0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0],
+                    [0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0],
+                ]
+            ]
+        ]
+    )
+    if sigma is not None:
+        assert paddle.isclose(
+            structural_similarity_index_measure(
+                preds, target, gaussian_kernel=True, sigma=sigma
+            ),
+            result,
+            atol=0.0001,
+        )
+    else:
+        assert paddle.isclose(
+            structural_similarity_index_measure(
+                preds, target, gaussian_kernel=False, kernel_size=kernel_size
+            ),
+            result,
+            atol=0.0001,
+        )
+
+
+@pytest.mark.parametrize(("preds", "target"), [(i.preds, i.target) for i in _inputs])
+def test_full_image_output(preds, target):
+    """Test that if full output should be returned, then its shape matches the input."""
+    out = structural_similarity_index_measure(preds[0], target[0])
+    assert isinstance(out, paddle.Tensor)
+    assert out.size == 1
+    out = structural_similarity_index_measure(
+        preds[0], target[0], return_full_image=True
+    )
+    assert isinstance(out, tuple)
+    assert len(out) == 2
+    assert out[0].size == 1
+    assert out[1].shape == preds[0].shape
+
+
+def test_ssim_for_correct_padding():
+    """Check that padding is correctly added and removed for SSIM.
+
+    See issue: https://github.com/Lightning-AI/paddlemetrics/issues/2718
+
+    """
+    preds = paddle.rand([3, 3, 256, 256])
+    target = preds.clone()
+    target[:, :, 0, :] = 0
+    target[:, :, -1, :] = 0
+    target[:, :, :, 0] = 0
+    target[:, :, :, -1] = 0
+    assert structural_similarity_index_measure(preds, target) < 1.0
+
+
+def _run_ssim_ddp(rank: int, world_size: int):
+    """Run SSIM metric computation in a DDP setup."""
+    setup_ddp(rank, world_size)
+    device = paddle.device(f"cuda:{rank}")
+    metric = StructuralSimilarityIndexMeasure(reduction="none").to(device)
+    for _ in range(3):
+        x, y = paddle.rand(4, 3, 224, 224).to(device).chunk(2)
+        metric.update(x, y)
+    result = metric.compute()
+    assert isinstance(result, paddle.Tensor), "Expected compute result to be a tensor"
+
+
+@pytest.mark.skipif(not paddle.cuda.is_available(), reason="test requires cuda")
+@pytest.mark.skipif(_IS_WINDOWS, reason="DDP not supported on Windows")
+@pytest.mark.skipif(not USE_PYTEST_POOL, reason="DDP pool is not available")
+@pytest.mark.DDP
+def test_ssim_reduction_none_ddp():
+    """Fail when reduction='none' and dist_reduce_fx='cat' used with DDP.
+
+    See issue: https://github.com/Lightning-AI/paddlemetrics/issues/3159
+
+    """
+    pytest.pool.map(
+        partial(_run_ssim_ddp, world_size=NUM_PROCESSES), range(NUM_PROCESSES)
+    )

@@ -1,0 +1,4 @@
+nltk>3.8.1
+tqdm
+regex>=2021.9.24
+sentencepiece>=0.2.0

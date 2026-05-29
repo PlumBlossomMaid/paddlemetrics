@@ -1,0 +1,186 @@
+from functools import partial
+from typing import Optional
+
+import paddle
+import pytest
+from monai.metrics.meaniou import compute_iou
+from unittests import NUM_CLASSES
+from unittests._helpers.testers import MetricTester
+from unittests.segmentation.inputs import (_index_input_1, _mixed_input_1,
+                                           _mixed_input_2, _mixed_logits_input,
+                                           _one_hot_input_1, _one_hot_input_2)
+
+from paddlemetrics.functional.segmentation.mean_iou import mean_iou
+from paddlemetrics.segmentation.mean_iou import MeanIoU
+
+
+def _reference_mean_iou(
+    preds: paddle.Tensor,
+    target: paddle.Tensor,
+    input_format: str,
+    num_classes: Optional[int],
+    include_background: bool = True,
+    per_class: bool = True,
+    reduce: bool = True,
+):
+    """Calculate reference metric for `MeanIoU`."""
+    if input_format == "index":
+        preds = paddle.nn.functional.one_hot(preds, num_classes=num_classes).moveaxis(
+            -1, 1
+        )
+        target = paddle.nn.functional.one_hot(target, num_classes=num_classes).moveaxis(
+            -1, 1
+        )
+    elif input_format == "mixed":
+        if preds.dim() == target.dim() + 1:
+            if paddle.is_floating_point(preds):
+                preds = preds.argmax(dim=1)
+                preds = paddle.nn.functional.one_hot(
+                    preds, num_classes=NUM_CLASSES
+                ).moveaxis(-1, 1)
+            target = paddle.nn.functional.one_hot(
+                target, num_classes=NUM_CLASSES
+            ).moveaxis(-1, 1)
+        elif preds.dim() + 1 == target.dim():
+            if paddle.is_floating_point(target):
+                target = target.argmax(dim=1)
+                target = paddle.nn.functional.one_hot(
+                    target, num_classes=NUM_CLASSES
+                ).moveaxis(-1, 1)
+            preds = paddle.nn.functional.one_hot(
+                preds, num_classes=NUM_CLASSES
+            ).moveaxis(-1, 1)
+    val = compute_iou(preds, target, include_background=include_background)
+    val[paddle.isnan(val)] = 0.0
+    if reduce:
+        return paddle.mean(val, 0) if per_class else paddle.mean(val)
+    return val
+
+
+@pytest.mark.parametrize(
+    ("preds", "target", "input_format", "num_classes"),
+    [
+        (_one_hot_input_1.preds, _one_hot_input_1.target, "one-hot", NUM_CLASSES),
+        (_one_hot_input_2.preds, _one_hot_input_2.target, "one-hot", NUM_CLASSES),
+        (_one_hot_input_1.preds, _one_hot_input_1.target, "one-hot", None),
+        (_one_hot_input_2.preds, _one_hot_input_2.target, "one-hot", None),
+        (_index_input_1.preds, _index_input_1.target, "index", NUM_CLASSES),
+        (_index_input_1.preds, _index_input_1.target, "index", None),
+        (_mixed_input_1.preds, _mixed_input_1.target, "mixed", NUM_CLASSES),
+        (_mixed_input_2.preds, _mixed_input_2.target, "mixed", NUM_CLASSES),
+        (_mixed_logits_input.preds, _mixed_logits_input.target, "mixed", NUM_CLASSES),
+    ],
+)
+@pytest.mark.parametrize("include_background", [True, False])
+class TestMeanIoU(MetricTester):
+    """Test class for `MeanIoU` metric."""
+
+    atol = 0.0001
+
+    @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
+    @pytest.mark.parametrize("per_class", [True, False])
+    def test_mean_iou_class(
+        self,
+        preds,
+        target,
+        input_format,
+        num_classes,
+        include_background,
+        per_class,
+        ddp,
+    ):
+        """Test class implementation of metric."""
+        if input_format in ["index", "mixed"] and num_classes is None:
+            with pytest.raises(
+                ValueError,
+                match="Argument `num_classes` must be provided when `input_format` is 'index'.",
+            ):
+                MeanIoU(num_classes=None, input_format="index")
+            return
+        self.run_class_metric_test(
+            ddp=ddp,
+            preds=preds,
+            target=target,
+            metric_class=MeanIoU,
+            reference_metric=partial(
+                _reference_mean_iou,
+                input_format=input_format,
+                num_classes=num_classes,
+                include_background=include_background,
+                per_class=per_class,
+                reduce=True,
+            ),
+            metric_args={
+                "num_classes": num_classes,
+                "include_background": include_background,
+                "per_class": per_class,
+                "input_format": input_format,
+            },
+        )
+
+    def test_mean_iou_functional(
+        self, preds, target, input_format, num_classes, include_background
+    ):
+        """Test functional implementation of metric."""
+        if input_format == "index" and num_classes is None:
+            with pytest.raises(
+                ValueError,
+                match="Argument `num_classes` must be provided when `input_format` is 'index'.",
+            ):
+                mean_iou(preds, target, num_classes=None, input_format="index")
+            return
+        self.run_functional_metric_test(
+            preds=preds,
+            target=target,
+            metric_functional=mean_iou,
+            reference_metric=partial(
+                _reference_mean_iou,
+                input_format=input_format,
+                num_classes=num_classes,
+                include_background=include_background,
+                reduce=False,
+            ),
+            metric_args={
+                "num_classes": num_classes,
+                "include_background": include_background,
+                "per_class": True,
+                "input_format": input_format,
+            },
+        )
+
+
+def test_mean_iou_absent_class():
+    """Test mean iou returns -1 for absent classes."""
+    metric = MeanIoU(num_classes=3, per_class=True, input_format="index")
+    target = paddle.tensor([[0, 1], [1, 0]])
+    preds = paddle.tensor([[0, 1], [1, 0]])
+    metric.update(preds, target)
+    miou_per_class = metric.compute()
+    functional_miou = mean_iou(
+        preds, target, num_classes=3, per_class=True, input_format="index"
+    ).mean(dim=0)
+    expected_ious = [1.0, 1.0, -1.0]
+    for idx, (iou, iou_func) in enumerate(zip(miou_per_class, functional_miou)):
+        assert iou == iou_func == expected_ious[idx]
+    metric = MeanIoU(num_classes=3, per_class=False, input_format="index")
+    metric.update(preds, target)
+    miou_per_class = metric.compute()
+    miou_func = mean_iou(
+        preds, target, num_classes=3, per_class=False, input_format="index"
+    ).mean(dim=0)
+    assert miou_per_class.item() == miou_func.item() == 1.0
+
+
+def test_mean_iou_perfect_prediction():
+    """Test perfect IoU prediction and target."""
+    metric = MeanIoU(num_classes=3, per_class=True, input_format="index")
+    target = paddle.tensor([[0, 1], [1, 0], [2, 2]])
+    preds = paddle.tensor([[0, 1], [1, 0], [2, 2]])
+    metric.update(preds, target)
+    miou_per_class = metric.compute()
+    miou_func = mean_iou(
+        preds, target, num_classes=3, per_class=True, input_format="index"
+    ).mean(dim=0)
+    expected_ious = [1.0, 1.0, 1.0]
+    for idx, (iou, iou_func) in enumerate(zip(miou_per_class, miou_func)):
+        assert iou == iou_func == expected_ious[idx]
