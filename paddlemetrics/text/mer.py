@@ -62,16 +62,10 @@ class MatchErrorRate(Metric):
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
-        self.add_state(
-            "errors", paddle.tensor(0, dtype=paddle.float32), dist_reduce_fx="sum"
-        )
-        self.add_state(
-            "total", paddle.tensor(0, dtype=paddle.float32), dist_reduce_fx="sum"
-        )
+        self.add_state("errors", paddle.tensor(0, dtype=paddle.float32), dist_reduce_fx="sum")
+        self.add_state("total", paddle.tensor(0, dtype=paddle.float32), dist_reduce_fx="sum")
 
-    def update(
-        self, preds: Union[str, list[str]], target: Union[str, list[str]]
-    ) -> None:
+    def update(self, preds: Union[str, list[str]], target: Union[str, list[str]]) -> None:
         """Update state with predictions and targets."""
         errors, total = _mer_update(preds, target)
         self.errors += errors

@@ -5,8 +5,7 @@ import paddle
 from typing_extensions import Literal
 
 from paddlemetrics.classification.base import _ClassificationTaskWrapper
-from paddlemetrics.classification.roc import (BinaryROC, MulticlassROC,
-                                             MultilabelROC)
+from paddlemetrics.classification.roc import BinaryROC, MulticlassROC, MultilabelROC
 from paddlemetrics.functional.classification.eer import _eer_compute
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.enums import ClassificationTask
@@ -426,15 +425,11 @@ class EER(_ClassificationTaskWrapper):
             return BinaryEER(**kwargs)
         if task == ClassificationTask.MULTICLASS:
             if not isinstance(num_classes, int):
-                raise ValueError(
-                    f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-                )
+                raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
             return MulticlassEER(num_classes, average=average, **kwargs)
         if task == ClassificationTask.MULTILABEL:
             if not isinstance(num_labels, int):
-                raise ValueError(
-                    f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-                )
+                raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
             return MultilabelEER(num_labels, **kwargs)
         raise ValueError(f"Task {task} not supported!")
 

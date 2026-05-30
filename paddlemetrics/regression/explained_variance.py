@@ -6,8 +6,10 @@ from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.functional.regression.explained_variance import (
-    ALLOWED_MULTIOUTPUT, _explained_variance_compute,
-    _explained_variance_update)
+    ALLOWED_MULTIOUTPUT,
+    _explained_variance_compute,
+    _explained_variance_update,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -82,9 +84,7 @@ class ExplainedVariance(Metric):
 
     def __init__(
         self,
-        multioutput: Literal[
-            "raw_values", "uniform_average", "variance_weighted"
-        ] = "uniform_average",
+        multioutput: Literal["raw_values", "uniform_average", "variance_weighted"] = "uniform_average",
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
@@ -94,13 +94,9 @@ class ExplainedVariance(Metric):
             )
         self.multioutput = multioutput
         self.add_state("sum_error", default=paddle.tensor(0.0), dist_reduce_fx="sum")
-        self.add_state(
-            "sum_squared_error", default=paddle.tensor(0.0), dist_reduce_fx="sum"
-        )
+        self.add_state("sum_squared_error", default=paddle.tensor(0.0), dist_reduce_fx="sum")
         self.add_state("sum_target", default=paddle.tensor(0.0), dist_reduce_fx="sum")
-        self.add_state(
-            "sum_squared_target", default=paddle.tensor(0.0), dist_reduce_fx="sum"
-        )
+        self.add_state("sum_squared_target", default=paddle.tensor(0.0), dist_reduce_fx="sum")
         self.add_state("num_obs", default=paddle.tensor(0.0), dist_reduce_fx="sum")
 
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:

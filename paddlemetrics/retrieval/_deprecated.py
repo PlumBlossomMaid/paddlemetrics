@@ -6,7 +6,9 @@ from paddlemetrics.retrieval.hit_rate import RetrievalHitRate
 from paddlemetrics.retrieval.ndcg import RetrievalNormalizedDCG
 from paddlemetrics.retrieval.precision import RetrievalPrecision
 from paddlemetrics.retrieval.precision_recall_curve import (
-    RetrievalPrecisionRecallCurve, RetrievalRecallAtFixedPrecision)
+    RetrievalPrecisionRecallCurve,
+    RetrievalRecallAtFixedPrecision,
+)
 from paddlemetrics.retrieval.r_precision import RetrievalRPrecision
 from paddlemetrics.retrieval.recall import RetrievalRecall
 from paddlemetrics.retrieval.reciprocal_rank import RetrievalMRR
@@ -31,15 +33,10 @@ class _RetrievalFallOut(RetrievalFallOut):
         empty_target_action: str = "pos",
         ignore_index: Optional[int] = None,
         top_k: Optional[int] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         _deprecated_root_import_class("RetrievalFallOut", "retrieval")
-        super().__init__(
-            empty_target_action=empty_target_action,
-            ignore_index=ignore_index,
-            top_k=top_k,
-            **kwargs
-        )
+        super().__init__(empty_target_action=empty_target_action, ignore_index=ignore_index, top_k=top_k, **kwargs)
 
 
 class _RetrievalHitRate(RetrievalHitRate):
@@ -60,15 +57,10 @@ class _RetrievalHitRate(RetrievalHitRate):
         empty_target_action: str = "neg",
         ignore_index: Optional[int] = None,
         top_k: Optional[int] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         _deprecated_root_import_class("RetrievalHitRate", "retrieval")
-        super().__init__(
-            empty_target_action=empty_target_action,
-            ignore_index=ignore_index,
-            top_k=top_k,
-            **kwargs
-        )
+        super().__init__(empty_target_action=empty_target_action, ignore_index=ignore_index, top_k=top_k, **kwargs)
 
 
 class _RetrievalMAP(RetrievalMAP):
@@ -89,15 +81,10 @@ class _RetrievalMAP(RetrievalMAP):
         empty_target_action: str = "neg",
         ignore_index: Optional[int] = None,
         top_k: Optional[int] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         _deprecated_root_import_class("RetrievalMAP", "retrieval")
-        super().__init__(
-            empty_target_action=empty_target_action,
-            ignore_index=ignore_index,
-            top_k=top_k,
-            **kwargs
-        )
+        super().__init__(empty_target_action=empty_target_action, ignore_index=ignore_index, top_k=top_k, **kwargs)
 
 
 class _RetrievalRecall(RetrievalRecall):
@@ -118,15 +105,10 @@ class _RetrievalRecall(RetrievalRecall):
         empty_target_action: str = "neg",
         ignore_index: Optional[int] = None,
         top_k: Optional[int] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         _deprecated_root_import_class("RetrievalRecall", "retrieval")
-        super().__init__(
-            empty_target_action=empty_target_action,
-            ignore_index=ignore_index,
-            top_k=top_k,
-            **kwargs
-        )
+        super().__init__(empty_target_action=empty_target_action, ignore_index=ignore_index, top_k=top_k, **kwargs)
 
 
 class _RetrievalRPrecision(RetrievalRPrecision):
@@ -142,16 +124,9 @@ class _RetrievalRPrecision(RetrievalRPrecision):
 
     """
 
-    def __init__(
-        self,
-        empty_target_action: str = "neg",
-        ignore_index: Optional[int] = None,
-        **kwargs: Any
-    ) -> None:
+    def __init__(self, empty_target_action: str = "neg", ignore_index: Optional[int] = None, **kwargs: Any) -> None:
         _deprecated_root_import_class("RetrievalRPrecision", "retrieval")
-        super().__init__(
-            empty_target_action=empty_target_action, ignore_index=ignore_index, **kwargs
-        )
+        super().__init__(empty_target_action=empty_target_action, ignore_index=ignore_index, **kwargs)
 
 
 class _RetrievalNormalizedDCG(RetrievalNormalizedDCG):
@@ -172,15 +147,10 @@ class _RetrievalNormalizedDCG(RetrievalNormalizedDCG):
         empty_target_action: str = "neg",
         ignore_index: Optional[int] = None,
         top_k: Optional[int] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         _deprecated_root_import_class("RetrievalNormalizedDCG", "retrieval")
-        super().__init__(
-            empty_target_action=empty_target_action,
-            ignore_index=ignore_index,
-            top_k=top_k,
-            **kwargs
-        )
+        super().__init__(empty_target_action=empty_target_action, ignore_index=ignore_index, top_k=top_k, **kwargs)
 
 
 class _RetrievalPrecision(RetrievalPrecision):
@@ -202,7 +172,7 @@ class _RetrievalPrecision(RetrievalPrecision):
         ignore_index: Optional[int] = None,
         top_k: Optional[int] = None,
         adaptive_k: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         _deprecated_root_import_class("", "retrieval")
         super().__init__(
@@ -210,7 +180,7 @@ class _RetrievalPrecision(RetrievalPrecision):
             ignore_index=ignore_index,
             top_k=top_k,
             adaptive_k=adaptive_k,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -238,7 +208,7 @@ class _RetrievalPrecisionRecallCurve(RetrievalPrecisionRecallCurve):
         adaptive_k: bool = False,
         empty_target_action: str = "neg",
         ignore_index: Optional[int] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         _deprecated_root_import_class("", "retrieval")
         super().__init__(
@@ -246,7 +216,7 @@ class _RetrievalPrecisionRecallCurve(RetrievalPrecisionRecallCurve):
             adaptive_k=adaptive_k,
             empty_target_action=empty_target_action,
             ignore_index=ignore_index,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -270,7 +240,7 @@ class _RetrievalRecallAtFixedPrecision(RetrievalRecallAtFixedPrecision):
         adaptive_k: bool = False,
         empty_target_action: str = "neg",
         ignore_index: Optional[int] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         _deprecated_root_import_class("RetrievalRecallAtFixedPrecision", "retrieval")
         super().__init__(
@@ -279,7 +249,7 @@ class _RetrievalRecallAtFixedPrecision(RetrievalRecallAtFixedPrecision):
             adaptive_k=adaptive_k,
             empty_target_action=empty_target_action,
             ignore_index=ignore_index,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -296,13 +266,6 @@ class _RetrievalMRR(RetrievalMRR):
 
     """
 
-    def __init__(
-        self,
-        empty_target_action: str = "neg",
-        ignore_index: Optional[int] = None,
-        **kwargs: Any
-    ) -> None:
+    def __init__(self, empty_target_action: str = "neg", ignore_index: Optional[int] = None, **kwargs: Any) -> None:
         _deprecated_root_import_class("", "retrieval")
-        super().__init__(
-            empty_target_action=empty_target_action, ignore_index=ignore_index, **kwargs
-        )
+        super().__init__(empty_target_action=empty_target_action, ignore_index=ignore_index, **kwargs)

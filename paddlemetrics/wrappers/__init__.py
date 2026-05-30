@@ -6,9 +6,11 @@ from paddlemetrics.wrappers.multioutput import MultioutputWrapper
 from paddlemetrics.wrappers.multitask import MultitaskWrapper
 from paddlemetrics.wrappers.running import Running
 from paddlemetrics.wrappers.tracker import MetricTracker
-from paddlemetrics.wrappers.transformations import (BinaryTargetTransformer,
-                                                   LambdaInputTransformer,
-                                                   MetricInputTransformer)
+from paddlemetrics.wrappers.transformations import (
+    BinaryTargetTransformer,
+    LambdaInputTransformer,
+    MetricInputTransformer,
+)
 
 __all__ = [
     "BinaryTargetTransformer",

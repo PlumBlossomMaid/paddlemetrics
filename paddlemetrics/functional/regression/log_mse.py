@@ -1,14 +1,11 @@
 from typing import Union
 
 import paddle
-from paddle import Tensor
 
 from paddlemetrics.utils.checks import _check_same_shape
 
 
-def _mean_squared_log_error_update(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> tuple[paddle.Tensor, int]:
+def _mean_squared_log_error_update(preds: paddle.Tensor, target: paddle.Tensor) -> tuple[paddle.Tensor, int]:
     """Return variables required to compute Mean Squared Log Error. Checks for same shape of tensors.
 
     Args:
@@ -17,9 +14,7 @@ def _mean_squared_log_error_update(
 
     """
     _check_same_shape(preds, target)
-    sum_squared_log_error = paddle.sum(
-        paddle.pow(paddle.log1p(x=preds) - paddle.log1p(x=target), 2)
-    )
+    sum_squared_log_error = paddle.sum(paddle.pow(paddle.log1p(x=preds) - paddle.log1p(x=target), 2))
     return sum_squared_log_error, target.size
 
 
@@ -44,9 +39,7 @@ def _mean_squared_log_error_compute(
     return sum_squared_log_error / num_obs
 
 
-def mean_squared_log_error(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> paddle.Tensor:
+def mean_squared_log_error(preds: paddle.Tensor, target: paddle.Tensor) -> paddle.Tensor:
     """Compute mean squared log error.
 
     Args:

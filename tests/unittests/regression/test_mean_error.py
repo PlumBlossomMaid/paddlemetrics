@@ -7,31 +7,33 @@ import paddle
 import pytest
 from permetrics.regression import RegressionMetric
 from sklearn.metrics import mean_absolute_error as sk_mean_absolute_error
-from sklearn.metrics import \
-    mean_absolute_percentage_error as sk_mean_abs_percentage_error
+from sklearn.metrics import mean_absolute_percentage_error as sk_mean_abs_percentage_error
 from sklearn.metrics import mean_squared_error as sk_mean_squared_error
 from sklearn.metrics import mean_squared_log_error as sk_mean_squared_log_error
 from sklearn.metrics._regression import _check_reg_targets
 from sklearn.utils import check_consistent_length
+
+from paddlemetrics.functional import (
+    mean_absolute_error,
+    mean_absolute_percentage_error,
+    mean_squared_error,
+    mean_squared_log_error,
+    normalized_root_mean_squared_error,
+    weighted_mean_absolute_percentage_error,
+)
+from paddlemetrics.functional.regression.symmetric_mape import symmetric_mean_absolute_percentage_error
+from paddlemetrics.regression import (
+    MeanAbsoluteError,
+    MeanAbsolutePercentageError,
+    MeanSquaredError,
+    MeanSquaredLogError,
+    WeightedMeanAbsolutePercentageError,
+)
+from paddlemetrics.regression.nrmse import NormalizedRootMeanSquaredError
+from paddlemetrics.regression.symmetric_mape import SymmetricMeanAbsolutePercentageError
 from unittests import BATCH_SIZE, NUM_BATCHES, _Input
 from unittests._helpers import _SKLEARN_GREATER_EQUAL_1_7, seed_all
 from unittests._helpers.testers import MetricTester
-
-from paddlemetrics.functional import (mean_absolute_error,
-                                     mean_absolute_percentage_error,
-                                     mean_squared_error,
-                                     mean_squared_log_error,
-                                     normalized_root_mean_squared_error,
-                                     weighted_mean_absolute_percentage_error)
-from paddlemetrics.functional.regression.symmetric_mape import \
-    symmetric_mean_absolute_percentage_error
-from paddlemetrics.regression import (MeanAbsoluteError,
-                                     MeanAbsolutePercentageError,
-                                     MeanSquaredError, MeanSquaredLogError,
-                                     WeightedMeanAbsolutePercentageError)
-from paddlemetrics.regression.nrmse import NormalizedRootMeanSquaredError
-from paddlemetrics.regression.symmetric_mape import \
-    SymmetricMeanAbsolutePercentageError
 
 seed_all(42)
 NUM_TARGETS = 5
@@ -92,11 +94,7 @@ def _reference_symmetric_mape(
         _, y_true, y_pred, multioutput = _check_reg_targets(y_true, y_pred, multioutput)
     check_consistent_length(y_true, y_pred, sample_weight)
     epsilon = np.finfo(np.float64).eps
-    smape = (
-        2
-        * np.abs(y_pred - y_true)
-        / np.maximum(np.abs(y_true) + np.abs(y_pred), epsilon)
-    )
+    smape = 2 * np.abs(y_pred - y_true) / np.maximum(np.abs(y_true) + np.abs(y_pred), epsilon)
     output_errors = np.average(smape, weights=sample_weight, axis=0)
     if isinstance(multioutput, str):
         if multioutput == "raw_values":
@@ -116,18 +114,10 @@ def _reference_normalized_root_mean_squared_error(
         y_true = y_true.flatten()
         y_pred = y_pred.flatten()
     if normalization != "l2":
-        evaluator = (
-            RegressionMetric(y_true, y_pred)
-            if normalization == "range"
-            else RegressionMetric(y_pred, y_true)
-        )
+        evaluator = RegressionMetric(y_true, y_pred) if normalization == "range" else RegressionMetric(y_pred, y_true)
         arg_mapping = {"mean": 1, "range": 2, "std": 4}
-        return evaluator.normalized_root_mean_square_error(
-            model=arg_mapping[normalization]
-        )
-    return np.sqrt(np.mean(np.square(y_true - y_pred), axis=0)) / np.linalg.norm(
-        y_true, axis=0
-    )
+        return evaluator.normalized_root_mean_square_error(model=arg_mapping[normalization])
+    return np.sqrt(np.mean(np.square(y_true - y_pred), axis=0)) / np.linalg.norm(y_true, axis=0)
 
 
 def _reference_weighted_mean_abs_percentage_error(target, preds):
@@ -152,11 +142,7 @@ def _multi_target_ref_wrapper(preds, target, sk_fn, metric_args):
     """Reference implementation of multi-target metrics."""
     sk_preds = preds.view(-1, NUM_TARGETS).numpy()
     sk_target = target.view(-1, NUM_TARGETS).numpy()
-    sk_kwargs = (
-        {"multioutput": "raw_values"}
-        if metric_args and "num_outputs" in metric_args
-        else {}
-    )
+    sk_kwargs = {"multioutput": "raw_values"} if metric_args and "num_outputs" in metric_args else {}
     if metric_args and "normalization" in metric_args:
         res = sk_fn(sk_target, sk_preds, **metric_args)
     else:
@@ -388,25 +374,15 @@ class TestMeanError(MetricTester):
     ):
         """Test dtype support of the metric on CPU."""
         if metric_class == MeanSquaredLogError:
-            pytest.xfail(
-                "MeanSquaredLogError metric does not support cpu + half precision"
-            )
+            pytest.xfail("MeanSquaredLogError metric does not support cpu + half precision")
         if metric_class == MeanAbsolutePercentageError:
-            pytest.xfail(
-                "MeanSquaredPercentageError metric does not support cpu + half precision"
-            )
+            pytest.xfail("MeanSquaredPercentageError metric does not support cpu + half precision")
         if metric_class == SymmetricMeanAbsolutePercentageError:
-            pytest.xfail(
-                "SymmetricMeanAbsolutePercentageError metric does not support cpu + half precision"
-            )
+            pytest.xfail("SymmetricMeanAbsolutePercentageError metric does not support cpu + half precision")
         if metric_class == WeightedMeanAbsolutePercentageError:
-            pytest.xfail(
-                "WeightedMeanAbsolutePercentageError metric does not support cpu + half precision"
-            )
+            pytest.xfail("WeightedMeanAbsolutePercentageError metric does not support cpu + half precision")
         if metric_class == NormalizedRootMeanSquaredError:
-            pytest.xfail(
-                "NormalizedRootMeanSquaredError metric does not support cpu + half precision"
-            )
+            pytest.xfail("NormalizedRootMeanSquaredError metric does not support cpu + half precision")
         self.run_precision_test_cpu(preds, target, metric_class, metric_functional)
 
     @pytest.mark.skipif(not paddle.cuda.is_available(), reason="test requires cuda")

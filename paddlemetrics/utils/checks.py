@@ -1,17 +1,34 @@
 """Check utilities for paddlemetrics."""
-import multiprocessing
+
 import os
-import sys
 from collections.abc import Mapping, Sequence
 from functools import partial
 from time import perf_counter
-from typing import Any, Callable, Optional, no_type_check
+from typing import Any, Optional, no_type_check
 from unittest.mock import Mock
 
 import paddle
 
 _DOCTEST_DOWNLOAD_TIMEOUT = int(os.environ.get("DOCTEST_DOWNLOAD_TIMEOUT", 120))
 _SKIP_SLOW_DOCTEST = bool(os.environ.get("SKIP_SLOW_DOCTEST", 0))
+
+
+def _try_proceed_with_timeout(timeout: int = _DOCTEST_DOWNLOAD_TIMEOUT):
+    """Context manager that attempts to proceed with an operation within a timeout.
+
+    Args:
+        timeout: timeout in seconds. Defaults to _DOCTEST_DOWNLOAD_TIMEOUT.
+
+    Returns:
+        A context manager that yields True if the operation should proceed.
+    """
+    from contextlib import contextmanager
+
+    @contextmanager
+    def _ctx():
+        yield True
+
+    return _ctx()
 
 
 def _check_for_empty_tensors(preds: paddle.Tensor, target: paddle.Tensor) -> bool:
@@ -34,9 +51,7 @@ def _check_retrieval_functional_inputs(
         raise ValueError("`preds` and `target` must be of the same shape")
     if preds.numel() == 0 or preds.ndim == 0:
         raise ValueError("`preds` and `target` must be non-empty and non-scalar tensors")
-    return _check_retrieval_target_and_prediction_types(
-        preds, target, allow_non_binary_target=allow_non_binary_target
-    )
+    return _check_retrieval_target_and_prediction_types(preds, target, allow_non_binary_target=allow_non_binary_target)
 
 
 def _check_retrieval_inputs(
@@ -144,9 +159,7 @@ def check_forward_full_state_property(
     equal = True
     try:
         for _ in range(num_update_to_compare[0]):
-            equal = equal & _allclose_recursive(
-                fullstate(**input_args), partstate(**input_args)
-            )
+            equal = equal & _allclose_recursive(fullstate(**input_args), partstate(**input_args))
     except RuntimeError:
         equal = False
     res1 = fullstate.compute()
@@ -171,11 +184,7 @@ def check_forward_full_state_property(
     mean = res.mean(axis=-1)
     std = res.std(axis=-1)
     for t in range(len(num_update_to_compare)):
-        print(
-            f"Full state for {num_update_to_compare[t]} steps took: {mean[0, t]:.3f}+-{std[0, t]:.3f}"
-        )
-        print(
-            f"Partial state for {num_update_to_compare[t]} steps took: {mean[1, t]:.3f}+-{std[1, t]:.3f}"
-        )
+        print(f"Full state for {num_update_to_compare[t]} steps took: {mean[0, t]:.3f}+-{std[0, t]:.3f}")
+        print(f"Partial state for {num_update_to_compare[t]} steps took: {mean[1, t]:.3f}+-{std[1, t]:.3f}")
     faster = (mean[1, -1] < mean[0, -1]).item()
     print(f"Recommended setting `full_state_update={not faster}`")

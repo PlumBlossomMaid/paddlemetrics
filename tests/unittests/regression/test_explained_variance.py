@@ -3,12 +3,12 @@ from functools import partial
 import paddle
 import pytest
 from sklearn.metrics import explained_variance_score
-from unittests import BATCH_SIZE, NUM_BATCHES, _Input
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
 
 from paddlemetrics.functional import explained_variance
 from paddlemetrics.regression import ExplainedVariance
+from unittests import BATCH_SIZE, NUM_BATCHES, _Input
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
 
 seed_all(42)
 NUM_TARGETS = 5
@@ -34,9 +34,7 @@ def _multi_target_ref_metric(preds, target, sk_fn=explained_variance_score):
     return sk_fn(sk_target, sk_preds)
 
 
-@pytest.mark.parametrize(
-    "multioutput", ["raw_values", "uniform_average", "variance_weighted"]
-)
+@pytest.mark.parametrize("multioutput", ["raw_values", "uniform_average", "variance_weighted"])
 @pytest.mark.parametrize(
     ("preds", "target", "ref_metric"),
     [
@@ -70,9 +68,7 @@ class TestExplainedVariance(MetricTester):
             metric_args={"multioutput": multioutput},
         )
 
-    def test_explained_variance_functional(
-        self, multioutput, preds, target, ref_metric
-    ):
+    def test_explained_variance_functional(self, multioutput, preds, target, ref_metric):
         """Test functional implementation of metric."""
         self.run_functional_metric_test(
             preds,
@@ -85,9 +81,7 @@ class TestExplainedVariance(MetricTester):
             metric_args={"multioutput": multioutput},
         )
 
-    def test_explained_variance_differentiability(
-        self, multioutput, preds, target, ref_metric
-    ):
+    def test_explained_variance_differentiability(self, multioutput, preds, target, ref_metric):
         """Test the differentiability of the metric, according to its `is_differentiable` attribute."""
         self.run_differentiability_test(
             preds=preds,
@@ -99,16 +93,12 @@ class TestExplainedVariance(MetricTester):
 
     def test_explained_variance_half_cpu(self, multioutput, preds, target, ref_metric):
         """Test dtype support of the metric on CPU."""
-        self.run_precision_test_cpu(
-            preds, target, ExplainedVariance, explained_variance
-        )
+        self.run_precision_test_cpu(preds, target, ExplainedVariance, explained_variance)
 
     @pytest.mark.skipif(not paddle.cuda.is_available(), reason="test requires cuda")
     def test_explained_variance_half_gpu(self, multioutput, preds, target, ref_metric):
         """Test dtype support of the metric on GPU."""
-        self.run_precision_test_gpu(
-            preds, target, ExplainedVariance, explained_variance
-        )
+        self.run_precision_test_gpu(preds, target, ExplainedVariance, explained_variance)
 
 
 def test_error_on_different_shape(metric_class=ExplainedVariance):

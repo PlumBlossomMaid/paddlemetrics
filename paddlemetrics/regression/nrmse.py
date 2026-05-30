@@ -6,7 +6,9 @@ from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.functional.regression.nrmse import (
-    _mean_squared_error_update, _normalized_root_mean_squared_error_compute)
+    _mean_squared_error_update,
+    _normalized_root_mean_squared_error_compute,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -150,13 +152,9 @@ class NormalizedRootMeanSquaredError(Metric):
             )
         self.normalization = normalization
         if not (isinstance(num_outputs, int) and num_outputs > 0):
-            raise ValueError(
-                f"Expected num_outputs to be a positive integer but got {num_outputs}"
-            )
+            raise ValueError(f"Expected num_outputs to be a positive integer but got {num_outputs}")
         self.num_outputs = num_outputs
-        self.add_state(
-            "sum_squared_error", default=paddle.zeros(num_outputs), dist_reduce_fx="sum"
-        )
+        self.add_state("sum_squared_error", default=paddle.zeros(num_outputs), dist_reduce_fx="sum")
         self.add_state("total", default=paddle.zeros(num_outputs), dist_reduce_fx=None)
         self.add_state(
             "min_val",
@@ -168,12 +166,8 @@ class NormalizedRootMeanSquaredError(Metric):
             default=-float("Inf") * paddle.ones(self.num_outputs),
             dist_reduce_fx=None,
         )
-        self.add_state(
-            "mean_val", default=paddle.zeros(self.num_outputs), dist_reduce_fx=None
-        )
-        self.add_state(
-            "var_val", default=paddle.zeros(self.num_outputs), dist_reduce_fx=None
-        )
+        self.add_state("mean_val", default=paddle.zeros(self.num_outputs), dist_reduce_fx=None)
+        self.add_state("var_val", default=paddle.zeros(self.num_outputs), dist_reduce_fx=None)
         self.add_state(
             "target_squared",
             default=paddle.zeros(self.num_outputs),
@@ -186,21 +180,13 @@ class NormalizedRootMeanSquaredError(Metric):
         See `mean_squared_error_update` for details.
 
         """
-        sum_squared_error, num_obs = _mean_squared_error_update(
-            preds, target, self.num_outputs
-        )
+        sum_squared_error, num_obs = _mean_squared_error_update(preds, target, self.num_outputs)
         self.sum_squared_error += sum_squared_error
         target = target.view(-1) if self.num_outputs == 1 else target
-        self.min_val = paddle.minimum(
-            (target.min(axis=0), target.argmin(axis=0)).values, self.min_val
-        )
-        self.max_val = paddle.maximum(
-            (target.max(axis=0), target.argmax(axis=0)).values, self.max_val
-        )
+        self.min_val = paddle.minimum(target.min(axis=0)[0], self.min_val)
+        self.max_val = paddle.maximum(target.max(axis=0)[0], self.max_val)
         self.target_squared += (target**2).sum(dim=0)
-        new_mean = (self.total * self.mean_val + target.sum(dim=0)) / (
-            self.total + num_obs
-        )
+        new_mean = (self.total * self.mean_val + target.sum(dim=0)) / (self.total + num_obs)
         self.total += num_obs
         new_var = ((target - new_mean) * (target - self.mean_val)).sum(dim=0)
         self.mean_val = new_mean
@@ -212,12 +198,7 @@ class NormalizedRootMeanSquaredError(Metric):
         See `mean_squared_error_compute` for details.
 
         """
-        if (
-            self.num_outputs == 1
-            and self.mean_val.size > 1
-            or self.num_outputs > 1
-            and self.mean_val.ndim > 1
-        ):
+        if self.num_outputs == 1 and self.mean_val.size > 1 or self.num_outputs > 1 and self.mean_val.ndim > 1:
             denom = _final_aggregation(
                 min_val=self.min_val,
                 max_val=self.max_val,
@@ -238,9 +219,7 @@ class NormalizedRootMeanSquaredError(Metric):
             else:
                 denom = paddle.sqrt(self.target_squared)
             total = self.total
-        return _normalized_root_mean_squared_error_compute(
-            self.sum_squared_error, total, denom
-        )
+        return _normalized_root_mean_squared_error_compute(self.sum_squared_error, total, denom)
 
     def plot(
         self,

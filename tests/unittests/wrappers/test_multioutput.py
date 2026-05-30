@@ -5,14 +5,14 @@ import paddle
 import pytest
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import r2_score as sk_r2score
-from unittests import BATCH_SIZE, NUM_BATCHES, NUM_CLASSES, _Input
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
 
 from paddlemetrics import Metric
 from paddlemetrics.classification import ConfusionMatrix, MulticlassAccuracy
 from paddlemetrics.regression import R2Score
 from paddlemetrics.wrappers.multioutput import MultioutputWrapper
+from unittests import BATCH_SIZE, NUM_BATCHES, NUM_CLASSES, _Input
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
 
 seed_all(42)
 
@@ -22,9 +22,7 @@ class _MultioutputMetric(Metric):
 
     def __init__(self, base_metric_class, num_outputs: int = 1, **kwargs: Any) -> None:
         super().__init__(**kwargs)
-        self.metric = MultioutputWrapper(
-            base_metric_class(**kwargs), num_outputs=num_outputs
-        )
+        self.metric = MultioutputWrapper(base_metric_class(**kwargs), num_outputs=num_outputs)
 
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update the each pair of outputs and predictions."""
@@ -34,6 +32,7 @@ class _MultioutputMetric(Metric):
         """Compute the R2 score between each pair of outputs and predictions."""
         return self.metric.compute()
 
+
 num_targets = 2
 _multi_target_regression_inputs = _Input(
     preds=paddle.rand(NUM_BATCHES, BATCH_SIZE, num_targets),
@@ -41,9 +40,7 @@ _multi_target_regression_inputs = _Input(
 )
 _multi_target_classification_inputs = _Input(
     preds=paddle.rand(NUM_BATCHES, BATCH_SIZE, NUM_CLASSES, num_targets),
-    target=paddle.randint(
-        low=0, high=NUM_CLASSES, shape=(NUM_BATCHES, BATCH_SIZE, num_targets)
-    ),
+    target=paddle.randint(low=0, high=NUM_CLASSES, shape=(NUM_BATCHES, BATCH_SIZE, num_targets)),
 )
 
 
@@ -53,18 +50,13 @@ def _multi_target_sk_r2score(preds, target, adjusted=0, multioutput="raw_values"
     sk_target = target.view(-1, num_targets).numpy()
     r2_score = sk_r2score(sk_target, sk_preds, multioutput=multioutput)
     if adjusted != 0:
-        return 1 - (1 - r2_score) * (sk_preds.shape[0] - 1) / (
-            sk_preds.shape[0] - adjusted - 1
-        )
+        return 1 - (1 - r2_score) * (sk_preds.shape[0] - 1) / (sk_preds.shape[0] - adjusted - 1)
     return r2_score
 
 
 def _multi_target_sk_accuracy(preds, target, num_outputs):
     """Compute accuracy over multiple outputs."""
-    return [
-        accuracy_score(paddle.argmax(preds[:, :, i], axis=1), target[:, i])
-        for i in range(num_outputs)
-    ]
+    return [accuracy_score(paddle.argmax(preds[:, :, i], axis=1), target[:, i]) for i in range(num_outputs)]
 
 
 @pytest.mark.parametrize(
@@ -90,9 +82,7 @@ class TestMultioutputWrapper(MetricTester):
     """Test the MultioutputWrapper class with regression and classification inner metrics."""
 
     @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
-    def test_multioutput_wrapper(
-        self, base_metric_class, compare_metric, preds, target, num_outputs, ddp
-    ):
+    def test_multioutput_wrapper(self, base_metric_class, compare_metric, preds, target, num_outputs, ddp):
         """Test correctness of implementation.
 
         Tests that the multioutput wrapper properly slices and computes outputs along the output dimension for both

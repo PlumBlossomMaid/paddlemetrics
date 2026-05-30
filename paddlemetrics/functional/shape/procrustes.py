@@ -45,9 +45,7 @@ def procrustes_disparity(
         )
     rotation = paddle.matmul(u, v)
     scale = w.sum(1, keepdim=True)
-    point_cloud2 = scale[:, None] * paddle.matmul(
-        point_cloud2, rotation.transpose(1, 2)
-    )
+    point_cloud2 = scale[:, None] * paddle.matmul(point_cloud2, rotation.transpose(1, 2))
     disparity = (point_cloud1 - point_cloud2).square().sum(dim=[1, 2])
     if return_all:
         return disparity, scale, rotation

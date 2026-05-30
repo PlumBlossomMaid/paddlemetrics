@@ -5,9 +5,7 @@ import paddle
 from paddle import Tensor
 
 from paddlemetrics import Metric
-from paddlemetrics.functional.text.bleu import (_bleu_score_compute,
-                                               _bleu_score_update,
-                                               _tokenize_fn)
+from paddlemetrics.functional.text.bleu import _bleu_score_compute, _bleu_score_update, _tokenize_fn
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
 
@@ -69,9 +67,7 @@ class BLEUScore(Metric):
         self.n_gram = n_gram
         self.smooth = smooth
         if weights is not None and len(weights) != n_gram:
-            raise ValueError(
-                f"List of weights has different weights than `n_gram`: {len(weights)} != {n_gram}"
-            )
+            raise ValueError(f"List of weights has different weights than `n_gram`: {len(weights)} != {n_gram}")
         self.weights = weights if weights is not None else [1.0 / n_gram] * n_gram
         self.add_state("preds_len", paddle.tensor(0.0), dist_reduce_fx="sum")
         self.add_state("target_len", paddle.tensor(0.0), dist_reduce_fx="sum")

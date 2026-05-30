@@ -54,14 +54,8 @@ class RelativeAverageSpectralError(Metric):
 
     def __init__(self, window_size: int = 8, **kwargs: dict[str, Any]) -> None:
         super().__init__(**kwargs)
-        if (
-            not isinstance(window_size, int)
-            or isinstance(window_size, int)
-            and window_size < 1
-        ):
-            raise ValueError(
-                f"Argument `window_size` is expected to be a positive integer, but got {window_size}"
-            )
+        if not isinstance(window_size, int) or isinstance(window_size, int) and window_size < 1:
+            raise ValueError(f"Argument `window_size` is expected to be a positive integer, but got {window_size}")
         self.window_size = window_size
         self.add_state("preds", default=[], dist_reduce_fx="cat")
         self.add_state("target", default=[], dist_reduce_fx="cat")

@@ -17,9 +17,7 @@ def _check_input(
 
     """
     if x.ndim != 2:
-        raise ValueError(
-            f"Expected argument `x` to be a 2D tensor of shape `[N, d]` but got {x.shape}"
-        )
+        raise ValueError(f"Expected argument `x` to be a 2D tensor of shape `[N, d]` but got {x.shape}")
     if y is not None:
         if y.ndim != 2 or y.shape[1] != x.shape[1]:
             raise ValueError(
@@ -32,9 +30,7 @@ def _check_input(
     return x, y, zero_diagonal
 
 
-def _reduce_distance_matrix(
-    distmat: paddle.Tensor, reduction: Optional[str] = None
-) -> paddle.Tensor:
+def _reduce_distance_matrix(distmat: paddle.Tensor, reduction: Optional[str] = None) -> paddle.Tensor:
     """Reduction of distance matrix.
 
     Args:
@@ -48,6 +44,4 @@ def _reduce_distance_matrix(
         return distmat.sum(dim=-1)
     if reduction is None or reduction == "none":
         return distmat
-    raise ValueError(
-        f"Expected reduction to be one of `['mean', 'sum', None]` but got {reduction}"
-    )
+    raise ValueError(f"Expected reduction to be one of `['mean', 'sum', None]` but got {reduction}")

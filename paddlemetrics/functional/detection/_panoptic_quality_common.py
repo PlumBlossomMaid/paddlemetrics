@@ -19,11 +19,7 @@ def _nested_tuple(nested_list: list) -> tuple:
         A nested tuple with the same content.
 
     """
-    return (
-        tuple(map(_nested_tuple, nested_list))
-        if isinstance(nested_list, list)
-        else nested_list
-    )
+    return tuple(map(_nested_tuple, nested_list)) if isinstance(nested_list, list) else nested_list
 
 
 def _to_tuple(t: paddle.Tensor) -> tuple:
@@ -49,15 +45,11 @@ def _get_color_areas(inputs: paddle.Tensor) -> dict[tuple, paddle.Tensor]:
         A dictionary specifying the `(category_id, instance_id)` and the corresponding number of occurrences.
 
     """
-    unique_keys, unique_keys_area = paddle.unique(
-        inputs, axis=0, return_counts=True
-    )
+    unique_keys, unique_keys_area = paddle.unique(inputs, axis=0, return_counts=True)
     return dict(zip(_to_tuple(unique_keys), unique_keys_area))
 
 
-def _parse_categories(
-    things: Collection[int], stuffs: Collection[int]
-) -> tuple[set[int], set[int]]:
+def _parse_categories(things: Collection[int], stuffs: Collection[int]) -> tuple[set[int], set[int]]:
     """Parse and validate metrics arguments for `things` and `stuff`.
 
     Args:
@@ -82,13 +74,9 @@ def _parse_categories(
             UserWarning,
         )
     if not all(isinstance(val, int) for val in things_parsed):
-        raise TypeError(
-            f"Expected argument `things` to contain `int` categories, but got {things}"
-        )
+        raise TypeError(f"Expected argument `things` to contain `int` categories, but got {things}")
     if not all(isinstance(val, int) for val in stuffs_parsed):
-        raise TypeError(
-            f"Expected argument `stuffs` to contain `int` categories, but got {stuffs}"
-        )
+        raise TypeError(f"Expected argument `stuffs` to contain `int` categories, but got {stuffs}")
     if things_parsed & stuffs_parsed:
         raise ValueError(
             f"Expected arguments `things` and `stuffs` to have distinct keys, but got {things} and {stuffs}"
@@ -107,13 +95,9 @@ def _validate_inputs(preds: paddle.Tensor, target: paddle.Tensor) -> None:
 
     """
     if not isinstance(preds, paddle.Tensor):
-        raise TypeError(
-            f"Expected argument `preds` to be of type `paddle.Tensor`, but got {type(preds)}"
-        )
+        raise TypeError(f"Expected argument `preds` to be of type `paddle.Tensor`, but got {type(preds)}")
     if not isinstance(target, paddle.Tensor):
-        raise TypeError(
-            f"Expected argument `target` to be of type `paddle.Tensor`, but got {type(target)}"
-        )
+        raise TypeError(f"Expected argument `target` to be of type `paddle.Tensor`, but got {type(target)}")
     if preds.shape != target.shape:
         raise ValueError(
             f"Expected argument `preds` and `target` to have the same shape, but got {preds.shape} and {target.shape}"
@@ -143,9 +127,7 @@ def _get_void_color(things: set[int], stuffs: set[int]) -> tuple[int, int]:
     return unused_category_id, 0
 
 
-def _get_category_id_to_continuous_id(
-    things: set[int], stuffs: set[int]
-) -> dict[int, int]:
+def _get_category_id_to_continuous_id(things: set[int], stuffs: set[int]) -> dict[int, int]:
     """Convert original IDs to continuous IDs.
 
     Args:
@@ -156,12 +138,8 @@ def _get_category_id_to_continuous_id(
         A mapping from the original category IDs to continuous IDs (i.e., 0, 1, 2, ...).
 
     """
-    thing_id_to_continuous_id = {
-        thing_id: idx for idx, thing_id in enumerate(sorted(things))
-    }
-    stuff_id_to_continuous_id = {
-        stuff_id: (idx + len(things)) for idx, stuff_id in enumerate(sorted(stuffs))
-    }
+    thing_id_to_continuous_id = {thing_id: idx for idx, thing_id in enumerate(sorted(things))}
+    stuff_id_to_continuous_id = {stuff_id: (idx + len(things)) for idx, stuff_id in enumerate(sorted(stuffs))}
     cat_id_to_continuous_id = {}
     cat_id_to_continuous_id.update(thing_id_to_continuous_id)
     cat_id_to_continuous_id.update(stuff_id_to_continuous_id)
@@ -211,14 +189,10 @@ def _prepocess_inputs(
     out = paddle.flatten(out, 1, -2)
     mask_stuffs = _isin(out[:, :, 0], list(stuffs))
     mask_things = _isin(out[:, :, 0], list(things))
-    mask_stuffs_instance = paddle.stack(
-        [paddle.zeros_like(mask_stuffs), mask_stuffs], axis=-1
-    )
+    mask_stuffs_instance = paddle.stack([paddle.zeros_like(mask_stuffs), mask_stuffs], axis=-1)
     out[mask_stuffs_instance] = 0
     if not allow_unknown_category and not paddle.all(mask_things | mask_stuffs):
-        raise ValueError(
-            f"Unknown categories found: {out[~(mask_things | mask_stuffs)]}"
-        )
+        raise ValueError(f"Unknown categories found: {out[~(mask_things | mask_stuffs)]}")
     out[~(mask_things | mask_stuffs)] = out.new(void_color)
     return out
 
@@ -361,9 +335,7 @@ def _panoptic_quality_update_sample(
     false_negatives = paddle.zeros(num_categories, dtype=paddle.int32, device=device)
     pred_areas = cast(dict[_Color, paddle.Tensor], _get_color_areas(flatten_preds))
     target_areas = cast(dict[_Color, paddle.Tensor], _get_color_areas(flatten_target))
-    intersection_matrix = paddle.transpose(
-        paddle.stack((flatten_preds, flatten_target), -1), -1, -2
-    )
+    intersection_matrix = paddle.transpose(paddle.stack((flatten_preds, flatten_target), -1), -1, -2)
     intersection_areas = cast(
         dict[tuple[_Color, _Color], paddle.Tensor],
         _get_color_areas(intersection_matrix),
@@ -391,15 +363,11 @@ def _panoptic_quality_update_sample(
             true_positives[continuous_id] += 1
         elif target_color[0] in stuffs_modified_metric and iou > 0:
             iou_sum[continuous_id] += iou
-    for cat_id in _filter_false_negatives(
-        target_areas, target_segment_matched, intersection_areas, void_color
-    ):
+    for cat_id in _filter_false_negatives(target_areas, target_segment_matched, intersection_areas, void_color):
         if cat_id not in stuffs_modified_metric:
             continuous_id = cat_id_to_continuous_id[cat_id]
             false_negatives[continuous_id] += 1
-    for cat_id in _filter_false_positives(
-        pred_areas, pred_segment_matched, intersection_areas, void_color
-    ):
+    for cat_id in _filter_false_positives(pred_areas, pred_segment_matched, intersection_areas, void_color):
         if cat_id not in stuffs_modified_metric:
             continuous_id = cat_id_to_continuous_id[cat_id]
             false_positives[continuous_id] += 1
@@ -442,9 +410,7 @@ def _panoptic_quality_update(
     true_positives = paddle.zeros(num_categories, dtype=paddle.int32, device=device)
     false_positives = paddle.zeros(num_categories, dtype=paddle.int32, device=device)
     false_negatives = paddle.zeros(num_categories, dtype=paddle.int32, device=device)
-    for flatten_preds_single, flatten_target_single in zip(
-        flatten_preds, flatten_target
-    ):
+    for flatten_preds_single, flatten_target_single in zip(flatten_preds, flatten_target):
         result = _panoptic_quality_update_sample(
             flatten_preds_single,
             flatten_target_single,

@@ -1,14 +1,14 @@
 from typing import Optional, Union
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.functional.classification.confusion_matrix import (
     _binary_confusion_matrix_format,
     _binary_confusion_matrix_tensor_validation,
     _multiclass_confusion_matrix_format,
-    _multiclass_confusion_matrix_tensor_validation)
+    _multiclass_confusion_matrix_tensor_validation,
+)
 from paddlemetrics.utils.compute import normalize_logits_if_needed
 from paddlemetrics.utils.enums import ClassificationTaskNoMultilabel
 
@@ -28,15 +28,9 @@ def _binning_bucketize(
 
     """
     accuracies = accuracies.to(dtype=confidences.dtype)
-    acc_bin = paddle.zeros(
-        len(bin_boundaries), device=confidences.device, dtype=confidences.dtype
-    )
-    conf_bin = paddle.zeros(
-        len(bin_boundaries), device=confidences.device, dtype=confidences.dtype
-    )
-    count_bin = paddle.zeros(
-        len(bin_boundaries), device=confidences.device, dtype=confidences.dtype
-    )
+    acc_bin = paddle.zeros(len(bin_boundaries), device=confidences.device, dtype=confidences.dtype)
+    conf_bin = paddle.zeros(len(bin_boundaries), device=confidences.device, dtype=confidences.dtype)
+    count_bin = paddle.zeros(len(bin_boundaries), device=confidences.device, dtype=confidences.dtype)
     indices = paddle.bucketize(confidences, bin_boundaries, right=True) - 1
     count_bin.scatter_add_(dim=0, index=indices, src=paddle.ones_like(confidences))
     conf_bin.scatter_add_(dim=0, index=indices, src=confidences)
@@ -72,17 +66,11 @@ def _ce_compute(
 
     """
     if isinstance(bin_boundaries, int):
-        bin_boundaries = paddle.linspace(
-            0, 1, bin_boundaries + 1, dtype=confidences.dtype, device=confidences.device
-        )
+        bin_boundaries = paddle.linspace(0, 1, bin_boundaries + 1, dtype=confidences.dtype, device=confidences.device)
     if norm not in {"l1", "l2", "max"}:
-        raise ValueError(
-            f"Argument `norm` is expected to be one of 'l1', 'l2', 'max' but got {norm}"
-        )
+        raise ValueError(f"Argument `norm` is expected to be one of 'l1', 'l2', 'max' but got {norm}")
     with paddle.no_grad():
-        acc_bin, conf_bin, prop_bin = _binning_bucketize(
-            confidences, accuracies, bin_boundaries
-        )
+        acc_bin, conf_bin, prop_bin = _binning_bucketize(confidences, accuracies, bin_boundaries)
     if norm == "l1":
         return paddle.sum(paddle.abs(acc_bin - conf_bin) * prop_bin)
     if norm == "max":
@@ -90,12 +78,7 @@ def _ce_compute(
     if norm == "l2":
         ce = paddle.sum(paddle.pow(acc_bin - conf_bin, 2) * prop_bin)
         if debias:
-            debias_bins = (
-                acc_bin
-                * (acc_bin - 1)
-                * prop_bin
-                / (prop_bin * accuracies.size()[0] - 1)
-            )
+            debias_bins = acc_bin * (acc_bin - 1) * prop_bin / (prop_bin * accuracies.size()[0] - 1)
             ce += paddle.sum(paddle.nan_to_num(x=debias_bins))
         return paddle.sqrt(ce) if ce > 0 else paddle.tensor(0)
     return ce
@@ -107,18 +90,12 @@ def _binary_calibration_error_arg_validation(
     ignore_index: Optional[int] = None,
 ) -> None:
     if not isinstance(n_bins, int) or n_bins < 1:
-        raise ValueError(
-            f"Expected argument `n_bins` to be an integer larger than 0, but got {n_bins}"
-        )
+        raise ValueError(f"Expected argument `n_bins` to be an integer larger than 0, but got {n_bins}")
     allowed_norm = "l1", "l2", "max"
     if norm not in allowed_norm:
-        raise ValueError(
-            f"Expected argument `norm` to be one of {allowed_norm}, but got {norm}."
-        )
+        raise ValueError(f"Expected argument `norm` to be one of {allowed_norm}, but got {norm}.")
     if ignore_index is not None and not isinstance(ignore_index, int):
-        raise ValueError(
-            f"Expected argument `ignore_index` to either be `None` or an integer, but got {ignore_index}"
-        )
+        raise ValueError(f"Expected argument `ignore_index` to either be `None` or an integer, but got {ignore_index}")
 
 
 def _binary_calibration_error_tensor_validation(
@@ -214,22 +191,14 @@ def _multiclass_calibration_error_arg_validation(
     ignore_index: Optional[int] = None,
 ) -> None:
     if not isinstance(num_classes, int) or num_classes < 2:
-        raise ValueError(
-            f"Expected argument `num_classes` to be an integer larger than 1, but got {num_classes}"
-        )
+        raise ValueError(f"Expected argument `num_classes` to be an integer larger than 1, but got {num_classes}")
     if not isinstance(n_bins, int) or n_bins < 1:
-        raise ValueError(
-            f"Expected argument `n_bins` to be an integer larger than 0, but got {n_bins}"
-        )
+        raise ValueError(f"Expected argument `n_bins` to be an integer larger than 0, but got {n_bins}")
     allowed_norm = "l1", "l2", "max"
     if norm not in allowed_norm:
-        raise ValueError(
-            f"Expected argument `norm` to be one of {allowed_norm}, but got {norm}."
-        )
+        raise ValueError(f"Expected argument `norm` to be one of {allowed_norm}, but got {norm}.")
     if ignore_index is not None and not isinstance(ignore_index, int):
-        raise ValueError(
-            f"Expected argument `ignore_index` to either be `None` or an integer, but got {ignore_index}"
-        )
+        raise ValueError(f"Expected argument `ignore_index` to either be `None` or an integer, but got {ignore_index}")
 
 
 def _multiclass_calibration_error_tensor_validation(
@@ -238,9 +207,7 @@ def _multiclass_calibration_error_tensor_validation(
     num_classes: int,
     ignore_index: Optional[int] = None,
 ) -> None:
-    _multiclass_confusion_matrix_tensor_validation(
-        preds, target, num_classes, ignore_index
-    )
+    _multiclass_confusion_matrix_tensor_validation(preds, target, num_classes, ignore_index)
     if not preds.is_floating_point():
         raise ValueError(
             f"Expected argument `preds` to be floating tensor with probabilities/logits but got tensor with dtype {preds.dtype}"
@@ -321,15 +288,9 @@ def multiclass_calibration_error(
 
     """
     if validate_args:
-        _multiclass_calibration_error_arg_validation(
-            num_classes, n_bins, norm, ignore_index
-        )
-        _multiclass_calibration_error_tensor_validation(
-            preds, target, num_classes, ignore_index
-        )
-    preds, target = _multiclass_confusion_matrix_format(
-        preds, target, ignore_index, convert_to_labels=False
-    )
+        _multiclass_calibration_error_arg_validation(num_classes, n_bins, norm, ignore_index)
+        _multiclass_calibration_error_tensor_validation(preds, target, num_classes, ignore_index)
+    preds, target = _multiclass_confusion_matrix_format(preds, target, ignore_index, convert_to_labels=False)
     confidences, accuracies = _multiclass_calibration_error_update(preds, target)
     return _ce_compute(confidences, accuracies, n_bins, norm)
 
@@ -373,17 +334,9 @@ def calibration_error(
     task = ClassificationTaskNoMultilabel.from_str(task)
     assert norm is not None
     if task == ClassificationTaskNoMultilabel.BINARY:
-        return binary_calibration_error(
-            preds, target, n_bins, norm, ignore_index, validate_args
-        )
+        return binary_calibration_error(preds, target, n_bins, norm, ignore_index, validate_args)
     if task == ClassificationTaskNoMultilabel.MULTICLASS:
         if not isinstance(num_classes, int):
-            raise ValueError(
-                f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-            )
-        return multiclass_calibration_error(
-            preds, target, num_classes, n_bins, norm, ignore_index, validate_args
-        )
-    raise ValueError(
-        f"Expected argument `task` to either be `'binary'` or `'multiclass'` but got {task}"
-    )
+            raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
+        return multiclass_calibration_error(preds, target, num_classes, n_bins, norm, ignore_index, validate_args)
+    raise ValueError(f"Expected argument `task` to either be `'binary'` or `'multiclass'` but got {task}")

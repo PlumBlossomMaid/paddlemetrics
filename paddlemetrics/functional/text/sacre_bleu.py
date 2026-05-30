@@ -6,17 +6,17 @@ from functools import partial
 from typing import Any, ClassVar, Optional
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
-from paddlemetrics.functional.text.bleu import (_bleu_score_compute,
-                                               _bleu_score_update)
-from paddlemetrics.utils.imports import (_IPADIC_AVAILABLE,
-                                            _MECAB_AVAILABLE,
-                                            _MECAB_KO_AVAILABLE,
-                                            _MECAB_KO_DIC_AVAILABLE,
-                                            _REGEX_AVAILABLE,
-                                            _SENTENCEPIECE_AVAILABLE)
+from paddlemetrics.functional.text.bleu import _bleu_score_compute, _bleu_score_update
+from paddlemetrics.utils.imports import (
+    _IPADIC_AVAILABLE,
+    _MECAB_AVAILABLE,
+    _MECAB_KO_AVAILABLE,
+    _MECAB_KO_DIC_AVAILABLE,
+    _REGEX_AVAILABLE,
+    _SENTENCEPIECE_AVAILABLE,
+)
 
 AVAILABLE_TOKENIZERS = (
     "none",
@@ -317,12 +317,8 @@ class _SacreBLEUTokenizer:
         import sentencepiece
 
         if cls.sentencepiece_processors[tokenize] is None:
-            cls.sentencepiece_processors[
-                tokenize
-            ] = sentencepiece.SentencePieceProcessor()
-            file_path = os.path.join(
-                _FLORES_LOCAL_DIR, _FLORES_MODELS_URL[tokenize].split("/")[-1]
-            )
+            cls.sentencepiece_processors[tokenize] = sentencepiece.SentencePieceProcessor()
+            file_path = os.path.join(_FLORES_LOCAL_DIR, _FLORES_MODELS_URL[tokenize].split("/")[-1])
             if not os.path.exists(file_path):
                 cls.download_flores_file(tokenize)
             cls.sentencepiece_processors[tokenize].Load(file_path)
@@ -361,18 +357,14 @@ class _SacreBLEUTokenizer:
         return line
 
     @classmethod
-    def _check_tokenizers_validity(
-        cls: type["_SacreBLEUTokenizer"], tokenize: _TokenizersLiteral
-    ) -> None:
+    def _check_tokenizers_validity(cls: type["_SacreBLEUTokenizer"], tokenize: _TokenizersLiteral) -> None:
         """Check if a supported tokenizer is chosen.
 
         Also check all dependencies of a given tokenizers are installed.
 
         """
         if tokenize not in cls._TOKENIZE_FN:
-            raise ValueError(
-                f"Unsupported tokenizer selected. Please, choose one of {list(cls._TOKENIZE_FN.keys())}"
-            )
+            raise ValueError(f"Unsupported tokenizer selected. Please, choose one of {list(cls._TOKENIZE_FN.keys())}")
         if tokenize == "intl" and not _REGEX_AVAILABLE:
             raise ModuleNotFoundError(
                 "`'intl'` tokenization requires that `regex` is installed. Use `pip install regex` or `pip install paddlemetrics[text]`."
@@ -381,9 +373,7 @@ class _SacreBLEUTokenizer:
             raise ModuleNotFoundError(
                 "`'ja-mecab'` tokenization requires that `MeCab` and `ipadic` are installed. Use `pip install mecab-python3 ipadic` or `pip install paddlemetrics[text]`."
             )
-        if tokenize == "ko-mecab" and not (
-            _MECAB_KO_AVAILABLE and _MECAB_KO_DIC_AVAILABLE
-        ):
+        if tokenize == "ko-mecab" and not (_MECAB_KO_AVAILABLE and _MECAB_KO_DIC_AVAILABLE):
             raise ModuleNotFoundError(
                 "`'ko-mecab'` tokenization requires that `mecab_ko` and `mecab_ko_dic` are installed. Use `pip install mecab_ko mecab_ko_dic` or `pip install paddlemetrics[text]`."
             )
@@ -402,9 +392,7 @@ class _SacreBLEUTokenizer:
         model_url = _FLORES_MODELS_URL[model_name]
         file_path = os.path.join(_FLORES_LOCAL_DIR, model_url.split("/")[-1])
         try:
-            with open(file_path, "wb") as out_file, urllib.request.urlopen(
-                model_url
-            ) as remote_file:
+            with open(file_path, "wb") as out_file, urllib.request.urlopen(model_url) as remote_file:
                 out_file.write(remote_file.read())
         except ssl.SSLError as e:
             raise OSError(f"Failed to download {model_name} model.") from e
@@ -484,18 +472,14 @@ def sacre_bleu_score(
     if len(preds) != len(target):
         raise ValueError(f"Corpus has different size {len(preds)} != {len(target)}")
     if weights is not None and len(weights) != n_gram:
-        raise ValueError(
-            f"List of weights has different weights than `n_gram`: {len(weights)} != {n_gram}"
-        )
+        raise ValueError(f"List of weights has different weights than `n_gram`: {len(weights)} != {n_gram}")
     if weights is None:
         weights = [1.0 / n_gram] * n_gram
     numerator = paddle.zeros(n_gram)
     denominator = paddle.zeros(n_gram)
     preds_len = paddle.tensor(0.0)
     target_len = paddle.tensor(0.0)
-    tokenize_fn = partial(
-        _SacreBLEUTokenizer.tokenize, tokenize=tokenize, lowercase=lowercase
-    )
+    tokenize_fn = partial(_SacreBLEUTokenizer.tokenize, tokenize=tokenize, lowercase=lowercase)
     preds_len, target_len = _bleu_score_update(
         preds,
         target,
@@ -506,6 +490,4 @@ def sacre_bleu_score(
         n_gram,
         tokenize_fn,
     )
-    return _bleu_score_compute(
-        preds_len, target_len, numerator, denominator, n_gram, weights, smooth
-    )
+    return _bleu_score_compute(preds_len, target_len, numerator, denominator, n_gram, weights, smooth)

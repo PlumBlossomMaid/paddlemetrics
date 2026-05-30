@@ -1,13 +1,10 @@
 import paddle
-from paddle import Tensor
 
 
 def _image_gradients_validate(img: paddle.Tensor) -> None:
     """Validate whether img is a 4D torch Tensor."""
     if not isinstance(img, paddle.Tensor):
-        raise TypeError(
-            f"The `img` expects a value of <Tensor> type but got {type(img)}"
-        )
+        raise TypeError(f"The `img` expects a value of <Tensor> type but got {type(img)}")
     if img.ndim != 4:
         raise RuntimeError(f"The `img` expects a 4D tensor but got {img.ndim}D tensor")
 
@@ -18,14 +15,10 @@ def _compute_image_gradients(img: paddle.Tensor) -> tuple[paddle.Tensor, paddle.
     dy = img[..., 1:, :] - img[..., :-1, :]
     dx = img[..., :, 1:] - img[..., :, :-1]
     shapey = [batch_size, channels, 1, width]
-    dy = paddle.concat(
-        [dy, paddle.zeros(shapey, device=img.device, dtype=img.dtype)], axis=2
-    )
+    dy = paddle.concat([dy, paddle.zeros(shapey, device=img.device, dtype=img.dtype)], axis=2)
     dy = dy.view(img.shape)
     shapex = [batch_size, channels, height, 1]
-    dx = paddle.concat(
-        [dx, paddle.zeros(shapex, device=img.device, dtype=img.dtype)], axis=3
-    )
+    dx = paddle.concat([dx, paddle.zeros(shapex, device=img.device, dtype=img.dtype)], axis=3)
     dx = dx.view(img.shape)
     return dy, dx
 

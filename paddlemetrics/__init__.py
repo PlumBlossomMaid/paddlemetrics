@@ -1,4 +1,5 @@
 """PaddleMetrics - Machine learning metrics for PaddlePaddle."""
+
 import logging as __logging
 import os
 
@@ -10,7 +11,7 @@ _PACKAGE_ROOT = os.path.dirname(__file__)
 _PROJECT_ROOT = os.path.dirname(_PACKAGE_ROOT)
 
 from paddlemetrics.__about__ import __version__
-from paddlemetrics.metric import Metric, CompositionalMetric
+from paddlemetrics.metric import CompositionalMetric, Metric
 
 __all__ = [
     "__version__",
@@ -19,15 +20,26 @@ __all__ = [
 ]
 
 # Core modules
-from paddlemetrics.collections import MetricCollection
 from paddlemetrics.aggregation import (
-    CatMetric, MaxMetric, MeanMetric, MinMetric, RunningMean, RunningSum, SumMetric,
+    CatMetric,
+    MaxMetric,
+    MeanMetric,
+    MinMetric,
+    RunningMean,
+    RunningSum,
+    SumMetric,
 )
+from paddlemetrics.collections import MetricCollection
 
 __all__ += [
     "MetricCollection",
-    "CatMetric", "MaxMetric", "MeanMetric", "MinMetric",
-    "RunningMean", "RunningSum", "SumMetric",
+    "CatMetric",
+    "MaxMetric",
+    "MeanMetric",
+    "MinMetric",
+    "RunningMean",
+    "RunningSum",
+    "SumMetric",
 ]
 
 
@@ -111,6 +123,7 @@ def __getattr__(name: str):
     if name in _lazy_imports:
         module_path, attr_name = _lazy_imports[name]
         import importlib
+
         mod = importlib.import_module(module_path)
         return getattr(mod, attr_name)
     raise AttributeError(f"module 'paddlemetrics' has no attribute {name!r}")
@@ -118,4 +131,4 @@ def __getattr__(name: str):
 
 # Functional (lazy)
 def __dir__():
-    return __all__ + list(_lazy_imports.keys()) if '_lazy_imports' in dir() else __all__
+    return __all__ + list(_lazy_imports.keys()) if "_lazy_imports" in dir() else __all__

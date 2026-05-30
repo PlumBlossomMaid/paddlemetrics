@@ -3,12 +3,12 @@ from functools import partial
 import paddle
 import pytest
 from scipy.stats import pearsonr
-from unittests import BATCH_SIZE, EXTRA_DIM, NUM_BATCHES, _Input
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
 
 from paddlemetrics.functional.regression.pearson import pearson_corrcoef
 from paddlemetrics.regression.pearson import PearsonCorrCoef, _final_aggregation
+from unittests import BATCH_SIZE, EXTRA_DIM, NUM_BATCHES, _Input
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
 
 seed_all(42)
 _single_target_inputs1 = _Input(
@@ -114,9 +114,7 @@ def test_error_on_different_shape():
     ):
         metric(paddle.randn(100), paddle.randn(50))
     metric = PearsonCorrCoef(num_outputs=5)
-    with pytest.raises(
-        ValueError, match="Expected both predictions and target to be either 1- or 2-.*"
-    ):
+    with pytest.raises(ValueError, match="Expected both predictions and target to be either 1- or 2-.*"):
         metric(paddle.randn(100, 2, 5), paddle.randn(100, 2, 5))
     metric = PearsonCorrCoef(num_outputs=2)
     with pytest.raises(
@@ -128,12 +126,8 @@ def test_error_on_different_shape():
 
 def test_1d_input_allowed():
     """Check that both input of the form [N,] and [N,1] is allowed with default num_outputs argument."""
-    assert isinstance(
-        pearson_corrcoef(paddle.randn(10, 1), paddle.randn(10, 1)), paddle.Tensor
-    )
-    assert isinstance(
-        pearson_corrcoef(paddle.randn(10), paddle.randn(10)), paddle.Tensor
-    )
+    assert isinstance(pearson_corrcoef(paddle.randn(10, 1), paddle.randn(10, 1)), paddle.Tensor)
+    assert isinstance(pearson_corrcoef(paddle.randn(10), paddle.randn(10)), paddle.Tensor)
 
 
 @pytest.mark.parametrize("shapes", [(5,), (1, 5), (2, 5)])
@@ -186,34 +180,22 @@ def test_final_aggregation_no_inplace_change():
             _corr_xy,
             _n_total,
         )
-    assert paddle.allclose(
-        x=_mean_x, y=mean_x
-    ).item(), f"Mean X drift: mean={(_mean_x - mean_x).abs().mean().item()}"
-    assert paddle.allclose(
-        x=_mean_y, y=mean_y
-    ).item(), f"Mean Y drift: mean={(_mean_y - mean_y).abs().mean().item()}"
-    assert paddle.allclose(
-        x=_max_abs_dev_x, y=max_abs_dev_x
-    ).item(), (
+    assert paddle.allclose(x=_mean_x, y=mean_x).item(), f"Mean X drift: mean={(_mean_x - mean_x).abs().mean().item()}"
+    assert paddle.allclose(x=_mean_y, y=mean_y).item(), f"Mean Y drift: mean={(_mean_y - mean_y).abs().mean().item()}"
+    assert paddle.allclose(x=_max_abs_dev_x, y=max_abs_dev_x).item(), (
         f"Max Abs X drift: mean={(_max_abs_dev_x - max_abs_dev_x).abs().mean().item()}"
     )
-    assert paddle.allclose(
-        x=_max_abs_dev_y, y=max_abs_dev_y
-    ).item(), (
+    assert paddle.allclose(x=_max_abs_dev_y, y=max_abs_dev_y).item(), (
         f"Max Abs Y drift: mean={(_max_abs_dev_y - max_abs_dev_y).abs().mean().item()}"
     )
-    assert paddle.allclose(
-        x=_var_x, y=var_x
-    ).item(), f"Var X drift: mean={(_var_x - var_x).abs().mean().item()}"
-    assert paddle.allclose(
-        x=_var_y, y=var_y
-    ).item(), f"Var Y drift: mean={(_var_y - var_y).abs().mean().item()}"
-    assert paddle.allclose(
-        x=_corr_xy, y=corr_xy
-    ).item(), f"Corr XY drift: mean={(_corr_xy - corr_xy).abs().mean().item()}"
-    assert paddle.allclose(
-        x=_n_total, y=n_total
-    ).item(), f"N Total drift: mean={(_n_total - n_total).abs().mean().item()}"
+    assert paddle.allclose(x=_var_x, y=var_x).item(), f"Var X drift: mean={(_var_x - var_x).abs().mean().item()}"
+    assert paddle.allclose(x=_var_y, y=var_y).item(), f"Var Y drift: mean={(_var_y - var_y).abs().mean().item()}"
+    assert paddle.allclose(x=_corr_xy, y=corr_xy).item(), (
+        f"Corr XY drift: mean={(_corr_xy - corr_xy).abs().mean().item()}"
+    )
+    assert paddle.allclose(x=_n_total, y=n_total).item(), (
+        f"N Total drift: mean={(_n_total - n_total).abs().mean().item()}"
+    )
 
 
 def test_final_aggregation_with_empty_devices():
@@ -248,9 +230,7 @@ def test_final_aggregation_with_empty_devices():
         var_y_cur,
         corr_xy_cur,
         n_total_cur,
-    ) = _final_aggregation(
-        mean_x, mean_y, max_abs_dev_x, max_abs_dev_y, var_x, var_y, corr_xy, n_total
-    )
+    ) = _final_aggregation(mean_x, mean_y, max_abs_dev_x, max_abs_dev_y, var_x, var_y, corr_xy, n_total)
     (
         mean_x_exp,
         mean_y_exp,
@@ -270,30 +250,18 @@ def test_final_aggregation_with_empty_devices():
         corr_xy[2:],
         n_total[2:],
     )
-    assert paddle.allclose(
-        x=mean_x_cur, y=mean_x_exp
-    ).item(), f"mean_x: {mean_x_cur} (expected: {mean_x_exp})"
-    assert paddle.allclose(
-        x=mean_y_cur, y=mean_y_exp
-    ).item(), f"mean_y: {mean_y_cur} (expected: {mean_y_exp})"
-    assert paddle.allclose(
-        x=max_abs_dev_x_cur, y=max_abs_dev_x_exp
-    ).item(), f"max_abs_dev_x: {max_abs_dev_x_cur} (expected: {max_abs_dev_x_exp})"
-    assert paddle.allclose(
-        x=max_abs_dev_y_cur, y=max_abs_dev_y_exp
-    ).item(), f"max_abs_dev_y: {max_abs_dev_y_cur} (expected: {max_abs_dev_y_exp})"
-    assert paddle.allclose(
-        x=var_x_cur, y=var_x_exp
-    ).item(), f"var_x: {var_x_cur} (expected: {var_x_exp})"
-    assert paddle.allclose(
-        x=var_y_cur, y=var_y_exp
-    ).item(), f"var_y: {var_y_cur} (expected: {var_y_exp})"
-    assert paddle.allclose(
-        x=corr_xy_cur, y=corr_xy_exp
-    ).item(), f"corr_xy: {corr_xy_cur} (expected: {corr_xy_exp})"
-    assert paddle.allclose(
-        x=n_total_cur, y=n_total_exp
-    ).item(), f"n_total: {n_total_cur} (expected: {n_total_exp})"
+    assert paddle.allclose(x=mean_x_cur, y=mean_x_exp).item(), f"mean_x: {mean_x_cur} (expected: {mean_x_exp})"
+    assert paddle.allclose(x=mean_y_cur, y=mean_y_exp).item(), f"mean_y: {mean_y_cur} (expected: {mean_y_exp})"
+    assert paddle.allclose(x=max_abs_dev_x_cur, y=max_abs_dev_x_exp).item(), (
+        f"max_abs_dev_x: {max_abs_dev_x_cur} (expected: {max_abs_dev_x_exp})"
+    )
+    assert paddle.allclose(x=max_abs_dev_y_cur, y=max_abs_dev_y_exp).item(), (
+        f"max_abs_dev_y: {max_abs_dev_y_cur} (expected: {max_abs_dev_y_exp})"
+    )
+    assert paddle.allclose(x=var_x_cur, y=var_x_exp).item(), f"var_x: {var_x_cur} (expected: {var_x_exp})"
+    assert paddle.allclose(x=var_y_cur, y=var_y_exp).item(), f"var_y: {var_y_cur} (expected: {var_y_exp})"
+    assert paddle.allclose(x=corr_xy_cur, y=corr_xy_exp).item(), f"corr_xy: {corr_xy_cur} (expected: {corr_xy_exp})"
+    assert paddle.allclose(x=n_total_cur, y=n_total_exp).item(), f"n_total: {n_total_cur} (expected: {n_total_exp})"
 
 
 @pytest.mark.parametrize(
@@ -304,9 +272,7 @@ def test_pearsons_warning_on_small_input(dtype, scale):
     """Check that a user warning is raised for small input."""
     preds = scale * paddle.randn(100, dtype=dtype)
     target = scale * paddle.randn(100, dtype=dtype)
-    with pytest.warns(
-        UserWarning, match="The variance of predictions or target is close to zero.*"
-    ):
+    with pytest.warns(UserWarning, match="The variance of predictions or target is close to zero.*"):
         pearson_corrcoef(preds, target)
 
 
@@ -337,9 +303,7 @@ def test_overwrite_reference_inputs():
     correlation = pearson(y, y_pred)
     pearson = PearsonCorrCoef()
     for lower, upper in [(0, 33), (33, 66), (66, 99), (99, 100)]:
-        pearson.update(
-            paddle.tensor(y[lower:upper]), paddle.tensor(y_pred[lower:upper])
-        )
+        pearson.update(paddle.tensor(y[lower:upper]), paddle.tensor(y_pred[lower:upper]))
         pearson.compute()
     assert paddle.isclose(pearson.compute(), correlation)
 
@@ -350,9 +314,7 @@ def test_corner_cases():
     See issue: https://github.com/Lightning-AI/paddlemetrics/issues/2920
 
     """
-    y_pred = paddle.tensor(
-        [[-0.1816, 0.6568, 0.9788, -0.1425], [-0.4111, 0.394, 1.4834, 0.1322]]
-    )
+    y_pred = paddle.tensor([[-0.1816, 0.6568, 0.9788, -0.1425], [-0.4111, 0.394, 1.4834, 0.1322]])
     y_true = paddle.tensor([[4.0268, 5.9401, 1.0, 1.0], [6.4956, 5.6684, 1.0, 1.0]])
     pearson_corr = PearsonCorrCoef(num_outputs=4)
     result = pearson_corr(y_pred, y_true)

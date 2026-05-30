@@ -4,8 +4,7 @@ from typing import Any, Callable, Optional, Union
 import paddle
 from typing_extensions import Literal
 
-from paddlemetrics.functional.retrieval.average_precision import \
-    retrieval_average_precision
+from paddlemetrics.functional.retrieval.average_precision import retrieval_average_precision
 from paddlemetrics.retrieval.base import RetrievalMetric
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -98,9 +97,7 @@ class RetrievalMAP(RetrievalMetric):
             **kwargs,
         )
         if top_k is not None and not isinstance(top_k, int) and top_k <= 0:
-            raise ValueError(
-                f"Argument ``top_k`` has to be a positive integer or None, but got {top_k}"
-            )
+            raise ValueError(f"Argument ``top_k`` has to be a positive integer or None, but got {top_k}")
         self.k = top_k
 
     def _metric(self, preds: paddle.Tensor, target: paddle.Tensor) -> paddle.Tensor:

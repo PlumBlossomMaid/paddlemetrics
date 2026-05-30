@@ -3,12 +3,12 @@ from functools import partial
 import numpy as np
 import paddle
 import pytest
-from unittests import BATCH_SIZE, NUM_BATCHES, _Input
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
 
 from paddlemetrics.functional.regression.log_cosh import log_cosh_error
 from paddlemetrics.regression.log_cosh import LogCoshError
+from unittests import BATCH_SIZE, NUM_BATCHES, _Input
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
 
 seed_all(42)
 NUM_TARGETS = 5

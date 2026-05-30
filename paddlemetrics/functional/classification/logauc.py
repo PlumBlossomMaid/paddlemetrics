@@ -1,15 +1,11 @@
 from typing import List, Optional, Tuple, Union
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
-from paddlemetrics.functional.classification.roc import (binary_roc,
-                                                        multiclass_roc,
-                                                        multilabel_roc)
+from paddlemetrics.functional.classification.roc import binary_roc, multiclass_roc, multilabel_roc
 from paddlemetrics.utils import rank_zero_warn
-from paddlemetrics.utils.compute import (_auc_compute_without_check,
-                                            _safe_divide)
+from paddlemetrics.utils.compute import _auc_compute_without_check, _safe_divide
 from paddlemetrics.utils.data import interp
 from paddlemetrics.utils.enums import ClassificationTask
 
@@ -17,13 +13,9 @@ from paddlemetrics.utils.enums import ClassificationTask
 def _validate_fpr_range(fpr_range: Tuple[float, float]) -> None:
     """Validate the `fpr_range` argument for the logauc metric."""
     if not isinstance(fpr_range, tuple) and not len(fpr_range) == 2:
-        raise ValueError(
-            f"The `fpr_range` should be a tuple of two floats, but got {type(fpr_range)}."
-        )
+        raise ValueError(f"The `fpr_range` should be a tuple of two floats, but got {type(fpr_range)}.")
     if not 0 <= fpr_range[0] < fpr_range[1] <= 1:
-        raise ValueError(
-            f"The `fpr_range` should be a tuple of two floats in the range [0, 1], but got {fpr_range}."
-        )
+        raise ValueError(f"The `fpr_range` should be a tuple of two floats in the range [0, 1], but got {fpr_range}.")
 
 
 def _binary_logauc_compute(
@@ -38,20 +30,15 @@ def _binary_logauc_compute(
             "At least two values on for the fpr and tpr are required to compute the log AUC. Returns 0 score."
         )
         return paddle.tensor(0.0, device=fpr.place)
-    tpr = paddle.concat([tpr, interp(fpr_range, fpr, tpr)]).sort().values
-    fpr = (
-        paddle.sort(x=paddle.concat([fpr, fpr_range])),
-        paddle.argsort(x=paddle.concat([fpr, fpr_range])),
-    ).values
+    tpr = paddle.concat([tpr, interp(fpr_range, fpr, tpr)]).sort()[0]
+    fpr = paddle.sort(x=paddle.concat([fpr, fpr_range]))[0]
     log_fpr = paddle.log10(x=fpr)
     bounds = paddle.log10(x=fpr_range.detach().clone())
     lower_bound_idx = paddle.where(log_fpr == bounds[0])[0][-1]
     upper_bound_idx = paddle.where(log_fpr == bounds[1])[0][-1]
     trimmed_log_fpr = log_fpr[lower_bound_idx : upper_bound_idx + 1]
     trimmed_tpr = tpr[lower_bound_idx : upper_bound_idx + 1]
-    return _auc_compute_without_check(trimmed_log_fpr, trimmed_tpr, 1.0) / (
-        bounds[1] - bounds[0]
-    )
+    return _auc_compute_without_check(trimmed_log_fpr, trimmed_tpr, 1.0) / (bounds[1] - bounds[0])
 
 
 def _reduce_logauc(
@@ -78,9 +65,7 @@ def _reduce_logauc(
     if average == "weighted" and weights is not None:
         weights = _safe_divide(weights[idx], weights[idx].sum())
         return (scores[idx] * weights).sum()
-    raise ValueError(
-        f"Got unknown average parameter: {average}. Please choose one of ['macro', 'weighted', 'none']."
-    )
+    raise ValueError(f"Got unknown average parameter: {average}. Please choose one of ['macro', 'weighted', 'none'].")
 
 
 def binary_logauc(
@@ -317,9 +302,7 @@ def multilabel_logauc(
         tensor([0.5000, 0.0000, 0.6835])
 
     """
-    fpr, tpr, _ = multilabel_roc(
-        preds, target, num_labels, thresholds, ignore_index, validate_args
-    )
+    fpr, tpr, _ = multilabel_roc(preds, target, num_labels, thresholds, ignore_index, validate_args)
     return _reduce_logauc(fpr, tpr, fpr_range, average=average)
 
 
@@ -345,14 +328,10 @@ def logauc(
     """
     task = ClassificationTask.from_str(task)
     if task == ClassificationTask.BINARY:
-        return binary_logauc(
-            preds, target, fpr_range, thresholds, ignore_index, validate_args
-        )
+        return binary_logauc(preds, target, fpr_range, thresholds, ignore_index, validate_args)
     if task == ClassificationTask.MULTICLASS:
         if not isinstance(num_classes, int):
-            raise ValueError(
-                f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-            )
+            raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
         return multiclass_logauc(
             preds,
             target,
@@ -365,9 +344,7 @@ def logauc(
         )
     if task == ClassificationTask.MULTILABEL:
         if not isinstance(num_labels, int):
-            raise ValueError(
-                f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-            )
+            raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
         return multilabel_logauc(
             preds,
             target,

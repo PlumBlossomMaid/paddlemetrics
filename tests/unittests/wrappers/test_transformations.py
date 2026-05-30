@@ -2,15 +2,13 @@ from typing import ClassVar
 
 import paddle
 import pytest
-from unittests._helpers import seed_all
 
 from paddlemetrics import MeanSquaredError
 from paddlemetrics.aggregation import MeanMetric
 from paddlemetrics.classification import BinaryAccuracy
 from paddlemetrics.retrieval import RetrievalMAP
-from paddlemetrics.wrappers import (BinaryTargetTransformer,
-                                   LambdaInputTransformer,
-                                   MetricInputTransformer)
+from paddlemetrics.wrappers import BinaryTargetTransformer, LambdaInputTransformer, MetricInputTransformer
+from unittests._helpers import seed_all
 
 seed_all(42)
 
@@ -20,9 +18,7 @@ class TestMetricInputTransformer:
 
     def test_no_base_metric(self) -> None:
         """Tests that TypeError is raised when no wrapped_metric is passed."""
-        with pytest.raises(
-            TypeError, match="Expected wrapped metric to be an instance of .*"
-        ):
+        with pytest.raises(TypeError, match="Expected wrapped metric to be an instance of .*"):
             MetricInputTransformer([])
 
 
@@ -96,11 +92,7 @@ class TestLambdaInputTransformer:
         preds = paddle.Tensor(preds).float()
         targets = paddle.Tensor(targets).float()
         preds_transformed = paddle.Tensor(preds_transformed).float()
-        targets_transformed = (
-            paddle.Tensor(targets_transformed).float()
-            if targets_transformed is not None
-            else targets
-        )
+        targets_transformed = paddle.Tensor(targets_transformed).float() if targets_transformed is not None else targets
         args = preds, targets
         transformed_args = preds_transformed, targets_transformed
         assert metric(*transformed_args) == wrapped_metric(*args)
@@ -123,16 +115,8 @@ class TestLambdaInputTransformer:
         )
         preds = paddle.Tensor(preds).float()
         targets = paddle.Tensor(targets).float()
-        preds_transformed = (
-            paddle.Tensor(preds_transformed).float()
-            if preds_transformed is not None
-            else preds
-        )
-        targets_transformed = (
-            paddle.Tensor(targets_transformed).float()
-            if targets_transformed is not None
-            else targets
-        )
+        preds_transformed = paddle.Tensor(preds_transformed).float() if preds_transformed is not None else preds
+        targets_transformed = paddle.Tensor(targets_transformed).float() if targets_transformed is not None else targets
         args = preds, targets
         transformed_args = preds_transformed, targets_transformed
         metric.update(*transformed_args)
@@ -141,16 +125,12 @@ class TestLambdaInputTransformer:
 
     def test_no_transform_pred(self) -> None:
         """Tests that TypeError is raised when a non-callable is passed as `transform_pred`."""
-        with pytest.raises(
-            TypeError, match="Expected `transform_pred` to be of type .*"
-        ):
+        with pytest.raises(TypeError, match="Expected `transform_pred` to be of type .*"):
             LambdaInputTransformer(BinaryAccuracy(), transform_pred=[])
 
     def test_no_transform_target(self) -> None:
         """Tests that TypeError is raised when a non-callable is passed as `transform_target`."""
-        with pytest.raises(
-            TypeError, match="Expected `transform_target` to be of type .*"
-        ):
+        with pytest.raises(TypeError, match="Expected `transform_target` to be of type .*"):
             LambdaInputTransformer(BinaryAccuracy(), transform_target=[])
 
     def test_reset_forwards_to_wrapped_metric(self):
@@ -253,30 +233,20 @@ class TestBinaryTargetTransformer:
     ]
 
     @pytest.mark.parametrize(_test_signature, _test_cases)
-    def test_forward(
-        self, cls, threshold, preds, targets, targets_binary, kwargs
-    ) -> None:
+    def test_forward(self, cls, threshold, preds, targets, targets_binary, kwargs) -> None:
         """Tests if the binarized forward matches the output of the metric on manually binarized targets."""
         metric = cls()
         wrapped_metric = BinaryTargetTransformer(metric, threshold=threshold)
         preds = paddle.Tensor(preds).float()
         targets = paddle.Tensor(targets).float() if targets is not None else None
-        targets_binary = (
-            paddle.Tensor(targets_binary).float()
-            if targets_binary is not None
-            else None
-        )
+        targets_binary = paddle.Tensor(targets_binary).float() if targets_binary is not None else None
         args = (preds, targets) if targets is not None else (preds,)
-        wrapped_args = (
-            (preds, targets_binary) if targets_binary is not None else (preds,)
-        )
+        wrapped_args = (preds, targets_binary) if targets_binary is not None else (preds,)
         kwargs = {k: paddle.Tensor(v).long() for k, v in kwargs.items()}
         assert metric(*wrapped_args, **kwargs) == wrapped_metric(*args, **kwargs)
 
     @pytest.mark.parametrize(_test_signature, _test_cases)
-    def test_update(
-        self, cls, threshold, preds, targets, targets_binary, kwargs
-    ) -> None:
+    def test_update(self, cls, threshold, preds, targets, targets_binary, kwargs) -> None:
         """Tests if the binarized update matches the output of the metric on manually binarized targets."""
         metric = cls()
         wrapped_metric = BinaryTargetTransformer(metric, threshold=threshold)
@@ -285,9 +255,7 @@ class TestBinaryTargetTransformer:
             targets = paddle.Tensor(targets).float()
             targets_binary = paddle.Tensor(targets_binary).float()
         args = (preds, targets) if targets is not None else [preds]
-        wrapped_args = (
-            (preds, targets_binary) if targets_binary is not None else [preds]
-        )
+        wrapped_args = (preds, targets_binary) if targets_binary is not None else [preds]
         kwargs = {k: paddle.Tensor(v).long() for k, v in kwargs.items()}
         metric.update(*wrapped_args, **kwargs)
         wrapped_metric.update(*args, **kwargs)

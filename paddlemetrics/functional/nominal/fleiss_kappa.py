@@ -1,12 +1,9 @@
-import sys
 
 import paddle
 from typing_extensions import Literal
 
 
-def _fleiss_kappa_update(
-    ratings: paddle.Tensor, mode: Literal["counts", "probs"] = "counts"
-) -> paddle.Tensor:
+def _fleiss_kappa_update(ratings: paddle.Tensor, mode: Literal["counts", "probs"] = "counts") -> paddle.Tensor:
     """Updates the counts for fleiss kappa metric.
 
     Args:
@@ -20,9 +17,7 @@ def _fleiss_kappa_update(
                 "If argument ``mode`` is 'probs', ratings must have 3 dimensions with the format [n_samples, n_categories, n_raters] and be floating point."
             )
         ratings = ratings.argmax(dim=1)
-        one_hot = paddle.nn.functional.one_hot(
-            ratings, num_classes=ratings.shape[1]
-        ).permute(0, 2, 1)
+        one_hot = paddle.nn.functional.one_hot(ratings, num_classes=ratings.shape[1]).permute(0, 2, 1)
         ratings = one_hot.sum(dim=-1)
     elif mode == "counts" and (ratings.ndim != 2 or ratings.is_floating_point()):
         raise ValueError(
@@ -39,7 +34,7 @@ def _fleiss_kappa_compute(counts: paddle.Tensor) -> paddle.Tensor:
 
     """
     total = counts.shape[0]
-    num_raters = counts.sum(1)._max()
+    num_raters = counts.sum(1).amax()
     p_i = counts.sum(dim=0) / (total * num_raters)
     p_j = ((counts**2).sum(dim=1) - num_raters) / (num_raters * (num_raters - 1))
     p_bar = p_j.mean()
@@ -47,9 +42,7 @@ def _fleiss_kappa_compute(counts: paddle.Tensor) -> paddle.Tensor:
     return (p_bar - pe_bar) / (1 - pe_bar + 1e-05)
 
 
-def fleiss_kappa(
-    ratings: paddle.Tensor, mode: Literal["counts", "probs"] = "counts"
-) -> paddle.Tensor:
+def fleiss_kappa(ratings: paddle.Tensor, mode: Literal["counts", "probs"] = "counts") -> paddle.Tensor:
     """Calculatees `Fleiss kappa`_ a statistical measure for inter agreement between raters.
 
     .. math::

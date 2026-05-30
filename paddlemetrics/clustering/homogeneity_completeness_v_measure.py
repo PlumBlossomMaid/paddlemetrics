@@ -4,7 +4,10 @@ from typing import Any, List, Optional, Union
 import paddle
 
 from paddlemetrics.functional.clustering.homogeneity_completeness_v_measure import (
-    completeness_score, homogeneity_score, v_measure_score)
+    completeness_score,
+    homogeneity_score,
+    v_measure_score,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.data import dim_zero_cat
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
@@ -279,9 +282,7 @@ class VMeasureScore(Metric):
 
     def compute(self) -> paddle.Tensor:
         """Compute rand score over state."""
-        return v_measure_score(
-            dim_zero_cat(self.preds), dim_zero_cat(self.target), beta=self.beta
-        )
+        return v_measure_score(dim_zero_cat(self.preds), dim_zero_cat(self.target), beta=self.beta)
 
     def plot(
         self,

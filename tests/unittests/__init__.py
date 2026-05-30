@@ -1,4 +1,5 @@
 """Test utilities for paddlemetrics."""
+
 import os
 import warnings
 from typing import NamedTuple
@@ -24,9 +25,7 @@ for tp_name, tp_ins in [("object", object), ("bool", bool), ("int", int), ("floa
 
 _PATH_UNITTESTS = os.path.dirname(__file__)
 _PATH_ALL_TESTS = os.path.dirname(_PATH_UNITTESTS)
-_PATH_TEST_CACHE = os.getenv(
-    "PYTEST_REFERENCE_CACHE", os.path.join(_PATH_ALL_TESTS, "_cache-references")
-)
+_PATH_TEST_CACHE = os.getenv("PYTEST_REFERENCE_CACHE", os.path.join(_PATH_ALL_TESTS, "_cache-references"))
 
 # Simple cachier-like decorator for caching reference computations
 try:
@@ -34,10 +33,16 @@ try:
 
     _reference_cachier = cachier(cache_dir=_PATH_TEST_CACHE, separate_files=True)
 except ImportError:
-    # Fallback: no-op decorator
-    def _reference_cachier(*args, **kwargs):
+    # Fallback: no-op decorator that works as both @decorator and decorator(func)(args)
+    def _reference_cachier(*outer_args, **outer_kwargs):
+        if len(outer_args) == 1 and callable(outer_args[0]):
+            # Used as @_reference_cachier (without parens)
+            return outer_args[0]
+
+        # Used as @_reference_cachier(...) or _reference_cachier(...)(func)
         def decorator(func):
             return func
+
         return decorator
 
 
@@ -51,12 +56,14 @@ paddle.set_flags({"FLAGS_cudnn_deterministic": True})
 
 class _Input(NamedTuple):
     """Input for parametrized tests."""
+
     preds: Tensor
     target: Tensor
 
 
 class _GroupInput(NamedTuple):
     """Group input for parametrized tests."""
+
     preds: Tensor
     target: Tensor
     groups: Tensor

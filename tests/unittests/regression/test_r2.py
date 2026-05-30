@@ -3,12 +3,12 @@ from functools import partial
 import paddle
 import pytest
 from sklearn.metrics import r2_score as sk_r2score
-from unittests import BATCH_SIZE, NUM_BATCHES, _Input
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
 
 from paddlemetrics.functional import r2_score
 from paddlemetrics.regression import R2Score
+from unittests import BATCH_SIZE, NUM_BATCHES, _Input
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
 
 seed_all(42)
 NUM_TARGETS = 5
@@ -27,9 +27,7 @@ def _single_target_ref_wrapper(preds, target, adjusted, multioutput):
     sk_target = target.view(-1).numpy()
     r2_score = sk_r2score(sk_target, sk_preds, multioutput=multioutput)
     if adjusted != 0:
-        return 1 - (1 - r2_score) * (sk_preds.shape[0] - 1) / (
-            sk_preds.shape[0] - adjusted - 1
-        )
+        return 1 - (1 - r2_score) * (sk_preds.shape[0] - 1) / (sk_preds.shape[0] - adjusted - 1)
     return r2_score
 
 
@@ -38,16 +36,12 @@ def _multi_target_ref_wrapper(preds, target, adjusted, multioutput):
     sk_target = target.view(-1, NUM_TARGETS).numpy()
     r2_score = sk_r2score(sk_target, sk_preds, multioutput=multioutput)
     if adjusted != 0:
-        return 1 - (1 - r2_score) * (sk_preds.shape[0] - 1) / (
-            sk_preds.shape[0] - adjusted - 1
-        )
+        return 1 - (1 - r2_score) * (sk_preds.shape[0] - 1) / (sk_preds.shape[0] - adjusted - 1)
     return r2_score
 
 
 @pytest.mark.parametrize("adjusted", [0, 5, 10])
-@pytest.mark.parametrize(
-    "multioutput", ["raw_values", "uniform_average", "variance_weighted"]
-)
+@pytest.mark.parametrize("multioutput", ["raw_values", "uniform_average", "variance_weighted"])
 @pytest.mark.parametrize(
     ("preds", "target", "ref_metric"),
     [
@@ -88,9 +82,7 @@ class TestR2Score(MetricTester):
             metric_args={"adjusted": adjusted, "multioutput": multioutput},
         )
 
-    def test_r2_differentiability(
-        self, adjusted, multioutput, preds, target, ref_metric
-    ):
+    def test_r2_differentiability(self, adjusted, multioutput, preds, target, ref_metric):
         """Test the differentiability of the metric, according to its `is_differentiable` attribute."""
         self.run_differentiability_test(
             preds,
@@ -145,9 +137,7 @@ def test_error_on_multidim_tensors(metric_class=R2Score):
 def test_error_on_too_few_samples(metric_class=R2Score):
     """Test that error is raised if too few samples are provided."""
     metric = metric_class()
-    with pytest.raises(
-        ValueError, match="Needs at least two samples to calculate r2 score."
-    ):
+    with pytest.raises(ValueError, match="Needs at least two samples to calculate r2 score."):
         metric(paddle.randn(1), paddle.randn(1))
     metric.reset()
     metric.update(paddle.randn(1), paddle.randn(1))

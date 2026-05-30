@@ -3,13 +3,20 @@ from typing import Any
 
 import paddle
 import pytest
-from srmrpy import srmr as srmrpy_srmr
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
 
+from unittests._helpers import seed_all
+
+try:
+    from srmrpy import srmr as srmrpy_srmr
+
+    _SRMRPY_AVAILABLE = True
+except ImportError:
+    _SRMRPY_AVAILABLE = False
+
+pytestmark = pytest.mark.skipif(not _SRMRPY_AVAILABLE, reason="srmrpy not available")
 from paddlemetrics.audio.srmr import SpeechReverberationModulationEnergyRatio
-from paddlemetrics.functional.audio.srmr import \
-    speech_reverberation_modulation_energy_ratio
+from paddlemetrics.functional.audio.srmr import speech_reverberation_modulation_energy_ratio
+from unittests._helpers.testers import MetricTester
 
 seed_all(42)
 preds = paddle.rand(2, 2, 8000)
@@ -22,7 +29,7 @@ def _reference_srmr_batch(
     fast: bool,
     norm: bool,
     reduce_mean: bool = False,
-    **kwargs: dict[str, Any]
+    **kwargs: dict[str, Any],
 ):
     shape = preds.shape
     preds = preds.reshape(1, -1) if len(shape) == 1 else preds.reshape(-1, shape[-1])
@@ -30,9 +37,7 @@ def _reference_srmr_batch(
     preds = preds.detach().cpu().numpy()
     score = []
     for b in range(preds.shape[0]):
-        val, _ = srmrpy_srmr(
-            preds[b, ...], fs=fs, fast=fast, norm=norm, max_cf=128 if not norm else 30
-        )
+        val, _ = srmrpy_srmr(preds[b, ...], fs=fs, fast=fast, norm=norm, max_cf=128 if not norm else 30)
         score.append(val)
     score = paddle.tensor(score)
     srmr = score.reshape(*shape[:-1])
@@ -41,15 +46,11 @@ def _reference_srmr_batch(
     return srmr
 
 
-def _speech_reverberation_modulation_energy_ratio_cheat(
-    preds, target, **kwargs: dict[str, Any]
-):
+def _speech_reverberation_modulation_energy_ratio_cheat(preds, target, **kwargs: dict[str, Any]):
     return speech_reverberation_modulation_energy_ratio(preds, **kwargs)
 
 
-class _SpeechReverberationModulationEnergyRatioCheat(
-    SpeechReverberationModulationEnergyRatio
-):
+class _SpeechReverberationModulationEnergyRatioCheat(SpeechReverberationModulationEnergyRatio):
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         super().update(preds=preds)
 
@@ -58,13 +59,13 @@ class _SpeechReverberationModulationEnergyRatioCheat(
     ("preds", "fs", "fast", "norm"),
     [
         (preds, 8000, False, False),
-        (preds, 8000, False),
-        (preds, 8000, False),
-        (preds, 8000),
+        (preds, 8000, False, False),
+        (preds, 8000, False, False),
+        (preds, 8000, False, False),
         (preds, 16000, False, False),
-        (preds, 16000, False),
-        (preds, 16000, False),
-        (preds, 16000),
+        (preds, 16000, False, False),
+        (preds, 16000, False, False),
+        (preds, 16000, False, False),
     ],
 )
 class TestSRMR(MetricTester):
@@ -80,9 +81,7 @@ class TestSRMR(MetricTester):
             preds=preds,
             target=preds,
             metric_class=_SpeechReverberationModulationEnergyRatioCheat,
-            reference_metric=partial(
-                _reference_srmr_batch, fs=fs, fast=fast, norm=norm, reduce_mean=True
-            ),
+            reference_metric=partial(_reference_srmr_batch, fs=fs, fast=fast, norm=norm, reduce_mean=True),
             metric_args={"fs": fs, "fast": fast, "norm": norm},
         )
 
@@ -92,9 +91,7 @@ class TestSRMR(MetricTester):
             preds=preds,
             target=preds,
             metric_functional=_speech_reverberation_modulation_energy_ratio_cheat,
-            reference_metric=partial(
-                _reference_srmr_batch, fs=fs, fast=fast, norm=norm
-            ),
+            reference_metric=partial(_reference_srmr_batch, fs=fs, fast=fast, norm=norm),
             metric_args={"fs": fs, "fast": fast, "norm": norm},
         )
 
@@ -103,9 +100,7 @@ class TestSRMR(MetricTester):
         if fast is True:
             pytest.xfail("SRMR metric is not differentiable when `fast=True`")
         else:
-            pytest.xfail(
-                "differentiable test for SRMR metric is skipped as it is too slow"
-            )
+            pytest.xfail("differentiable test for SRMR metric is skipped as it is too slow")
 
     def test_srmr_half_cpu(self, preds, fs, fast, norm):
         """Test dtype support of the metric on CPU."""

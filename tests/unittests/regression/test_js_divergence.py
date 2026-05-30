@@ -3,16 +3,15 @@ from typing import NamedTuple, Optional
 
 import numpy as np
 import paddle
-from paddle import Tensor
 import pytest
+from paddle import Tensor
 from scipy.spatial.distance import jensenshannon
+
+from paddlemetrics.functional.regression.js_divergence import jensen_shannon_divergence
+from paddlemetrics.regression.js_divergence import JensenShannonDivergence
 from unittests import BATCH_SIZE, EXTRA_DIM, NUM_BATCHES
 from unittests._helpers import seed_all
 from unittests._helpers.testers import MetricTester
-
-from paddlemetrics.functional.regression.js_divergence import \
-    jensen_shannon_divergence
-from paddlemetrics.regression.js_divergence import JensenShannonDivergence
 
 seed_all(42)
 
@@ -54,7 +53,7 @@ def _wrap_reduction(
     ("p", "q", "log_prob"),
     [
         (_probs_inputs.p, _probs_inputs.q, False),
-        (_log_probs_inputs.p, _log_probs_inputs.q),
+        (_log_probs_inputs.p, _log_probs_inputs.q, True),
     ],
 )
 class TestJensenShannonDivergence(MetricTester):
@@ -84,9 +83,7 @@ class TestJensenShannonDivergence(MetricTester):
             metric_args={"log_prob": log_prob, "reduction": reduction},
         )
 
-    def test_jensen_shannon_divergence_differentiability(
-        self, reduction, p, q, log_prob
-    ):
+    def test_jensen_shannon_divergence_differentiability(self, reduction, p, q, log_prob):
         """Test the differentiability of the metric, according to its `is_differentiable` attribute."""
         self.run_differentiability_test(
             p,

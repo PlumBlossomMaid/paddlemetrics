@@ -5,9 +5,7 @@ import paddle
 from paddlemetrics.utils.checks import _check_same_shape
 
 
-def _cosine_similarity_update(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> tuple[paddle.Tensor, paddle.Tensor]:
+def _cosine_similarity_update(preds: paddle.Tensor, target: paddle.Tensor) -> tuple[paddle.Tensor, paddle.Tensor]:
     """Update and returns variables required to compute Cosine Similarity. Checks for same shape of input tensors.
 
     Args:
@@ -57,9 +55,7 @@ def _cosine_similarity_compute(
     return reduction_mapping[reduction](similarity)
 
 
-def cosine_similarity(
-    preds: paddle.Tensor, target: paddle.Tensor, reduction: Optional[str] = "sum"
-) -> paddle.Tensor:
+def cosine_similarity(preds: paddle.Tensor, target: paddle.Tensor, reduction: Optional[str] = "sum") -> paddle.Tensor:
     """Compute the `Cosine Similarity`_.
 
     .. math::

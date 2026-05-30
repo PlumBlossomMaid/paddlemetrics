@@ -1,23 +1,20 @@
-import sys
 
 from typing import Optional
 
 import paddle
-from paddle import Tensor
 
 from paddlemetrics.functional.classification.confusion_matrix import (
     _multilabel_confusion_matrix_arg_validation,
     _multilabel_confusion_matrix_format,
-    _multilabel_confusion_matrix_tensor_validation)
+    _multilabel_confusion_matrix_tensor_validation,
+)
 from paddlemetrics.utils.data import _cumsum
 
 
 def _rank_data(x: paddle.Tensor) -> paddle.Tensor:
     """Rank data based on values."""
     with paddle.no_grad():
-        _, inverse, counts = paddle.unique(
-            x, sorted=True, return_inverse=True, return_counts=True
-        )
+        _, inverse, counts = paddle.unique(x, sorted=True, return_inverse=True, return_counts=True)
     ranks = _cumsum(counts, axis=0)
     return ranks[inverse]
 
@@ -32,21 +29,15 @@ def _multilabel_ranking_tensor_validation(
     num_labels: int,
     ignore_index: Optional[int] = None,
 ) -> None:
-    _multilabel_confusion_matrix_tensor_validation(
-        preds, target, num_labels, ignore_index
-    )
+    _multilabel_confusion_matrix_tensor_validation(preds, target, num_labels, ignore_index)
     if not preds.is_floating_point():
-        raise ValueError(
-            f"Expected preds tensor to be floating point, but received input with dtype {preds.dtype}"
-        )
+        raise ValueError(f"Expected preds tensor to be floating point, but received input with dtype {preds.dtype}")
 
 
-def _multilabel_coverage_error_update(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> tuple[paddle.Tensor, int]:
+def _multilabel_coverage_error_update(preds: paddle.Tensor, target: paddle.Tensor) -> tuple[paddle.Tensor, int]:
     """Accumulate state for coverage error."""
     offset = paddle.zeros_like(preds)
-    offset[target == 0] = preds._min().abs() + 10
+    offset[target == 0] = preds.amin().abs() + 10
     preds_mod = preds + offset
     preds_min = (preds_mod.min(axis=1), preds_mod.argmin(axis=1))[0]
     coverage = (preds >= preds_min[:, None]).sum(dim=1).to(paddle.float32)
@@ -98,9 +89,7 @@ def multilabel_coverage_error(
 
     """
     if validate_args:
-        _multilabel_confusion_matrix_arg_validation(
-            num_labels, threshold=0.0, ignore_index=ignore_index
-        )
+        _multilabel_confusion_matrix_arg_validation(num_labels, threshold=0.0, ignore_index=ignore_index)
         _multilabel_ranking_tensor_validation(preds, target, num_labels, ignore_index)
     preds, target = _multilabel_confusion_matrix_format(
         preds,
@@ -178,9 +167,7 @@ def multilabel_ranking_average_precision(
 
     """
     if validate_args:
-        _multilabel_confusion_matrix_arg_validation(
-            num_labels, threshold=0.0, ignore_index=ignore_index
-        )
+        _multilabel_confusion_matrix_arg_validation(num_labels, threshold=0.0, ignore_index=ignore_index)
         _multilabel_ranking_tensor_validation(preds, target, num_labels, ignore_index)
     preds, target = _multilabel_confusion_matrix_format(
         preds,
@@ -194,9 +181,7 @@ def multilabel_ranking_average_precision(
     return _ranking_reduce(score, num_elements)
 
 
-def _multilabel_ranking_loss_update(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> tuple[paddle.Tensor, int]:
+def _multilabel_ranking_loss_update(preds: paddle.Tensor, target: paddle.Tensor) -> tuple[paddle.Tensor, int]:
     """Accumulate state for label ranking loss.
 
     Args:
@@ -267,9 +252,7 @@ def multilabel_ranking_loss(
 
     """
     if validate_args:
-        _multilabel_confusion_matrix_arg_validation(
-            num_labels, threshold=0.0, ignore_index=ignore_index
-        )
+        _multilabel_confusion_matrix_arg_validation(num_labels, threshold=0.0, ignore_index=ignore_index)
         _multilabel_ranking_tensor_validation(preds, target, num_labels, ignore_index)
     preds, target = _multilabel_confusion_matrix_format(
         preds,

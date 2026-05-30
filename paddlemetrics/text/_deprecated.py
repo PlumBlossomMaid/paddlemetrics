@@ -28,11 +28,7 @@ class _BLEUScore(BLEUScore):
     """
 
     def __init__(
-        self,
-        n_gram: int = 4,
-        smooth: bool = False,
-        weights: Optional[Sequence[float]] = None,
-        **kwargs: Any
+        self, n_gram: int = 4, smooth: bool = False, weights: Optional[Sequence[float]] = None, **kwargs: Any
     ) -> None:
         _deprecated_root_import_class("BLEUScore", "text")
         super().__init__(n_gram=n_gram, smooth=smooth, weights=weights, **kwargs)
@@ -73,7 +69,7 @@ class _CHRFScore(CHRFScore):
         lowercase: bool = False,
         whitespace: bool = False,
         return_sentence_level_score: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         _deprecated_root_import_class("CHRFScore", "text")
         super().__init__(
@@ -83,7 +79,7 @@ class _CHRFScore(CHRFScore):
             lowercase=lowercase,
             whitespace=whitespace,
             return_sentence_level_score=return_sentence_level_score,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -106,7 +102,7 @@ class _ExtendedEditDistance(ExtendedEditDistance):
         rho: float = 0.3,
         deletion: float = 0.2,
         insertion: float = 1.0,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         _deprecated_root_import_class("ExtendedEditDistance", "text")
         super().__init__(
@@ -116,7 +112,7 @@ class _ExtendedEditDistance(ExtendedEditDistance):
             rho=rho,
             deletion=deletion,
             insertion=insertion,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -172,16 +168,11 @@ class _SacreBLEUScore(SacreBLEUScore):
         tokenize: Literal["none", "13a", "zh", "intl", "char"] = "13a",
         lowercase: bool = False,
         weights: Optional[Sequence[float]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         _deprecated_root_import_class("SacreBLEUScore", "text")
         super().__init__(
-            n_gram=n_gram,
-            smooth=smooth,
-            tokenize=tokenize,
-            lowercase=lowercase,
-            weights=weights,
-            **kwargs
+            n_gram=n_gram, smooth=smooth, tokenize=tokenize, lowercase=lowercase, weights=weights, **kwargs
         )
 
 
@@ -219,7 +210,7 @@ class _TranslationEditRate(TranslationEditRate):
         lowercase: bool = True,
         asian_support: bool = False,
         return_sentence_level_score: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         _deprecated_root_import_class("TranslationEditRate", "text")
         super().__init__(
@@ -228,7 +219,7 @@ class _TranslationEditRate(TranslationEditRate):
             lowercase=lowercase,
             asian_support=asian_support,
             return_sentence_level_score=return_sentence_level_score,
-            **kwargs
+            **kwargs,
         )
 
 

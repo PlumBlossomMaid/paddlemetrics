@@ -3,9 +3,14 @@ from collections.abc import Collection
 import paddle
 
 from paddlemetrics.functional.detection._panoptic_quality_common import (
-    _get_category_id_to_continuous_id, _get_void_color,
-    _panoptic_quality_compute, _panoptic_quality_update, _parse_categories,
-    _prepocess_inputs, _validate_inputs)
+    _get_category_id_to_continuous_id,
+    _get_void_color,
+    _panoptic_quality_compute,
+    _panoptic_quality_update,
+    _parse_categories,
+    _prepocess_inputs,
+    _validate_inputs,
+)
 
 
 def panoptic_quality(
@@ -133,18 +138,14 @@ def panoptic_quality(
     _validate_inputs(preds, target)
     void_color = _get_void_color(things, stuffs)
     cat_id_to_continuous_id = _get_category_id_to_continuous_id(things, stuffs)
-    flatten_preds = _prepocess_inputs(
-        things, stuffs, preds, void_color, allow_unknown_preds_category
-    )
+    flatten_preds = _prepocess_inputs(things, stuffs, preds, void_color, allow_unknown_preds_category)
     flatten_target = _prepocess_inputs(things, stuffs, target, void_color)
     (
         iou_sum,
         true_positives,
         false_positives,
         false_negatives,
-    ) = _panoptic_quality_update(
-        flatten_preds, flatten_target, cat_id_to_continuous_id, void_color
-    )
+    ) = _panoptic_quality_update(flatten_preds, flatten_target, cat_id_to_continuous_id, void_color)
     pq, sq, rq, pq_avg, sq_avg, rq_avg = _panoptic_quality_compute(
         iou_sum, true_positives, false_positives, false_negatives
     )
@@ -221,9 +222,7 @@ def modified_panoptic_quality(
     _validate_inputs(preds, target)
     void_color = _get_void_color(things, stuffs)
     cat_id_to_continuous_id = _get_category_id_to_continuous_id(things, stuffs)
-    flatten_preds = _prepocess_inputs(
-        things, stuffs, preds, void_color, allow_unknown_preds_category
-    )
+    flatten_preds = _prepocess_inputs(things, stuffs, preds, void_color, allow_unknown_preds_category)
     flatten_target = _prepocess_inputs(things, stuffs, target, void_color)
     (
         iou_sum,
@@ -237,7 +236,5 @@ def modified_panoptic_quality(
         void_color,
         modified_metric_stuffs=stuffs,
     )
-    _, _, _, pq_avg, _, _ = _panoptic_quality_compute(
-        iou_sum, true_positives, false_positives, false_negatives
-    )
+    _, _, _, pq_avg, _, _ = _panoptic_quality_compute(iou_sum, true_positives, false_positives, false_negatives)
     return pq_avg

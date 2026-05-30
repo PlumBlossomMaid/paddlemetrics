@@ -2,12 +2,11 @@ from functools import partial
 
 import paddle
 import pytest
-from unittests.text._helpers import TextTester
-from unittests.text._inputs import (
-    _inputs_single_reference, _inputs_single_sentence_multiple_references)
 
 from paddlemetrics.functional.text.eed import extended_edit_distance
 from paddlemetrics.text.eed import ExtendedEditDistance
+from unittests.text._helpers import TextTester
+from unittests.text._inputs import _inputs_single_reference, _inputs_single_sentence_multiple_references
 
 
 def _reference_rwth_manual(preds, targets) -> paddle.Tensor:

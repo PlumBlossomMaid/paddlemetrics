@@ -15,9 +15,7 @@ class MetricInputTransformer(WrapperMetric):
 
     """
 
-    def __init__(
-        self, wrapped_metric: Union[Metric, MetricCollection], **kwargs: dict[str, Any]
-    ) -> None:
+    def __init__(self, wrapped_metric: Union[Metric, MetricCollection], **kwargs: dict[str, Any]) -> None:
         super().__init__(**kwargs)
         if not isinstance(wrapped_metric, (Metric, MetricCollection)):
             raise TypeError(
@@ -111,9 +109,7 @@ class LambdaInputTransformer(MetricInputTransformer):
         super().__init__(wrapped_metric, **kwargs)
         if transform_pred is not None:
             if not callable(transform_pred):
-                raise TypeError(
-                    f"Expected `transform_pred` to be of type `Callable` but received `{transform_pred}`"
-                )
+                raise TypeError(f"Expected `transform_pred` to be of type `Callable` but received `{transform_pred}`")
             self.transform_pred = transform_pred
         if transform_target is not None:
             if not callable(transform_target):
@@ -162,9 +158,7 @@ class BinaryTargetTransformer(MetricInputTransformer):
     ) -> None:
         super().__init__(wrapped_metric, **kwargs)
         if not isinstance(threshold, (int, float)):
-            raise TypeError(
-                f"Expected `threshold` to be of type `int` or `float` but received `{threshold}`"
-            )
+            raise TypeError(f"Expected `threshold` to be of type `int` or `float` but received `{threshold}`")
         self.threshold = threshold
 
     def transform_target(self, target: paddle.Tensor) -> paddle.Tensor:

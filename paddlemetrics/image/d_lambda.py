@@ -5,7 +5,9 @@ import paddle
 from typing_extensions import Literal
 
 from paddlemetrics.functional.image.d_lambda import (
-    _spectral_distortion_index_compute, _spectral_distortion_index_update)
+    _spectral_distortion_index_compute,
+    _spectral_distortion_index_update,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils import rank_zero_warn
 from paddlemetrics.utils.data import dim_zero_cat
@@ -75,9 +77,7 @@ class SpectralDistortionIndex(Metric):
         self.p = p
         allowed_reductions = "elementwise_mean", "sum", "none"
         if reduction not in allowed_reductions:
-            raise ValueError(
-                f"Expected argument `reduction` be one of {allowed_reductions} but got {reduction}"
-            )
+            raise ValueError(f"Expected argument `reduction` be one of {allowed_reductions} but got {reduction}")
         self.reduction = reduction
         self.add_state("preds", default=[], dist_reduce_fx="cat")
         self.add_state("target", default=[], dist_reduce_fx="cat")

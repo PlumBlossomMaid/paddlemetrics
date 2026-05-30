@@ -1,11 +1,11 @@
 """Tests for the core Metric base class."""
+
 import pickle
-from copy import deepcopy
 
 import paddle
 import pytest
 
-from paddlemetrics.metric import CompositionalMetric, Metric
+from paddlemetrics.metric import Metric
 
 
 def _assert_scalar_close(actual, expected, atol=1e-6):

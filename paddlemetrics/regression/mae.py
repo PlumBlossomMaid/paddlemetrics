@@ -4,8 +4,7 @@ from typing import Any, Optional, Union
 import paddle
 from paddle import Tensor
 
-from paddlemetrics.functional.regression.mae import (
-    _mean_absolute_error_compute, _mean_absolute_error_update)
+from paddlemetrics.functional.regression.mae import _mean_absolute_error_compute, _mean_absolute_error_update
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -66,20 +65,14 @@ class MeanAbsoluteError(Metric):
     def __init__(self, num_outputs: int = 1, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         if not (isinstance(num_outputs, int) and num_outputs > 0):
-            raise ValueError(
-                f"Expected num_outputs to be a positive integer but got {num_outputs}"
-            )
+            raise ValueError(f"Expected num_outputs to be a positive integer but got {num_outputs}")
         self.num_outputs = num_outputs
-        self.add_state(
-            "sum_abs_error", default=paddle.zeros(num_outputs), dist_reduce_fx="sum"
-        )
+        self.add_state("sum_abs_error", default=paddle.zeros(num_outputs), dist_reduce_fx="sum")
         self.add_state("total", default=paddle.tensor(0), dist_reduce_fx="sum")
 
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update state with predictions and targets."""
-        sum_abs_error, num_obs = _mean_absolute_error_update(
-            preds, target, num_outputs=self.num_outputs
-        )
+        sum_abs_error, num_obs = _mean_absolute_error_update(preds, target, num_outputs=self.num_outputs)
         self.sum_abs_error += sum_abs_error
         self.total += num_obs
 

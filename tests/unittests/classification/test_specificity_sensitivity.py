@@ -6,29 +6,30 @@ import pytest
 from scipy.special import expit as sigmoid
 from scipy.special import softmax
 from sklearn.metrics import roc_curve as sk_roc_curve
-from unittests import NUM_CLASSES
-from unittests._helpers import seed_all
-from unittests._helpers.testers import (MetricTester, inject_ignore_index,
-                                        remove_ignore_index)
-from unittests.classification._inputs import (_binary_cases, _multiclass_cases,
-                                              _multilabel_cases)
 
 from paddlemetrics.classification.specificity_sensitivity import (
-    BinarySpecificityAtSensitivity, MulticlassSpecificityAtSensitivity,
-    MultilabelSpecificityAtSensitivity, SpecificityAtSensitivity)
+    BinarySpecificityAtSensitivity,
+    MulticlassSpecificityAtSensitivity,
+    MultilabelSpecificityAtSensitivity,
+    SpecificityAtSensitivity,
+)
 from paddlemetrics.functional.classification.specificity_sensitivity import (
-    _convert_fpr_to_specificity, binary_specificity_at_sensitivity,
+    _convert_fpr_to_specificity,
+    binary_specificity_at_sensitivity,
     multiclass_specificity_at_sensitivity,
-    multilabel_specificity_at_sensitivity)
+    multilabel_specificity_at_sensitivity,
+)
 from paddlemetrics.metric import Metric
+from unittests import NUM_CLASSES
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester, inject_ignore_index, remove_ignore_index
+from unittests.classification._inputs import _binary_cases, _multiclass_cases, _multilabel_cases
 
 seed_all(42)
 
 
 def _specificity_at_sensitivity_x_multilabel(predictions, targets, min_sensitivity):
-    fpr, sensitivity, thresholds = sk_roc_curve(
-        targets, predictions, pos_label=1.0, drop_intermediate=False
-    )
+    fpr, sensitivity, thresholds = sk_roc_curve(targets, predictions, pos_label=1.0, drop_intermediate=False)
     if np.isnan(fpr).all():
         fpr = np.zeros_like(thresholds)
     specificity = _convert_fpr_to_specificity(fpr)
@@ -46,34 +47,23 @@ def _specificity_at_sensitivity_x_multilabel(predictions, targets, min_sensitivi
     return float(max_spec), float(best_threshold)
 
 
-def _reference_sklearn_specificity_at_sensitivity_binary(
-    preds, target, min_sensitivity, ignore_index=None
-):
+def _reference_sklearn_specificity_at_sensitivity_binary(preds, target, min_sensitivity, ignore_index=None):
     preds = preds.flatten().numpy()
     target = target.flatten().numpy()
-    if (
-        np.issubdtype(preds.dtype, np.floating)
-        and not ((preds > 0) & (preds < 1)).all()
-    ):
+    if np.issubdtype(preds.dtype, np.floating) and not ((preds > 0) & (preds < 1)).all():
         preds = sigmoid(preds)
-    target, preds = remove_ignore_index(
-        target=target, preds=preds, ignore_index=ignore_index
-    )
+    target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
     return _specificity_at_sensitivity_x_multilabel(preds, target, min_sensitivity)
 
 
-@pytest.mark.parametrize(
-    "inputs", [_binary_cases[1], _binary_cases[2], _binary_cases[4], _binary_cases[5]]
-)
+@pytest.mark.parametrize("inputs", [_binary_cases[1], _binary_cases[2], _binary_cases[4], _binary_cases[5]])
 class TestBinarySpecificityAtSensitivity(MetricTester):
     """Test class for `BinarySpecificityAtSensitivity` metric."""
 
     @pytest.mark.parametrize("min_sensitivity", [0.05, 0.1, 0.3, 0.5, 0.85])
     @pytest.mark.parametrize("ignore_index", [None, -1, 0])
     @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
-    def test_binary_specificity_at_sensitivity(
-        self, inputs, ddp, min_sensitivity, ignore_index
-    ):
+    def test_binary_specificity_at_sensitivity(self, inputs, ddp, min_sensitivity, ignore_index):
         """Test class implementation of metric."""
         preds, target = inputs
         if ignore_index is not None:
@@ -97,9 +87,7 @@ class TestBinarySpecificityAtSensitivity(MetricTester):
 
     @pytest.mark.parametrize("min_sensitivity", [0.05, 0.1, 0.3, 0.5, 0.8])
     @pytest.mark.parametrize("ignore_index", [None, -1, 0])
-    def test_binary_specificity_at_sensitivity_functional(
-        self, inputs, min_sensitivity, ignore_index
-    ):
+    def test_binary_specificity_at_sensitivity_functional(self, inputs, min_sensitivity, ignore_index):
         """Test functional implementation of metric."""
         preds, target = inputs
         if ignore_index is not None:
@@ -135,14 +123,8 @@ class TestBinarySpecificityAtSensitivity(MetricTester):
     def test_binary_specificity_at_sensitivity_dtype_cpu(self, inputs, dtype):
         """Test dtype support of the metric on CPU."""
         preds, target = inputs
-        if (
-            not True
-            and (preds < 0).any()
-            and dtype == paddle.float16
-        ):
-            pytest.xfail(
-                reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1"
-            )
+        if not True and (preds < 0).any() and dtype == paddle.float16:
+            pytest.xfail(reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1")
         self.run_precision_test_cpu(
             preds=preds,
             target=target,
@@ -167,16 +149,12 @@ class TestBinarySpecificityAtSensitivity(MetricTester):
         )
 
     @pytest.mark.parametrize("min_sensitivity", [0.05, 0.1, 0.3, 0.5, 0.8])
-    def test_binary_specificity_at_sensitivity_threshold_arg(
-        self, inputs, min_sensitivity
-    ):
+    def test_binary_specificity_at_sensitivity_threshold_arg(self, inputs, min_sensitivity):
         """Test that different types of `thresholds` argument lead to same result."""
         preds, target = inputs
         for pred, true in zip(preds, target):
             pred = paddle.tensor(np.round(pred.numpy(), 1)) + 1e-06
-            r1, _ = binary_specificity_at_sensitivity(
-                pred, true, min_sensitivity=min_sensitivity, thresholds=None
-            )
+            r1, _ = binary_specificity_at_sensitivity(pred, true, min_sensitivity=min_sensitivity, thresholds=None)
             r2, _ = binary_specificity_at_sensitivity(
                 pred,
                 true,
@@ -186,23 +164,17 @@ class TestBinarySpecificityAtSensitivity(MetricTester):
             assert paddle.allclose(x=r1, y=r2).item()
 
 
-def _reference_sklearn_specificity_at_sensitivity_multiclass(
-    preds, target, min_sensitivity, ignore_index=None
-):
+def _reference_sklearn_specificity_at_sensitivity_multiclass(preds, target, min_sensitivity, ignore_index=None):
     preds = np.moveaxis(preds.numpy(), 1, -1).reshape((-1, preds.shape[1]))
     target = target.numpy().flatten()
     if not ((preds > 0) & (preds < 1)).all():
         preds = softmax(preds, 1)
-    target, preds = remove_ignore_index(
-        target=target, preds=preds, ignore_index=ignore_index
-    )
+    target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
     specificity, thresholds = [], []
     for i in range(NUM_CLASSES):
         target_temp = np.zeros_like(target)
         target_temp[target == i] = 1
-        res = _specificity_at_sensitivity_x_multilabel(
-            preds[:, i], target_temp, min_sensitivity
-        )
+        res = _specificity_at_sensitivity_x_multilabel(preds[:, i], target_temp, min_sensitivity)
         specificity.append(res[0])
         thresholds.append(res[1])
     return specificity, thresholds
@@ -223,9 +195,7 @@ class TestMulticlassSpecificityAtSensitivity(MetricTester):
     @pytest.mark.parametrize("min_sensitivity", [0.05, 0.1, 0.3, 0.5, 0.8])
     @pytest.mark.parametrize("ignore_index", [None, -1, 0])
     @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
-    def test_multiclass_specificity_at_sensitivity(
-        self, inputs, ddp, min_sensitivity, ignore_index
-    ):
+    def test_multiclass_specificity_at_sensitivity(self, inputs, ddp, min_sensitivity, ignore_index):
         """Test class implementation of metric."""
         preds, target = inputs
         if ignore_index is not None:
@@ -250,9 +220,7 @@ class TestMulticlassSpecificityAtSensitivity(MetricTester):
 
     @pytest.mark.parametrize("min_sensitivity", [0.05, 0.1, 0.3, 0.5, 0.8])
     @pytest.mark.parametrize("ignore_index", [None, -1, 0])
-    def test_multiclass_specificity_at_sensitivity_functional(
-        self, inputs, min_sensitivity, ignore_index
-    ):
+    def test_multiclass_specificity_at_sensitivity_functional(self, inputs, min_sensitivity, ignore_index):
         """Test functional implementation of metric."""
         preds, target = inputs
         if ignore_index is not None:
@@ -327,9 +295,7 @@ class TestMulticlassSpecificityAtSensitivity(MetricTester):
         )
 
     @pytest.mark.parametrize("min_sensitivity", [0.05, 0.1, 0.3, 0.5, 0.8])
-    def test_multiclass_specificity_at_sensitivity_threshold_arg(
-        self, inputs, min_sensitivity
-    ):
+    def test_multiclass_specificity_at_sensitivity_threshold_arg(self, inputs, min_sensitivity):
         """Test that different types of `thresholds` argument lead to same result."""
         preds, target = inputs
         if (preds < 0).any():
@@ -353,9 +319,7 @@ class TestMulticlassSpecificityAtSensitivity(MetricTester):
             assert all(paddle.allclose(x=r1[i], y=r2[i]).item() for i in range(len(r1)))
 
 
-def _reference_sklearn_specificity_at_sensitivity_multilabel(
-    preds, target, min_sensitivity, ignore_index=None
-):
+def _reference_sklearn_specificity_at_sensitivity_multilabel(preds, target, min_sensitivity, ignore_index=None):
     specificity, thresholds = [], []
     for i in range(NUM_CLASSES):
         res = _reference_sklearn_specificity_at_sensitivity_binary(
@@ -381,9 +345,7 @@ class TestMultilabelSpecificityAtSensitivity(MetricTester):
     @pytest.mark.parametrize("min_sensitivity", [0.05, 0.1, 0.3, 0.5, 0.8])
     @pytest.mark.parametrize("ignore_index", [None, -1, 0])
     @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
-    def test_multilabel_specificity_at_sensitivity(
-        self, inputs, ddp, min_sensitivity, ignore_index
-    ):
+    def test_multilabel_specificity_at_sensitivity(self, inputs, ddp, min_sensitivity, ignore_index):
         """Test class implementation of metric."""
         preds, target = inputs
         if ignore_index is not None:
@@ -408,9 +370,7 @@ class TestMultilabelSpecificityAtSensitivity(MetricTester):
 
     @pytest.mark.parametrize("min_sensitivity", [0.05, 0.1, 0.3, 0.5, 0.8])
     @pytest.mark.parametrize("ignore_index", [None, -1, 0])
-    def test_multilabel_specificity_at_sensitivity_functional(
-        self, inputs, min_sensitivity, ignore_index
-    ):
+    def test_multilabel_specificity_at_sensitivity_functional(self, inputs, min_sensitivity, ignore_index):
         """Test functional implementation of metric."""
         preds, target = inputs
         if ignore_index is not None:
@@ -485,9 +445,7 @@ class TestMultilabelSpecificityAtSensitivity(MetricTester):
         )
 
     @pytest.mark.parametrize("min_sensitivity", [0.05, 0.1, 0.3, 0.5, 0.8])
-    def test_multilabel_specificity_at_sensitivity_threshold_arg(
-        self, inputs, min_sensitivity
-    ):
+    def test_multilabel_specificity_at_sensitivity_threshold_arg(self, inputs, min_sensitivity):
         """Test that different types of `thresholds` argument lead to same result."""
         preds, target = inputs
         if (preds < 0).any():
@@ -519,9 +477,7 @@ class TestMultilabelSpecificityAtSensitivity(MetricTester):
         partial(MultilabelSpecificityAtSensitivity, num_labels=NUM_CLASSES),
     ],
 )
-@pytest.mark.parametrize(
-    "thresholds", [None, 100, [0.3, 0.5, 0.7, 0.9], paddle.linspace(0, 1, 10)]
-)
+@pytest.mark.parametrize("thresholds", [None, 100, [0.3, 0.5, 0.7, 0.9], paddle.linspace(0, 1, 10)])
 def test_valid_input_thresholds(recwarn, metric, thresholds):
     """Test valid formats of the threshold argument."""
     metric(min_sensitivity=0.5, thresholds=thresholds)

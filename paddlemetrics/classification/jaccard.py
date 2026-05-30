@@ -6,11 +6,15 @@ from typing_extensions import Literal
 
 from paddlemetrics.classification.base import _ClassificationTaskWrapper
 from paddlemetrics.classification.confusion_matrix import (
-    BinaryConfusionMatrix, MulticlassConfusionMatrix,
-    MultilabelConfusionMatrix)
+    BinaryConfusionMatrix,
+    MulticlassConfusionMatrix,
+    MultilabelConfusionMatrix,
+)
 from paddlemetrics.functional.classification.jaccard import (
-    _jaccard_index_reduce, _multiclass_jaccard_index_arg_validation,
-    _multilabel_jaccard_index_arg_validation)
+    _jaccard_index_reduce,
+    _multiclass_jaccard_index_arg_validation,
+    _multilabel_jaccard_index_arg_validation,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.enums import ClassificationTask
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
@@ -101,9 +105,7 @@ class BinaryJaccardIndex(BinaryConfusionMatrix):
 
     def compute(self) -> paddle.Tensor:
         """Compute metric."""
-        return _jaccard_index_reduce(
-            self.confmat, average="binary", zero_division=self.zero_division
-        )
+        return _jaccard_index_reduce(self.confmat, average="binary", zero_division=self.zero_division)
 
     def plot(
         self,
@@ -383,18 +385,14 @@ class MultilabelJaccardIndex(MultilabelConfusionMatrix):
             **kwargs,
         )
         if validate_args:
-            _multilabel_jaccard_index_arg_validation(
-                num_labels, threshold, ignore_index, average
-            )
+            _multilabel_jaccard_index_arg_validation(num_labels, threshold, ignore_index, average)
         self.validate_args = validate_args
         self.average = average
         self.zero_division = zero_division
 
     def compute(self) -> paddle.Tensor:
         """Compute metric."""
-        return _jaccard_index_reduce(
-            self.confmat, average=self.average, zero_division=self.zero_division
-        )
+        return _jaccard_index_reduce(self.confmat, average=self.average, zero_division=self.zero_division)
 
     def plot(
         self,
@@ -486,14 +484,10 @@ class JaccardIndex(_ClassificationTaskWrapper):
             return BinaryJaccardIndex(threshold, **kwargs)
         if task == ClassificationTask.MULTICLASS:
             if not isinstance(num_classes, int):
-                raise ValueError(
-                    f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-                )
+                raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
             return MulticlassJaccardIndex(num_classes, average, **kwargs)
         if task == ClassificationTask.MULTILABEL:
             if not isinstance(num_labels, int):
-                raise ValueError(
-                    f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-                )
+                raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
             return MultilabelJaccardIndex(num_labels, threshold, average, **kwargs)
         raise ValueError(f"Task {task} not supported!")

@@ -2,14 +2,14 @@ import itertools
 from typing import Optional
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
-from paddlemetrics.functional.classification.confusion_matrix import \
-    _multiclass_confusion_matrix_update
-from paddlemetrics.functional.nominal.utils import (_drop_empty_rows_and_cols,
-                                                   _handle_nan_in_data,
-                                                   _nominal_input_validation)
+from paddlemetrics.functional.classification.confusion_matrix import _multiclass_confusion_matrix_update
+from paddlemetrics.functional.nominal.utils import (
+    _drop_empty_rows_and_cols,
+    _handle_nan_in_data,
+    _nominal_input_validation,
+)
 
 
 def _conditional_entropy_compute(confmat: paddle.Tensor) -> paddle.Tensor:
@@ -121,9 +121,7 @@ def theils_u(
 
     """
     num_classes = len(paddle.concat([preds, target]).unique())
-    confmat = _theils_u_update(
-        preds, target, num_classes, nan_strategy, nan_replace_value
-    )
+    confmat = _theils_u_update(preds, target, num_classes, nan_strategy, nan_replace_value)
     return _theils_u_compute(confmat)
 
 
@@ -161,9 +159,7 @@ def theils_u_matrix(
     """
     _nominal_input_validation(nan_strategy, nan_replace_value)
     num_variables = matrix.shape[1]
-    theils_u_matrix_value = paddle.ones(
-        num_variables, num_variables, device=matrix.device
-    )
+    theils_u_matrix_value = paddle.ones(num_variables, num_variables, device=matrix.device)
     for i, j in itertools.combinations(range(num_variables), 2):
         x, y = matrix[:, i], matrix[:, j]
         num_classes = len(paddle.concat([x, y]).unique())

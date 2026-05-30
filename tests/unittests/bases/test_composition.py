@@ -210,9 +210,7 @@ def test_metrics_mod(second_operand, expected_result):
     final_mod = first_metric % second_operand
     assert isinstance(final_mod, CompositionalMetric)
     final_mod.update()
-    assert paddle.allclose(
-        x=expected_result.to(float), y=final_mod.compute().to(float)
-    ).item()
+    assert paddle.allclose(x=expected_result.to(float), y=final_mod.compute().to(float)).item()
 
 
 @pytest.mark.parametrize(

@@ -5,7 +5,6 @@ from math import inf
 from typing import List, Optional, Union
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.functional.text.helper import _validate_inputs
@@ -85,9 +84,7 @@ def _preprocess_en(sentence: str) -> str:
 
     """
     if not isinstance(sentence, str):
-        raise ValueError(
-            f"Only strings allowed during preprocessing step, found {type(sentence)} instead"
-        )
+        raise ValueError(f"Only strings allowed during preprocessing step, found {type(sentence)} instead")
     sentence = sentence.rstrip()
     rules_interpunction = [(".", " ."), ("!", " !"), ("?", " ?"), (",", " ,")]
     for pattern, replacement in rules_interpunction:
@@ -119,9 +116,7 @@ def _preprocess_ja(sentence: str) -> str:
 
     """
     if not isinstance(sentence, str):
-        raise ValueError(
-            f"Only strings allowed during preprocessing step, found {type(sentence)} instead"
-        )
+        raise ValueError(f"Only strings allowed during preprocessing step, found {type(sentence)} instead")
     sentence = sentence.rstrip()
     return unicodedata.normalize("NFKC", sentence)
 
@@ -168,9 +163,7 @@ def _preprocess_sentences(
     elif language == "ja":
         preprocess_function = _preprocess_ja
     else:
-        raise ValueError(
-            f"Expected argument `language` to either be `en` or `ja` but got {language}"
-        )
+        raise ValueError(f"Expected argument `language` to either be `en` or `ja` but got {language}")
     preds = [preprocess_function(pred) for pred in preds]
     target = [[preprocess_function(ref) for ref in reference] for reference in target]
     return preds, target
@@ -238,9 +231,7 @@ def _eed_update(
     if 0 in (len(preds), len(target[0])):
         return sentence_eed
     for hypothesis, target_words in zip(preds, target):
-        score = _compute_sentence_statistics(
-            hypothesis, target_words, alpha, rho, deletion, insertion
-        )
+        score = _compute_sentence_statistics(hypothesis, target_words, alpha, rho, deletion, insertion)
         sentence_eed.append(score)
     return sentence_eed
 
@@ -284,16 +275,10 @@ def extended_edit_distance(
         submitted to WMT 2019. `ExtendedEditDistance`_
 
     """
-    for param_name, param in zip(
-        ["alpha", "rho", "deletion", "insertion"], [alpha, rho, deletion, insertion]
-    ):
+    for param_name, param in zip(["alpha", "rho", "deletion", "insertion"], [alpha, rho, deletion, insertion]):
         if not isinstance(param, float) or isinstance(param, float) and param < 0:
-            raise ValueError(
-                f"Parameter `{param_name}` is expected to be a non-negative float."
-            )
-    sentence_level_scores = _eed_update(
-        preds, target, language, alpha, rho, deletion, insertion
-    )
+            raise ValueError(f"Parameter `{param_name}` is expected to be a non-negative float.")
+    sentence_level_scores = _eed_update(preds, target, language, alpha, rho, deletion, insertion)
     average = _eed_compute(sentence_level_scores)
     if return_sentence_level_score:
         return average, paddle.stack(sentence_level_scores)

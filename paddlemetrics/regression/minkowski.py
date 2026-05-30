@@ -4,8 +4,7 @@ from typing import Any, Optional, Union
 import paddle
 from paddle import Tensor
 
-from paddlemetrics.functional.regression.minkowski import (
-    _minkowski_distance_compute, _minkowski_distance_update)
+from paddlemetrics.functional.regression.minkowski import _minkowski_distance_compute, _minkowski_distance_update
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.exceptions import PaddleMetricsUserError
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
@@ -52,13 +51,9 @@ class MinkowskiDistance(Metric):
     def __init__(self, p: float, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         if not (isinstance(p, (float, int)) and p >= 1):
-            raise PaddleMetricsUserError(
-                f"Argument ``p`` must be a float or int greater than 1, but got {p}"
-            )
+            raise PaddleMetricsUserError(f"Argument ``p`` must be a float or int greater than 1, but got {p}")
         self.p = p
-        self.add_state(
-            "minkowski_dist_sum", default=paddle.tensor(0.0), dist_reduce_fx="sum"
-        )
+        self.add_state("minkowski_dist_sum", default=paddle.tensor(0.0), dist_reduce_fx="sum")
 
     def update(self, preds: paddle.Tensor, targets: paddle.Tensor) -> None:
         """Update state with predictions and targets."""

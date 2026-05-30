@@ -5,9 +5,7 @@ import paddle
 from paddlemetrics.utils.checks import _check_retrieval_functional_inputs
 
 
-def _tie_average_dcg(
-    target: paddle.Tensor, preds: paddle.Tensor, discount_cumsum: paddle.Tensor
-) -> paddle.Tensor:
+def _tie_average_dcg(target: paddle.Tensor, preds: paddle.Tensor, discount_cumsum: paddle.Tensor) -> paddle.Tensor:
     """Translated version of sklearns `_tie_average_dcg` function.
 
     Args:
@@ -19,12 +17,10 @@ def _tie_average_dcg(
         The cumulative gain of the tied elements.
 
     """
-    _, inv, counts = paddle.unique(
-        -preds, return_inverse=True, return_counts=True
-    )
+    _, inv, counts = paddle.unique(-preds, return_inverse=True, return_counts=True)
     ranked = paddle.zeros_like(counts, dtype=paddle.float32)
     ranked.scatter_add_(0, inv, target.to(dtype=ranked.dtype))
-    ranked = ranked / counts
+    ranked = ranked / counts.cast(ranked.dtype)
     groups = counts.cumsum(dim=0) - 1
     discount_sums = paddle.zeros_like(counts, dtype=paddle.float32)
     discount_sums[0] = discount_cumsum[groups[0]]
@@ -32,9 +28,7 @@ def _tie_average_dcg(
     return (ranked * discount_sums).sum()
 
 
-def _dcg_sample_scores(
-    target: paddle.Tensor, preds: paddle.Tensor, top_k: int, ignore_ties: bool
-) -> paddle.Tensor:
+def _dcg_sample_scores(target: paddle.Tensor, preds: paddle.Tensor, top_k: int, ignore_ties: bool) -> paddle.Tensor:
     """Translated version of sklearns `_dcg_sample_scores` function.
 
     Args:
@@ -47,9 +41,7 @@ def _dcg_sample_scores(
         The cumulative gain
 
     """
-    discount = 1.0 / paddle.log2(
-        paddle.arange(target.shape[-1], device=target.place) + 2.0
-    )
+    discount = 1.0 / paddle.log2(paddle.arange(target.shape[-1], device=target.place) + 2.0)
     discount[top_k:] = 0.0
     if ignore_ties:
         ranking = preds.argsort(descending=True)
@@ -61,9 +53,7 @@ def _dcg_sample_scores(
     return cumulative_gain
 
 
-def retrieval_normalized_dcg(
-    preds: paddle.Tensor, target: paddle.Tensor, top_k: Optional[int] = None
-) -> paddle.Tensor:
+def retrieval_normalized_dcg(preds: paddle.Tensor, target: paddle.Tensor, top_k: Optional[int] = None) -> paddle.Tensor:
     """Compute `Normalized Discounted Cumulative Gain`_ (for information retrieval).
 
     ``preds`` and ``target`` should be of the same shape and live on the same device.
@@ -90,9 +80,7 @@ def retrieval_normalized_dcg(
         tensor(0.6957)
 
     """
-    preds, target = _check_retrieval_functional_inputs(
-        preds, target, allow_non_binary_target=True
-    )
+    preds, target = _check_retrieval_functional_inputs(preds, target, allow_non_binary_target=True)
     top_k = preds.shape[-1] if top_k is None else top_k
     if not (isinstance(top_k, int) and top_k > 0):
         raise ValueError("`top_k` has to be a positive integer or None")

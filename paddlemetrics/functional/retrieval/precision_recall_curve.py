@@ -1,7 +1,6 @@
 from typing import Optional
 
 import paddle
-from paddle import Tensor
 
 from paddlemetrics.utils.checks import _check_retrieval_functional_inputs
 from paddlemetrics.utils.data import _cumsum
@@ -69,9 +68,7 @@ def retrieval_precision_recall_curve(
         raise ValueError("`max_k` has to be a positive integer or None")
     if adaptive_k and max_k > preds.shape[-1]:
         topk = paddle.arange(1, preds.shape[-1] + 1, device=preds.place)
-        topk = paddle.nn.functional.pad(
-            topk, (0, max_k - preds.shape[-1]), "constant", float(preds.shape[-1])
-        )
+        topk = paddle.nn.functional.pad(topk, (0, max_k - preds.shape[-1]), "constant", float(preds.shape[-1]))
     else:
         topk = paddle.arange(1, max_k + 1, device=preds.place)
     if not target.sum():
@@ -82,10 +79,9 @@ def retrieval_precision_recall_curve(
         )
     relevant = target[preds.topk(min(max_k, preds.shape[-1]), axis=-1)[1]].float()
     relevant = _cumsum(
-        paddle.nn.functional.pad(
-            relevant, (0, max(0, max_k - len(relevant))), "constant", 0.0
-        ), axis=0,
+        paddle.nn.functional.pad(relevant, (0, max(0, max_k - len(relevant))), "constant", 0.0),
+        axis=0,
     )
-    recall = relevant / target.sum()
-    precision = relevant / topk
+    recall = relevant / target.sum().cast(relevant.dtype)
+    precision = relevant / topk.cast(relevant.dtype)
     return precision, recall, topk

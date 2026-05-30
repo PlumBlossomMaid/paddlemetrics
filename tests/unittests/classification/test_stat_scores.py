@@ -5,28 +5,29 @@ import paddle
 import pytest
 from scipy.special import expit as sigmoid
 from sklearn.metrics import confusion_matrix as sk_confusion_matrix
+
+from paddlemetrics.classification.stat_scores import (
+    BinaryStatScores,
+    MulticlassStatScores,
+    MultilabelStatScores,
+    StatScores,
+)
+from paddlemetrics.functional.classification.stat_scores import (
+    _refine_preds_oh,
+    binary_stat_scores,
+    multiclass_stat_scores,
+    multilabel_stat_scores,
+)
+from paddlemetrics.metric import Metric
 from unittests import NUM_CLASSES, THRESHOLD
 from unittests._helpers import seed_all
-from unittests._helpers.testers import (MetricTester, inject_ignore_index,
-                                        remove_ignore_index)
-from unittests.classification._inputs import (_binary_cases, _multiclass_cases,
-                                              _multilabel_cases)
-
-from paddlemetrics.classification.stat_scores import (BinaryStatScores,
-                                                     MulticlassStatScores,
-                                                     MultilabelStatScores,
-                                                     StatScores)
-from paddlemetrics.functional.classification.stat_scores import (
-    _refine_preds_oh, binary_stat_scores, multiclass_stat_scores,
-    multilabel_stat_scores)
-from paddlemetrics.metric import Metric
+from unittests._helpers.testers import MetricTester, inject_ignore_index, remove_ignore_index
+from unittests.classification._inputs import _binary_cases, _multiclass_cases, _multilabel_cases
 
 seed_all(42)
 
 
-def _reference_sklearn_stat_scores_binary(
-    preds, target, ignore_index, multidim_average
-):
+def _reference_sklearn_stat_scores_binary(preds, target, ignore_index, multidim_average):
     if multidim_average == "global":
         preds = preds.view(-1).numpy()
         target = target.view(-1).numpy()
@@ -38,23 +39,15 @@ def _reference_sklearn_stat_scores_binary(
             preds = sigmoid(preds)
         preds = (preds >= THRESHOLD).astype(np.uint8)
     if multidim_average == "global":
-        target, preds = remove_ignore_index(
-            target=target, preds=preds, ignore_index=ignore_index
-        )
-        tn, fp, fn, tp = sk_confusion_matrix(
-            y_true=target, y_pred=preds, labels=[0, 1]
-        ).ravel()
+        target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
+        tn, fp, fn, tp = sk_confusion_matrix(y_true=target, y_pred=preds, labels=[0, 1]).ravel()
         return np.array([tp, fp, tn, fn, tp + fn])
     res = []
     for pred, true in zip(preds, target):
         pred = pred.flatten()
         true = true.flatten()
-        true, pred = remove_ignore_index(
-            target=true, preds=pred, ignore_index=ignore_index
-        )
-        tn, fp, fn, tp = sk_confusion_matrix(
-            y_true=true, y_pred=pred, labels=[0, 1]
-        ).ravel()
+        true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
+        tn, fp, fn, tp = sk_confusion_matrix(y_true=true, y_pred=pred, labels=[0, 1]).ravel()
         res.append(np.array([tp, fp, tn, fn, tp + fn]))
     return np.stack(res)
 
@@ -94,9 +87,7 @@ class TestBinaryStatScores(MetricTester):
 
     @pytest.mark.parametrize("ignore_index", [None, 0, -1])
     @pytest.mark.parametrize("multidim_average", ["global", "samplewise"])
-    def test_binary_stat_scores_functional(
-        self, inputs, ignore_index, multidim_average
-    ):
+    def test_binary_stat_scores_functional(self, inputs, ignore_index, multidim_average):
         """Test functional implementation of metric."""
         preds, target = inputs
         if ignore_index == -1:
@@ -134,14 +125,8 @@ class TestBinaryStatScores(MetricTester):
     def test_binary_stat_scores_dtype_cpu(self, inputs, dtype):
         """Test dtype support of the metric on CPU."""
         preds, target = inputs
-        if (
-            not True
-            and (preds < 0).any()
-            and dtype == paddle.float16
-        ):
-            pytest.xfail(
-                reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1"
-            )
+        if not True and (preds < 0).any() and dtype == paddle.float16:
+            pytest.xfail(reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1")
         self.run_precision_test_cpu(
             preds=preds,
             target=target,
@@ -166,17 +151,11 @@ class TestBinaryStatScores(MetricTester):
         )
 
 
-def _reference_sklearn_stat_scores_multiclass_global(
-    preds, target, ignore_index, average
-):
+def _reference_sklearn_stat_scores_multiclass_global(preds, target, ignore_index, average):
     preds = preds.numpy().flatten()
     target = target.numpy().flatten()
-    target, preds = remove_ignore_index(
-        target=target, preds=preds, ignore_index=ignore_index
-    )
-    confmat = sk_confusion_matrix(
-        y_true=target, y_pred=preds, labels=list(range(NUM_CLASSES))
-    )
+    target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
+    confmat = sk_confusion_matrix(y_true=target, y_pred=preds, labels=list(range(NUM_CLASSES)))
     tp = np.diag(confmat)
     fp = confmat.sum(0) - tp
     fn = confmat.sum(1) - tp
@@ -194,21 +173,15 @@ def _reference_sklearn_stat_scores_multiclass_global(
     return None
 
 
-def _reference_sklearn_stat_scores_multiclass_local(
-    preds, target, ignore_index, average
-):
+def _reference_sklearn_stat_scores_multiclass_local(preds, target, ignore_index, average):
     preds = preds.numpy()
     target = target.numpy()
     res = []
     for pred, true in zip(preds, target):
         pred = pred.flatten()
         true = true.flatten()
-        true, pred = remove_ignore_index(
-            target=true, preds=pred, ignore_index=ignore_index
-        )
-        confmat = sk_confusion_matrix(
-            y_true=true, y_pred=pred, labels=list(range(NUM_CLASSES))
-        )
+        true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
+        confmat = sk_confusion_matrix(y_true=true, y_pred=pred, labels=list(range(NUM_CLASSES)))
         tp = np.diag(confmat)
         fp = confmat.sum(0) - tp
         fn = confmat.sum(1) - tp
@@ -226,18 +199,12 @@ def _reference_sklearn_stat_scores_multiclass_local(
     return np.stack(res, 0)
 
 
-def _reference_sklearn_stat_scores_multiclass(
-    preds, target, ignore_index, multidim_average, average
-):
+def _reference_sklearn_stat_scores_multiclass(preds, target, ignore_index, multidim_average, average):
     if preds.ndim == target.ndim + 1:
         preds = paddle.argmax(preds, 1)
     if multidim_average == "global":
-        return _reference_sklearn_stat_scores_multiclass_global(
-            preds, target, ignore_index, average
-        )
-    return _reference_sklearn_stat_scores_multiclass_local(
-        preds, target, ignore_index, average
-    )
+        return _reference_sklearn_stat_scores_multiclass_global(preds, target, ignore_index, average)
+    return _reference_sklearn_stat_scores_multiclass_local(preds, target, ignore_index, average)
 
 
 @pytest.mark.parametrize("inputs", _multiclass_cases)
@@ -248,9 +215,7 @@ class TestMulticlassStatScores(MetricTester):
     @pytest.mark.parametrize("multidim_average", ["global", "samplewise"])
     @pytest.mark.parametrize("average", ["micro", "macro", None])
     @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
-    def test_multiclass_stat_scores(
-        self, ddp, inputs, ignore_index, multidim_average, average
-    ):
+    def test_multiclass_stat_scores(self, ddp, inputs, ignore_index, multidim_average, average):
         """Test class implementation of metric."""
         preds, target = inputs
         if ignore_index == -1:
@@ -281,9 +246,7 @@ class TestMulticlassStatScores(MetricTester):
     @pytest.mark.parametrize("ignore_index", [None, 0, -1])
     @pytest.mark.parametrize("multidim_average", ["global", "samplewise"])
     @pytest.mark.parametrize("average", ["micro", "macro", None])
-    def test_multiclass_stat_scores_functional(
-        self, inputs, ignore_index, multidim_average, average
-    ):
+    def test_multiclass_stat_scores_functional(self, inputs, ignore_index, multidim_average, average):
         """Test functional implementation of metric."""
         preds, target = inputs
         if ignore_index == -1:
@@ -323,14 +286,8 @@ class TestMulticlassStatScores(MetricTester):
     def test_multiclass_stat_scores_dtype_cpu(self, inputs, dtype):
         """Test dtype support of the metric on CPU."""
         preds, target = inputs
-        if (
-            not True
-            and (preds < 0).any()
-            and dtype == paddle.float16
-        ):
-            pytest.xfail(
-                reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1"
-            )
+        if not True and (preds < 0).any() and dtype == paddle.float16:
+            pytest.xfail(reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1")
         self.run_precision_test_cpu(
             preds=preds,
             target=target,
@@ -387,9 +344,7 @@ class TestMulticlassStatScores(MetricTester):
 def test_raises_error_on_too_many_classes(preds, target, ignore_index, error_message):
     """Test that an error is raised if the number of classes in preds or target is larger than expected."""
     with pytest.raises(RuntimeError, match=error_message):
-        multiclass_stat_scores(
-            preds, target, num_classes=NUM_CLASSES, ignore_index=ignore_index
-        )
+        multiclass_stat_scores(preds, target, num_classes=NUM_CLASSES, ignore_index=ignore_index)
 
 
 @pytest.mark.parametrize(
@@ -397,21 +352,15 @@ def test_raises_error_on_too_many_classes(preds, target, ignore_index, error_mes
     [
         (
             1,
-            paddle.tensor(
-                [[[0, 0, 1]], [[1, 0, 0]], [[0, 1, 0]], [[1, 0, 0]]], dtype=paddle.int32
-            ),
+            paddle.tensor([[[0, 0, 1]], [[1, 0, 0]], [[0, 1, 0]], [[1, 0, 0]]], dtype=paddle.int32),
         ),
         (
             2,
-            paddle.tensor(
-                [[[1, 0, 0]], [[1, 0, 0]], [[0, 1, 0]], [[0, 0, 1]]], dtype=paddle.int32
-            ),
+            paddle.tensor([[[1, 0, 0]], [[1, 0, 0]], [[0, 1, 0]], [[0, 0, 1]]], dtype=paddle.int32),
         ),
         (
             3,
-            paddle.tensor(
-                [[[1, 0, 0]], [[0, 1, 0]], [[0, 1, 0]], [[0, 0, 1]]], dtype=paddle.int32
-            ),
+            paddle.tensor([[[1, 0, 0]], [[0, 1, 0]], [[0, 1, 0]], [[0, 0, 1]]], dtype=paddle.int32),
         ),
     ],
 )
@@ -434,22 +383,18 @@ def test_refine_preds_oh(top_k, expected_result):
             [[0.465], [0.2448], [0.2902]],
         ]
     )
-    preds_oh = paddle.tensor(
-        [[[1, 0, 1]], [[1, 0, 1]], [[0, 1, 1]], [[1, 0, 1]]], dtype=paddle.int32
-    )
+    preds_oh = paddle.tensor([[[1, 0, 1]], [[1, 0, 1]], [[0, 1, 1]], [[1, 0, 1]]], dtype=paddle.int32)
     target = paddle.tensor([[0], [1], [1], [2]])
     result = _refine_preds_oh(preds, preds_oh, target, top_k)
-    assert paddle.equal(
-        result, expected_result
-    ), f"Test failed for top_k={top_k}. Expected result: {expected_result}, but got: {result}"
+    assert paddle.equal(result, expected_result), (
+        f"Test failed for top_k={top_k}. Expected result: {expected_result}, but got: {result}"
+    )
 
 
 _mc_k_target = paddle.tensor([0, 1, 2])
 _mc_k_preds = paddle.tensor([[0.35, 0.4, 0.25], [0.1, 0.5, 0.4], [0.2, 0.1, 0.7]])
 _mc_k_target2 = paddle.tensor([0, 1, 2, 0])
-_mc_k_preds2 = paddle.tensor(
-    [[0.1, 0.2, 0.7], [0.4, 0.4, 0.2], [0.3, 0.3, 0.4], [0.3, 0.3, 0.4]]
-)
+_mc_k_preds2 = paddle.tensor([[0.1, 0.2, 0.7], [0.4, 0.4, 0.2], [0.3, 0.3, 0.4], [0.3, 0.3, 0.4]])
 
 
 @pytest.mark.parametrize(
@@ -543,13 +488,9 @@ def test_top_k_multiclass(k, preds, target, average, expected):
     """A simple test to check that top_k works as expected."""
     class_metric = MulticlassStatScores(top_k=k, average=average, num_classes=3)
     class_metric.update(preds, target)
+    assert paddle.allclose(x=class_metric.compute(), y=expected.T, atol=0.0001, rtol=0.0001).item()
     assert paddle.allclose(
-        x=class_metric.compute(), y=expected.T, atol=0.0001, rtol=0.0001
-    ).item()
-    assert paddle.allclose(
-        x=multiclass_stat_scores(
-            preds, target, top_k=k, average=average, num_classes=3
-        ),
+        x=multiclass_stat_scores(preds, target, top_k=k, average=average, num_classes=3),
         y=expected.T,
         atol=0.0001,
         rtol=0.0001,
@@ -562,9 +503,7 @@ def test_top_k_ignore_index_multiclass():
     target_without = paddle.randint(low=0, high=3, shape=(10,))
     preds_with = paddle.concat([preds_without, paddle.randn(10, 3).softmax(dim=-1)], 0)
     target_with = paddle.concat([target_without, -100 * paddle.ones(10)], 0).long()
-    res_without = multiclass_stat_scores(
-        preds_without, target_without, num_classes=3, average="micro", top_k=2
-    )
+    res_without = multiclass_stat_scores(preds_without, target_without, num_classes=3, average="micro", top_k=2)
     res_with = multiclass_stat_scores(
         preds_with,
         target_with,
@@ -591,9 +530,7 @@ def test_multiclass_overflow():
     assert paddle.allclose(x=res, y=paddle.tensor(compare)).item()
 
 
-def _reference_sklearn_stat_scores_multilabel(
-    preds, target, ignore_index, multidim_average, average
-):
+def _reference_sklearn_stat_scores_multilabel(preds, target, ignore_index, multidim_average, average):
     preds = preds.numpy()
     target = target.numpy()
     if np.issubdtype(preds.dtype, np.floating):
@@ -606,9 +543,7 @@ def _reference_sklearn_stat_scores_multilabel(
         stat_scores = []
         for i in range(preds.shape[1]):
             pred, true = preds[:, i].flatten(), target[:, i].flatten()
-            true, pred = remove_ignore_index(
-                target=true, preds=pred, ignore_index=ignore_index
-            )
+            true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
             tn, fp, fn, tp = sk_confusion_matrix(true, pred, labels=[0, 1]).ravel()
             stat_scores.append(np.array([tp, fp, tn, fn, tp + fn]))
         res = np.stack(stat_scores, axis=0)
@@ -627,9 +562,7 @@ def _reference_sklearn_stat_scores_multilabel(
         scores = []
         for j in range(preds.shape[1]):
             pred, true = preds[i, j], target[i, j]
-            true, pred = remove_ignore_index(
-                target=true, preds=pred, ignore_index=ignore_index
-            )
+            true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
             tn, fp, fn, tp = sk_confusion_matrix(true, pred, labels=[0, 1]).ravel()
             scores.append(np.array([tp, fp, tn, fn, tp + fn]))
         stat_scores.append(np.stack(scores, 1))
@@ -654,9 +587,7 @@ class TestMultilabelStatScores(MetricTester):
     @pytest.mark.parametrize("ignore_index", [None, 0, -1])
     @pytest.mark.parametrize("multidim_average", ["global", "samplewise"])
     @pytest.mark.parametrize("average", ["micro", "macro", None])
-    def test_multilabel_stat_scores(
-        self, ddp, inputs, ignore_index, multidim_average, average
-    ):
+    def test_multilabel_stat_scores(self, ddp, inputs, ignore_index, multidim_average, average):
         """Test class implementation of metric."""
         preds, target = inputs
         if ignore_index == -1:
@@ -688,9 +619,7 @@ class TestMultilabelStatScores(MetricTester):
     @pytest.mark.parametrize("ignore_index", [None, 0, -1])
     @pytest.mark.parametrize("multidim_average", ["global", "samplewise"])
     @pytest.mark.parametrize("average", ["micro", "macro", None])
-    def test_multilabel_stat_scores_functional(
-        self, inputs, ignore_index, multidim_average, average
-    ):
+    def test_multilabel_stat_scores_functional(self, inputs, ignore_index, multidim_average, average):
         """Test functional implementation of metric."""
         preds, target = inputs
         if ignore_index == -1:
@@ -731,14 +660,8 @@ class TestMultilabelStatScores(MetricTester):
     def test_multilabel_stat_scores_dtype_cpu(self, inputs, dtype):
         """Test dtype support of the metric on CPU."""
         preds, target = inputs
-        if (
-            not True
-            and (preds < 0).any()
-            and dtype == paddle.float16
-        ):
-            pytest.xfail(
-                reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1"
-            )
+        if not True and (preds < 0).any() and dtype == paddle.float16:
+            pytest.xfail(reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1")
         self.run_precision_test_cpu(
             preds=preds,
             target=target,
@@ -766,9 +689,7 @@ class TestMultilabelStatScores(MetricTester):
 def test_support_for_int():
     """See issue: https://github.com/Lightning-AI/paddlemetrics/issues/1970."""
     seed_all(42)
-    metric = MulticlassStatScores(
-        num_classes=4, average="none", multidim_average="samplewise", ignore_index=0
-    )
+    metric = MulticlassStatScores(num_classes=4, average="none", multidim_average="samplewise", ignore_index=0)
     prediction = paddle.randint(low=0, high=4, shape=(1, 50, 50)).to(paddle.uint8)
     label = paddle.randint(low=0, high=4, shape=(1, 50, 50)).to(paddle.uint8)
     score = metric(preds=prediction, target=label)

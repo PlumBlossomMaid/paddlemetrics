@@ -12,7 +12,6 @@ from paddlemetrics.text.ter import TranslationEditRate
 from paddlemetrics.text.wer import WordErrorRate
 from paddlemetrics.text.wil import WordInfoLost
 from paddlemetrics.text.wip import WordInfoPreserved
-from paddlemetrics.utils.imports import _TRANSFORMERS_GREATER_EQUAL_4_4
 
 __all__ = [
     "BLEUScore",
@@ -30,8 +29,3 @@ __all__ = [
     "WordInfoLost",
     "WordInfoPreserved",
 ]
-if _TRANSFORMERS_GREATER_EQUAL_4_4:
-    from paddlemetrics.text.bert import BERTScore
-    from paddlemetrics.text.infolm import InfoLM
-
-    __all__ += ["BERTScore", "InfoLM"]

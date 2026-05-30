@@ -65,18 +65,12 @@ class ExtendedEditDistance(Metric):
     ) -> None:
         super().__init__(**kwargs)
         if language not in ("en", "ja"):
-            raise ValueError(
-                f"Expected argument `language` to either be `en` or `ja` but got {language}"
-            )
+            raise ValueError(f"Expected argument `language` to either be `en` or `ja` but got {language}")
         self.language: Literal["en", "ja"] = language
         self.return_sentence_level_score = return_sentence_level_score
-        for param_name, param in zip(
-            ["alpha", "rho", "deletion", "insertion"], [alpha, rho, deletion, insertion]
-        ):
+        for param_name, param in zip(["alpha", "rho", "deletion", "insertion"], [alpha, rho, deletion, insertion]):
             if not isinstance(param, float) or isinstance(param, float) and param < 0:
-                raise ValueError(
-                    f"Parameter `{param_name}` is expected to be a non-negative float."
-                )
+                raise ValueError(f"Parameter `{param_name}` is expected to be a non-negative float.")
         self.alpha = alpha
         self.rho = rho
         self.deletion = deletion

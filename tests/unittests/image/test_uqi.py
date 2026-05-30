@@ -2,16 +2,15 @@ from functools import partial
 from typing import NamedTuple
 
 import paddle
-from paddle import Tensor
 import pytest
+from paddle import Tensor
 from skimage.metrics import structural_similarity
-from unittests import BATCH_SIZE, NUM_BATCHES
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
 
 from paddlemetrics.functional.image.uqi import universal_image_quality_index
 from paddlemetrics.image.uqi import UniversalImageQualityIndex
-from paddlemetrics.utils.imports import False
+from unittests import BATCH_SIZE, NUM_BATCHES
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
 
 seed_all(42)
 
@@ -25,15 +24,13 @@ class _InputMultichannel(NamedTuple):
 skimage_uqi = partial(structural_similarity, k1=0, k2=0)
 _inputs = []
 for size, channel, coef, multichannel, dtype in [
-    (12, 3, 0.9, paddle.float32),
+    (12, 3, 0.9, False, paddle.float32),
     (13, 1, 0.8, False, paddle.float32),
     (14, 1, 0.7, False, paddle.float64),
-    (15, 3, 0.6, paddle.float64),
+    (15, 3, 0.6, False, paddle.float64),
 ]:
     preds = paddle.rand(NUM_BATCHES, BATCH_SIZE, channel, size, size, dtype=dtype)
-    _inputs.append(
-        _InputMultichannel(preds=preds, target=preds * coef, multichannel=multichannel)
-    )
+    _inputs.append(_InputMultichannel(preds=preds, target=preds * coef, multichannel=multichannel))
 
 
 def _reference_skimage_uqi(preds, target, multichannel, kernel_size):
@@ -102,16 +99,12 @@ class TestUQI(MetricTester):
     )
     def test_uqi_half_cpu(self, preds, target, multichannel, kernel_size):
         """Test dtype support of the metric on CPU."""
-        self.run_precision_test_cpu(
-            preds, target, UniversalImageQualityIndex, universal_image_quality_index
-        )
+        self.run_precision_test_cpu(preds, target, UniversalImageQualityIndex, universal_image_quality_index)
 
     @pytest.mark.skipif(not paddle.cuda.is_available(), reason="test requires cuda")
     def test_uqi_half_gpu(self, preds, target, multichannel, kernel_size):
         """Test dtype support of the metric on GPU."""
-        self.run_precision_test_gpu(
-            preds, target, UniversalImageQualityIndex, universal_image_quality_index
-        )
+        self.run_precision_test_gpu(preds, target, UniversalImageQualityIndex, universal_image_quality_index)
 
 
 @pytest.mark.parametrize(
@@ -194,9 +187,7 @@ def test_uqi_different_dtype():
     """Check that an type error is raised if preds and target have different dtype."""
     pred_t = paddle.rand([1, 1, 16, 16])
     target_t = paddle.rand([1, 1, 16, 16], dtype=paddle.float64)
-    with pytest.raises(
-        TypeError, match="Expected `preds` and `target` to have the same data type.*"
-    ):
+    with pytest.raises(TypeError, match="Expected `preds` and `target` to have the same data type.*"):
         universal_image_quality_index(pred_t, target_t)
 
 

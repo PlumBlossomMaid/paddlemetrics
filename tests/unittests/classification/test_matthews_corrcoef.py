@@ -5,20 +5,24 @@ import paddle
 import pytest
 from scipy.special import expit as sigmoid
 from sklearn.metrics import matthews_corrcoef as sk_matthews_corrcoef
-from unittests import NUM_CLASSES, THRESHOLD
-from unittests._helpers import seed_all
-from unittests._helpers.testers import (MetricTester, inject_ignore_index,
-                                        remove_ignore_index)
-from unittests.classification._inputs import (_binary_cases, _multiclass_cases,
-                                              _multilabel_cases)
 
 from paddlemetrics.classification.matthews_corrcoef import (
-    BinaryMatthewsCorrCoef, MatthewsCorrCoef, MulticlassMatthewsCorrCoef,
-    MultilabelMatthewsCorrCoef)
+    BinaryMatthewsCorrCoef,
+    MatthewsCorrCoef,
+    MulticlassMatthewsCorrCoef,
+    MultilabelMatthewsCorrCoef,
+)
 from paddlemetrics.functional.classification.matthews_corrcoef import (
-    _matthews_corrcoef_reduce, binary_matthews_corrcoef,
-    multiclass_matthews_corrcoef, multilabel_matthews_corrcoef)
+    _matthews_corrcoef_reduce,
+    binary_matthews_corrcoef,
+    multiclass_matthews_corrcoef,
+    multilabel_matthews_corrcoef,
+)
 from paddlemetrics.metric import Metric
+from unittests import NUM_CLASSES, THRESHOLD
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester, inject_ignore_index, remove_ignore_index
+from unittests.classification._inputs import _binary_cases, _multiclass_cases, _multilabel_cases
 
 seed_all(42)
 
@@ -30,9 +34,7 @@ def _reference_sklearn_matthews_corrcoef_binary(preds, target, ignore_index=None
         if not ((preds > 0) & (preds < 1)).all():
             preds = sigmoid(preds)
         preds = (preds >= THRESHOLD).astype(np.uint8)
-    target, preds = remove_ignore_index(
-        target=target, preds=preds, ignore_index=ignore_index
-    )
+    target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
     return sk_matthews_corrcoef(y_true=target, y_pred=preds)
 
 
@@ -52,9 +54,7 @@ class TestBinaryMatthewsCorrCoef(MetricTester):
             preds=preds,
             target=target,
             metric_class=BinaryMatthewsCorrCoef,
-            reference_metric=partial(
-                _reference_sklearn_matthews_corrcoef_binary, ignore_index=ignore_index
-            ),
+            reference_metric=partial(_reference_sklearn_matthews_corrcoef_binary, ignore_index=ignore_index),
             metric_args={"threshold": THRESHOLD, "ignore_index": ignore_index},
         )
 
@@ -68,9 +68,7 @@ class TestBinaryMatthewsCorrCoef(MetricTester):
             preds=preds,
             target=target,
             metric_functional=binary_matthews_corrcoef,
-            reference_metric=partial(
-                _reference_sklearn_matthews_corrcoef_binary, ignore_index=ignore_index
-            ),
+            reference_metric=partial(_reference_sklearn_matthews_corrcoef_binary, ignore_index=ignore_index),
             metric_args={"threshold": THRESHOLD, "ignore_index": ignore_index},
         )
 
@@ -89,14 +87,8 @@ class TestBinaryMatthewsCorrCoef(MetricTester):
     def test_binary_matthews_corrcoef_dtype_cpu(self, inputs, dtype):
         """Test dtype support of the metric on CPU."""
         preds, target = inputs
-        if (
-            not True
-            and (preds < 0).any()
-            and dtype == paddle.float16
-        ):
-            pytest.xfail(
-                reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1"
-            )
+        if not True and (preds < 0).any() and dtype == paddle.float16:
+            pytest.xfail(reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1")
         self.run_precision_test_cpu(
             preds=preds,
             target=target,
@@ -128,9 +120,7 @@ def _reference_sklearn_matthews_corrcoef_multiclass(preds, target, ignore_index=
         preds = np.argmax(preds, axis=1)
     preds = preds.flatten()
     target = target.flatten()
-    target, preds = remove_ignore_index(
-        target=target, preds=preds, ignore_index=ignore_index
-    )
+    target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
     return sk_matthews_corrcoef(y_true=target, y_pred=preds)
 
 
@@ -220,9 +210,7 @@ def _reference_sklearn_matthews_corrcoef_multilabel(preds, target, ignore_index=
         if not ((preds > 0) & (preds < 1)).all():
             preds = sigmoid(preds)
         preds = (preds >= THRESHOLD).astype(np.uint8)
-    target, preds = remove_ignore_index(
-        target=target, preds=preds, ignore_index=ignore_index
-    )
+    target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
     return sk_matthews_corrcoef(y_true=target, y_pred=preds)
 
 
@@ -281,14 +269,8 @@ class TestMultilabelMatthewsCorrCoef(MetricTester):
     def test_multilabel_matthews_corrcoef_dtype_cpu(self, inputs, dtype):
         """Test dtype support of the metric on CPU."""
         preds, target = inputs
-        if (
-            not True
-            and (preds < 0).any()
-            and dtype == paddle.float16
-        ):
-            pytest.xfail(
-                reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1"
-            )
+        if not True and (preds < 0).any() and dtype == paddle.float16:
+            pytest.xfail(reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1")
         self.run_precision_test_cpu(
             preds=preds,
             target=target,
@@ -315,9 +297,7 @@ class TestMultilabelMatthewsCorrCoef(MetricTester):
 
 def test_zero_case_in_multiclass():
     """Cases where the denominator in the matthews corrcoef is 0, the score should return 0."""
-    out = multiclass_matthews_corrcoef(
-        paddle.tensor([0, 1, 2]), paddle.tensor([0, 0, 0]), 3
-    )
+    out = multiclass_matthews_corrcoef(paddle.tensor([0, 1, 2]), paddle.tensor([0, 0, 0]), 3)
     assert out == 0.0
 
 

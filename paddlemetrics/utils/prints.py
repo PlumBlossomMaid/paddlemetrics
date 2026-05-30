@@ -20,9 +20,7 @@ def rank_zero_only(fn: Callable) -> Callable:
     return wrapped_fn
 
 
-rank_zero_only.rank = getattr(
-    rank_zero_only, "rank", int(os.environ.get("LOCAL_RANK", 0))
-)
+rank_zero_only.rank = getattr(rank_zero_only, "rank", int(os.environ.get("LOCAL_RANK", 0)))
 
 
 def _warn(*args: Any, **kwargs: Any) -> None:

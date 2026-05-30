@@ -3,13 +3,12 @@ from functools import partial
 import paddle
 import pytest
 from sklearn.metrics import mean_tweedie_deviance
+
+from paddlemetrics.functional.regression.tweedie_deviance import tweedie_deviance_score
+from paddlemetrics.regression.tweedie_deviance import TweedieDevianceScore
 from unittests import BATCH_SIZE, NUM_BATCHES, _Input
 from unittests._helpers import seed_all
 from unittests._helpers.testers import MetricTester
-
-from paddlemetrics.functional.regression.tweedie_deviance import \
-    tweedie_deviance_score
-from paddlemetrics.regression.tweedie_deviance import TweedieDevianceScore
 
 seed_all(42)
 _single_target_inputs1 = _Input(
@@ -26,9 +25,7 @@ _multi_target_inputs = _Input(
 )
 
 
-def _reference_sklearn_deviance(
-    preds: paddle.Tensor, targets: paddle.Tensor, power: float
-):
+def _reference_sklearn_deviance(preds: paddle.Tensor, targets: paddle.Tensor, power: float):
     sk_preds = preds.view(-1).numpy()
     sk_target = targets.view(-1).numpy()
     return mean_tweedie_deviance(sk_target, sk_preds, power=power)
@@ -117,9 +114,7 @@ def test_error_on_different_shape(metric_class=TweedieDevianceScore):
 
 def test_error_on_invalid_inputs(metric_class=TweedieDevianceScore):
     """Test that error is raised on wrong argument combinations."""
-    with pytest.raises(
-        ValueError, match="Deviance Score is not defined for power=0.5."
-    ):
+    with pytest.raises(ValueError, match="Deviance Score is not defined for power=0.5."):
         metric_class(power=0.5)
     metric = metric_class(power=1)
     with pytest.raises(

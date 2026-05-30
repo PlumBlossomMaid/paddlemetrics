@@ -17,8 +17,7 @@ from paddlemetrics.regression.pearson import PearsonCorrCoef
 from paddlemetrics.regression.r2 import R2Score
 from paddlemetrics.regression.rse import RelativeSquaredError
 from paddlemetrics.regression.spearman import SpearmanCorrCoef
-from paddlemetrics.regression.symmetric_mape import \
-    SymmetricMeanAbsolutePercentageError
+from paddlemetrics.regression.symmetric_mape import SymmetricMeanAbsolutePercentageError
 from paddlemetrics.regression.tweedie_deviance import TweedieDevianceScore
 from paddlemetrics.regression.wmape import WeightedMeanAbsolutePercentageError
 

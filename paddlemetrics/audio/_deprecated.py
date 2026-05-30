@@ -3,10 +3,8 @@ from typing import Any, Callable, Optional
 from typing_extensions import Literal
 
 from paddlemetrics.audio.pit import PermutationInvariantTraining
-from paddlemetrics.audio.sdr import (ScaleInvariantSignalDistortionRatio,
-                                    SignalDistortionRatio)
-from paddlemetrics.audio.snr import (ScaleInvariantSignalNoiseRatio,
-                                    SignalNoiseRatio)
+from paddlemetrics.audio.sdr import ScaleInvariantSignalDistortionRatio, SignalDistortionRatio
+from paddlemetrics.audio.snr import ScaleInvariantSignalNoiseRatio, SignalNoiseRatio
 from paddlemetrics.utils.prints import _deprecated_root_import_class
 
 
@@ -29,12 +27,10 @@ class _PermutationInvariantTraining(PermutationInvariantTraining):
         metric_func: Callable,
         mode: Literal["speaker-wise", "permutation-wise"] = "speaker-wise",
         eval_func: Literal["max", "min"] = "max",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         _deprecated_root_import_class("PermutationInvariantTraining", "audio")
-        super().__init__(
-            metric_func=metric_func, mode=mode, eval_func=eval_func, **kwargs
-        )
+        super().__init__(metric_func=metric_func, mode=mode, eval_func=eval_func, **kwargs)
 
 
 class _ScaleInvariantSignalDistortionRatio(ScaleInvariantSignalDistortionRatio):
@@ -97,15 +93,11 @@ class _SignalDistortionRatio(SignalDistortionRatio):
         filter_length: int = 512,
         zero_mean: bool = False,
         load_diag: Optional[float] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         _deprecated_root_import_class("SignalDistortionRatio", "audio")
         super().__init__(
-            use_cg_iter=use_cg_iter,
-            filter_length=filter_length,
-            zero_mean=zero_mean,
-            load_diag=load_diag,
-            **kwargs
+            use_cg_iter=use_cg_iter, filter_length=filter_length, zero_mean=zero_mean, load_diag=load_diag, **kwargs
         )
 
 

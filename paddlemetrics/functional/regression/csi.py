@@ -27,9 +27,7 @@ def _critical_success_index_update(
     if keep_sequence_dim is None:
         sum_dims = None
     elif not 0 <= keep_sequence_dim < preds.ndim:
-        raise ValueError(
-            f"Expected keep_sequence dim to be in range [0, {preds.ndim}] but got {keep_sequence_dim}"
-        )
+        raise ValueError(f"Expected keep_sequence dim to be in range [0, {preds.ndim}] but got {keep_sequence_dim}")
     else:
         sum_dims = tuple(i for i in range(preds.ndim) if i != keep_sequence_dim)
     preds_bin = (preds >= threshold).bool()
@@ -41,9 +39,7 @@ def _critical_success_index_update(
     else:
         hits = paddle.sum(preds_bin & target_bin, axis=sum_dims).int()
         misses = paddle.sum((preds_bin ^ target_bin) & target_bin, axis=sum_dims).int()
-        false_alarms = paddle.sum(
-            (preds_bin ^ target_bin) & preds_bin, axis=sum_dims
-        ).int()
+        false_alarms = paddle.sum((preds_bin ^ target_bin) & preds_bin, axis=sum_dims).int()
     return hits, misses, false_alarms
 
 
@@ -102,7 +98,5 @@ def critical_success_index(
         tensor([0.3333, 0.3333])
 
     """
-    hits, misses, false_alarms = _critical_success_index_update(
-        preds, target, threshold, keep_sequence_dim
-    )
+    hits, misses, false_alarms = _critical_success_index_update(preds, target, threshold, keep_sequence_dim)
     return _critical_success_index_compute(hits, misses, false_alarms)

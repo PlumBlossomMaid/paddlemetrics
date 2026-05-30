@@ -2,12 +2,9 @@ from collections.abc import Sequence
 from typing import Any, List, Optional, Union
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
-from paddlemetrics.functional.image.ssim import (_multiscale_ssim_update,
-                                                _ssim_check_inputs,
-                                                _ssim_update)
+from paddlemetrics.functional.image.ssim import _multiscale_ssim_update, _ssim_check_inputs, _ssim_update
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.data import dim_zero_cat
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
@@ -83,9 +80,7 @@ class StructuralSimilarityIndexMeasure(Metric):
         gaussian_kernel: bool = True,
         sigma: Union[float, Sequence[float]] = 1.5,
         kernel_size: Union[int, Sequence[int]] = 11,
-        reduction: Literal[
-            "elementwise_mean", "sum", "none", None
-        ] = "elementwise_mean",
+        reduction: Literal["elementwise_mean", "sum", "none", None] = "elementwise_mean",
         data_range: Optional[Union[float, tuple[float, float]]] = None,
         k1: float = 0.01,
         k2: float = 0.03,
@@ -96,13 +91,9 @@ class StructuralSimilarityIndexMeasure(Metric):
         super().__init__(**kwargs)
         valid_reduction = "elementwise_mean", "sum", "none", None
         if reduction not in valid_reduction:
-            raise ValueError(
-                f"Argument `reduction` must be one of {valid_reduction}, but got {reduction}"
-            )
+            raise ValueError(f"Argument `reduction` must be one of {valid_reduction}, but got {reduction}")
         if reduction in ("elementwise_mean", "sum"):
-            self.add_state(
-                "similarity", default=paddle.tensor(0.0), dist_reduce_fx="sum"
-            )
+            self.add_state("similarity", default=paddle.tensor(0.0), dist_reduce_fx="sum")
         else:
             self.add_state("similarity", default=[], dist_reduce_fx=None)
         self.add_state("total", default=paddle.tensor(0.0), dist_reduce_fx="sum")
@@ -139,32 +130,24 @@ class StructuralSimilarityIndexMeasure(Metric):
             similarity = similarity_pack
         if self.return_contrast_sensitivity or self.return_full_image:
             if not isinstance(self.image_return, list):
-                raise TypeError(
-                    "Expected `self.image_return` to be a list when returning images."
-                )
+                raise TypeError("Expected `self.image_return` to be a list when returning images.")
             self.image_return.append(image)
         if self.reduction in ("elementwise_mean", "sum"):
             if not isinstance(self.similarity, paddle.Tensor):
-                raise TypeError(
-                    "Expected `self.similarity` to be a Tensor for reductions."
-                )
+                raise TypeError("Expected `self.similarity` to be a Tensor for reductions.")
             self.similarity += similarity.sum()
             if not isinstance(self.total, paddle.Tensor):
                 raise TypeError("Expected `self.total` to be a Tensor.")
             self.total += preds.shape[0]
         else:
             if not isinstance(self.similarity, list):
-                raise TypeError(
-                    "Expected `self.similarity` to be a list when reduction='none'."
-                )
+                raise TypeError("Expected `self.similarity` to be a list when reduction='none'.")
             self.similarity.append(similarity)
 
     def compute(self) -> Union[paddle.Tensor, tuple[paddle.Tensor, paddle.Tensor]]:
         """Compute SSIM over state."""
         if self.reduction == "elementwise_mean":
-            if isinstance(self.similarity, paddle.Tensor) and isinstance(
-                self.total, paddle.Tensor
-            ):
+            if isinstance(self.similarity, paddle.Tensor) and isinstance(self.total, paddle.Tensor):
                 similarity = self.similarity / self.total
             else:
                 raise TypeError(
@@ -172,23 +155,17 @@ class StructuralSimilarityIndexMeasure(Metric):
                 )
         elif self.reduction == "sum":
             if not isinstance(self.similarity, paddle.Tensor):
-                raise TypeError(
-                    "Expected `self.similarity` to be a Tensor for sum reduction."
-                )
+                raise TypeError("Expected `self.similarity` to be a Tensor for sum reduction.")
             similarity = self.similarity
         elif isinstance(self.similarity, list):
             similarity = dim_zero_cat(self.similarity)
         else:
-            raise TypeError(
-                "Expected `self.similarity` to be a list for reduction='none'."
-            )
+            raise TypeError("Expected `self.similarity` to be a list for reduction='none'.")
         if self.return_contrast_sensitivity or self.return_full_image:
             if isinstance(self.image_return, list):
                 image_return = dim_zero_cat(self.image_return)
             else:
-                raise TypeError(
-                    "Expected `self.image_return` to be a list when returning images."
-                )
+                raise TypeError("Expected `self.image_return` to be a list when returning images.")
             return similarity, image_return
         return similarity
 
@@ -315,9 +292,7 @@ class MultiScaleStructuralSimilarityIndexMeasure(Metric):
         gaussian_kernel: bool = True,
         kernel_size: Union[int, Sequence[int]] = 11,
         sigma: Union[float, Sequence[float]] = 1.5,
-        reduction: Literal[
-            "elementwise_mean", "sum", "none", None
-        ] = "elementwise_mean",
+        reduction: Literal["elementwise_mean", "sum", "none", None] = "elementwise_mean",
         data_range: Optional[Union[float, tuple[float, float]]] = None,
         k1: float = 0.01,
         k2: float = 0.03,
@@ -328,13 +303,9 @@ class MultiScaleStructuralSimilarityIndexMeasure(Metric):
         super().__init__(**kwargs)
         valid_reduction = "elementwise_mean", "sum", "none", None
         if reduction not in valid_reduction:
-            raise ValueError(
-                f"Argument `reduction` must be one of {valid_reduction}, but got {reduction}"
-            )
+            raise ValueError(f"Argument `reduction` must be one of {valid_reduction}, but got {reduction}")
         if reduction in ("elementwise_mean", "sum"):
-            self.add_state(
-                "similarity", default=paddle.tensor(0.0), dist_reduce_fx="sum"
-            )
+            self.add_state("similarity", default=paddle.tensor(0.0), dist_reduce_fx="sum")
         else:
             self.add_state("similarity", default=[], dist_reduce_fx=None)
         self.add_state("total", default=paddle.tensor(0.0), dist_reduce_fx="sum")
@@ -343,8 +314,7 @@ class MultiScaleStructuralSimilarityIndexMeasure(Metric):
                 f"Argument `kernel_size` expected to be an sequence or an int, or a single int. Got {kernel_size}"
             )
         if isinstance(kernel_size, Sequence) and (
-            len(kernel_size) not in (2, 3)
-            or not all(isinstance(ks, int) for ks in kernel_size)
+            len(kernel_size) not in (2, 3) or not all(isinstance(ks, int) for ks in kernel_size)
         ):
             raise ValueError(
                 f"Argument `kernel_size` expected to be an sequence of size 2 or 3 where each element is an int, or a single int. Got {kernel_size}"
@@ -358,15 +328,11 @@ class MultiScaleStructuralSimilarityIndexMeasure(Metric):
         self.k2 = k2
         if not isinstance(betas, tuple):
             raise ValueError("Argument `betas` is expected to be of a type tuple.")
-        if isinstance(betas, tuple) and not all(
-            isinstance(beta, float) for beta in betas
-        ):
+        if isinstance(betas, tuple) and not all(isinstance(beta, float) for beta in betas):
             raise ValueError("Argument `betas` is expected to be a tuple of floats.")
         self.betas = betas
         if normalize and normalize not in ("relu", "simple"):
-            raise ValueError(
-                "Argument `normalize` to be expected either `None` or one of 'relu' or 'simple'"
-            )
+            raise ValueError("Argument `normalize` to be expected either `None` or one of 'relu' or 'simple'")
         self.normalize = normalize
 
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
@@ -386,43 +352,29 @@ class MultiScaleStructuralSimilarityIndexMeasure(Metric):
         )
         if self.reduction in ("none", None):
             if not isinstance(self.similarity, list):
-                raise TypeError(
-                    "Expected `self.similarity` to be a list for reduction='none'."
-                )
+                raise TypeError("Expected `self.similarity` to be a list for reduction='none'.")
             self.similarity.append(similarity)
         else:
             if not isinstance(self.similarity, paddle.Tensor):
-                raise TypeError(
-                    "Expected `self.similarity` to be a Tensor for elementwise_mean or sum reduction."
-                )
+                raise TypeError("Expected `self.similarity` to be a Tensor for elementwise_mean or sum reduction.")
             self.similarity += similarity.sum()
         if not isinstance(self.total, paddle.Tensor):
             raise TypeError("Expected `self.total` to be a Tensor.")
-        self.total += paddle.tensor(
-            preds.shape[0], dtype=self.total.dtype, device=self.total.device
-        )
+        self.total += paddle.tensor(preds.shape[0], dtype=self.total.dtype, device=self.total.device)
 
     def compute(self) -> paddle.Tensor:
         """Compute MS-SSIM over state."""
         if self.reduction in ("none", None):
             if isinstance(self.similarity, list):
                 return dim_zero_cat(self.similarity)
-            raise TypeError(
-                "Expected `self.similarity` to be a list for reduction='none'."
-            )
+            raise TypeError("Expected `self.similarity` to be a list for reduction='none'.")
         if self.reduction == "sum":
             if isinstance(self.similarity, paddle.Tensor):
                 return self.similarity
-            raise TypeError(
-                "Expected `self.similarity` to be a Tensor for sum reduction."
-            )
-        if isinstance(self.similarity, paddle.Tensor) and isinstance(
-            self.total, paddle.Tensor
-        ):
+            raise TypeError("Expected `self.similarity` to be a Tensor for sum reduction.")
+        if isinstance(self.similarity, paddle.Tensor) and isinstance(self.total, paddle.Tensor):
             return self.similarity / self.total
-        raise TypeError(
-            "Expected `self.similarity` and `self.total` to be Tensors for elementwise_mean reduction."
-        )
+        raise TypeError("Expected `self.similarity` and `self.total` to be Tensors for elementwise_mean reduction.")
 
     def plot(
         self,

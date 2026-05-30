@@ -4,8 +4,7 @@ from typing import Any, Optional, Union
 import paddle
 from paddle import Tensor
 
-from paddlemetrics.functional.regression.mse import (
-    _mean_squared_error_compute, _mean_squared_error_update)
+from paddlemetrics.functional.regression.mse import _mean_squared_error_compute, _mean_squared_error_update
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -66,38 +65,26 @@ class MeanSquaredError(Metric):
     sum_squared_error: Tensor
     total: Tensor
 
-    def __init__(
-        self, squared: bool = True, num_outputs: int = 1, **kwargs: Any
-    ) -> None:
+    def __init__(self, squared: bool = True, num_outputs: int = 1, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         if not isinstance(squared, bool):
-            raise ValueError(
-                f"Expected argument `squared` to be a boolean but got {squared}"
-            )
+            raise ValueError(f"Expected argument `squared` to be a boolean but got {squared}")
         self.squared = squared
         if not (isinstance(num_outputs, int) and num_outputs > 0):
-            raise ValueError(
-                f"Expected num_outputs to be a positive integer but got {num_outputs}"
-            )
+            raise ValueError(f"Expected num_outputs to be a positive integer but got {num_outputs}")
         self.num_outputs = num_outputs
-        self.add_state(
-            "sum_squared_error", default=paddle.zeros(num_outputs), dist_reduce_fx="sum"
-        )
+        self.add_state("sum_squared_error", default=paddle.zeros(num_outputs), dist_reduce_fx="sum")
         self.add_state("total", default=paddle.tensor(0), dist_reduce_fx="sum")
 
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update state with predictions and targets."""
-        sum_squared_error, num_obs = _mean_squared_error_update(
-            preds, target, num_outputs=self.num_outputs
-        )
+        sum_squared_error, num_obs = _mean_squared_error_update(preds, target, num_outputs=self.num_outputs)
         self.sum_squared_error += sum_squared_error
         self.total += num_obs
 
     def compute(self) -> paddle.Tensor:
         """Compute mean squared error over state."""
-        return _mean_squared_error_compute(
-            self.sum_squared_error, self.total, squared=self.squared
-        )
+        return _mean_squared_error_compute(self.sum_squared_error, self.total, squared=self.squared)
 
     def plot(
         self,

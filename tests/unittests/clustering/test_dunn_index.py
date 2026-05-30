@@ -3,22 +3,19 @@ from itertools import combinations
 
 import numpy as np
 import pytest
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
-from unittests.clustering._inputs import (_single_target_intrinsic1,
-                                          _single_target_intrinsic2)
 
 from paddlemetrics.clustering.dunn_index import DunnIndex
 from paddlemetrics.functional.clustering.dunn_index import dunn_index
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
+from unittests.clustering._inputs import _single_target_intrinsic1, _single_target_intrinsic2
 
 seed_all(42)
 
 
 def _reference_np_dunn_index(data, labels, p):
     unique_labels, inverse_indices = np.unique(labels, return_inverse=True)
-    clusters = [
-        data[inverse_indices == label_idx] for label_idx in range(len(unique_labels))
-    ]
+    clusters = [data[inverse_indices == label_idx] for label_idx in range(len(unique_labels))]
     centroids = [c.mean(axis=0) for c in clusters]
     intercluster_distance = np.linalg.norm(
         np.stack([(a - b) for a, b in combinations(centroids, 2)], axis=0),
@@ -26,10 +23,7 @@ def _reference_np_dunn_index(data, labels, p):
         axis=1,
     )
     max_intracluster_distance = np.stack(
-        [
-            np.linalg.norm(ci - mu, ord=p, axis=1).max()
-            for ci, mu in zip(clusters, centroids)
-        ]
+        [np.linalg.norm(ci - mu, ord=p, axis=1).max() for ci, mu in zip(clusters, centroids)]
     )
     return intercluster_distance.min() / max_intracluster_distance.max()
 

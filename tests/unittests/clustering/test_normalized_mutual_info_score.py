@@ -3,15 +3,13 @@ from functools import partial
 import paddle
 import pytest
 from sklearn.metrics import normalized_mutual_info_score as sklearn_nmi
-from unittests import BATCH_SIZE, NUM_CLASSES
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
-from unittests.clustering._inputs import (_float_inputs_extrinsic,
-                                          _single_target_extrinsic1,
-                                          _single_target_extrinsic2)
 
 from paddlemetrics.clustering import NormalizedMutualInfoScore
 from paddlemetrics.functional.clustering import normalized_mutual_info_score
+from unittests import BATCH_SIZE, NUM_CLASSES
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
+from unittests.clustering._inputs import _float_inputs_extrinsic, _single_target_extrinsic1, _single_target_extrinsic2
 
 seed_all(42)
 
@@ -41,9 +39,7 @@ class TestNormalizedMutualInfoScore(MetricTester):
             metric_args={"average_method": average_method},
         )
 
-    def test_normalized_mutual_info_score_functional(
-        self, preds, target, average_method
-    ):
+    def test_normalized_mutual_info_score_functional(self, preds, target, average_method):
         """Test functional implementation of metric."""
         self.run_functional_metric_test(
             preds=preds,

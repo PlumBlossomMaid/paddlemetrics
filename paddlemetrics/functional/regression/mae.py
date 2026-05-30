@@ -1,7 +1,6 @@
 from typing import Union
 
 import paddle
-from paddle import Tensor
 
 from paddlemetrics.utils.checks import _check_same_shape
 
@@ -29,9 +28,7 @@ def _mean_absolute_error_update(
     return sum_abs_error, target.shape[0]
 
 
-def _mean_absolute_error_compute(
-    sum_abs_error: paddle.Tensor, num_obs: Union[int, paddle.Tensor]
-) -> paddle.Tensor:
+def _mean_absolute_error_compute(sum_abs_error: paddle.Tensor, num_obs: Union[int, paddle.Tensor]) -> paddle.Tensor:
     """Compute Mean Absolute Error.
 
     Args:
@@ -49,9 +46,7 @@ def _mean_absolute_error_compute(
     return sum_abs_error / num_obs
 
 
-def mean_absolute_error(
-    preds: paddle.Tensor, target: paddle.Tensor, num_outputs: int = 1
-) -> paddle.Tensor:
+def mean_absolute_error(preds: paddle.Tensor, target: paddle.Tensor, num_outputs: int = 1) -> paddle.Tensor:
     """Compute mean absolute error.
 
     Args:
@@ -70,7 +65,5 @@ def mean_absolute_error(
         tensor(0.2500)
 
     """
-    sum_abs_error, num_obs = _mean_absolute_error_update(
-        preds, target, num_outputs=num_outputs
-    )
+    sum_abs_error, num_obs = _mean_absolute_error_update(preds, target, num_outputs=num_outputs)
     return _mean_absolute_error_compute(sum_abs_error, num_obs)

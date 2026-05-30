@@ -5,11 +5,12 @@ import paddle
 from typing_extensions import Literal
 
 from paddlemetrics.classification.base import _ClassificationTaskWrapper
-from paddlemetrics.classification.confusion_matrix import (
-    BinaryConfusionMatrix, MulticlassConfusionMatrix)
+from paddlemetrics.classification.confusion_matrix import BinaryConfusionMatrix, MulticlassConfusionMatrix
 from paddlemetrics.functional.classification.cohen_kappa import (
-    _binary_cohen_kappa_arg_validation, _cohen_kappa_reduce,
-    _multiclass_cohen_kappa_arg_validation)
+    _binary_cohen_kappa_arg_validation,
+    _cohen_kappa_reduce,
+    _multiclass_cohen_kappa_arg_validation,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.enums import ClassificationTaskNoMultilabel
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
@@ -91,9 +92,7 @@ class BinaryCohenKappa(BinaryConfusionMatrix):
         validate_args: bool = True,
         **kwargs: Any,
     ) -> None:
-        super().__init__(
-            threshold, ignore_index, normalize=None, validate_args=False, **kwargs
-        )
+        super().__init__(threshold, ignore_index, normalize=None, validate_args=False, **kwargs)
         if validate_args:
             _binary_cohen_kappa_arg_validation(threshold, ignore_index, weights)
         self.weights = weights
@@ -224,9 +223,7 @@ class MulticlassCohenKappa(MulticlassConfusionMatrix):
         validate_args: bool = True,
         **kwargs: Any,
     ) -> None:
-        super().__init__(
-            num_classes, ignore_index, normalize=None, validate_args=False, **kwargs
-        )
+        super().__init__(num_classes, ignore_index, normalize=None, validate_args=False, **kwargs)
         if validate_args:
             _multiclass_cohen_kappa_arg_validation(num_classes, ignore_index, weights)
         self.weights = weights
@@ -331,8 +328,6 @@ class CohenKappa(_ClassificationTaskWrapper):
             return BinaryCohenKappa(threshold, **kwargs)
         if task == ClassificationTaskNoMultilabel.MULTICLASS:
             if not isinstance(num_classes, int):
-                raise ValueError(
-                    f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-                )
+                raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
             return MulticlassCohenKappa(num_classes, **kwargs)
         raise ValueError(f"Task {task} not supported!")

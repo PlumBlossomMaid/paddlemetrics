@@ -5,8 +5,11 @@ import paddle
 from typing_extensions import Literal
 
 from paddlemetrics.functional.regression.kendall import (
-    _kendall_corrcoef_compute, _kendall_corrcoef_update, _MetricVariant,
-    _TestAlternative)
+    _kendall_corrcoef_compute,
+    _kendall_corrcoef_update,
+    _MetricVariant,
+    _TestAlternative,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.data import dim_zero_cat
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
@@ -115,17 +118,11 @@ class KendallRankCorrCoef(Metric):
     ) -> None:
         super().__init__(**kwargs)
         if not isinstance(t_test, bool):
-            raise ValueError(
-                f"Argument `t_test` is expected to be of a type `bool`, but got {type(t_test)}."
-            )
+            raise ValueError(f"Argument `t_test` is expected to be of a type `bool`, but got {type(t_test)}.")
         if t_test and alternative is None:
-            raise ValueError(
-                "Argument `alternative` is required if `t_test=True` but got `None`."
-            )
+            raise ValueError("Argument `alternative` is required if `t_test=True` but got `None`.")
         self.variant = _MetricVariant.from_str(str(variant))
-        self.alternative = (
-            _TestAlternative.from_str(str(alternative)) if t_test else None
-        )
+        self.alternative = _TestAlternative.from_str(str(alternative)) if t_test else None
         self.num_outputs = num_outputs
         self.add_state("preds", [], dist_reduce_fx="cat")
         self.add_state("target", [], dist_reduce_fx="cat")
@@ -140,9 +137,7 @@ class KendallRankCorrCoef(Metric):
         """Compute Kendall rank correlation coefficient, and optionally p-value of corresponding statistical test."""
         preds = dim_zero_cat(self.preds)
         target = dim_zero_cat(self.target)
-        tau, p_value = _kendall_corrcoef_compute(
-            preds, target, self.variant, self.alternative
-        )
+        tau, p_value = _kendall_corrcoef_compute(preds, target, self.variant, self.alternative)
         if p_value is not None:
             return tau, p_value
         return tau

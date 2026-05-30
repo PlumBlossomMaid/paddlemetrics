@@ -53,9 +53,7 @@ def _ensure_nltk_punkt_is_downloaded() -> None:
 def _split_sentence(x: str) -> Sequence[str]:
     """Split sentence to get rougeLsum scores matching published rougeL scores for BART and PEGASUS."""
     if not _NLTK_AVAILABLE:
-        raise ModuleNotFoundError(
-            "ROUGE-Lsum calculation requires that `nltk` is installed. Use `pip install nltk`."
-        )
+        raise ModuleNotFoundError("ROUGE-Lsum calculation requires that `nltk` is installed. Use `pip install nltk`.")
     import nltk
 
     _ensure_nltk_punkt_is_downloaded()
@@ -63,9 +61,7 @@ def _split_sentence(x: str) -> Sequence[str]:
     return nltk.sent_tokenize(x)
 
 
-def _compute_metrics(
-    hits_or_lcs: int, pred_len: int, target_len: int
-) -> dict[str, paddle.Tensor]:
+def _compute_metrics(hits_or_lcs: int, pred_len: int, target_len: int) -> dict[str, paddle.Tensor]:
     """Compute overall metrics.
 
     This function computes precision, recall and F1 score based on hits/lcs, the length of lists of tokenizer
@@ -146,9 +142,7 @@ def _backtracked_lcs(
     return backtracked_lcs
 
 
-def _union_lcs(
-    pred_tokens_list: Sequence[Sequence[str]], target_tokens: Sequence[str]
-) -> Sequence[str]:
+def _union_lcs(pred_tokens_list: Sequence[Sequence[str]], target_tokens: Sequence[str]) -> Sequence[str]:
     """Find union LCS between a target sentence and iterable of predicted tokens.
 
     Args:
@@ -157,22 +151,16 @@ def _union_lcs(
 
     """
 
-    def lcs_ind(
-        pred_tokens: Sequence[str], target_tokens: Sequence[str]
-    ) -> Sequence[int]:
+    def lcs_ind(pred_tokens: Sequence[str], target_tokens: Sequence[str]) -> Sequence[int]:
         """Return one of the longest of longest common subsequence via backtracked lcs table."""
-        lcs_table: Sequence[Sequence[int]] = _lcs(
-            pred_tokens, target_tokens, return_full_table=True
-        )
+        lcs_table: Sequence[Sequence[int]] = _lcs(pred_tokens, target_tokens, return_full_table=True)
         return _backtracked_lcs(lcs_table, pred_tokens, target_tokens)
 
     def find_union(lcs_tables: Sequence[Sequence[int]]) -> Sequence[int]:
         """Find union LCS given a list of LCS."""
         return sorted(set().union(*lcs_tables))
 
-    lcs_tables = [
-        lcs_ind(pred_tokens, target_tokens) for pred_tokens in pred_tokens_list
-    ]
+    lcs_tables = [lcs_ind(pred_tokens, target_tokens) for pred_tokens in pred_tokens_list]
     return [target_tokens[i] for i in find_union(lcs_tables)]
 
 
@@ -198,20 +186,14 @@ def _normalize_and_tokenize_text(
             This function must take a ``str`` and return ``Sequence[str]``
 
     """
-    text = (
-        normalizer(text)
-        if callable(normalizer)
-        else re.sub("[^a-z0-9]+", " ", text.lower())
-    )
+    text = normalizer(text) if callable(normalizer) else re.sub("[^a-z0-9]+", " ", text.lower())
     tokens = tokenizer(text) if callable(tokenizer) else re.split("\\s+", text)
     if stemmer:
         tokens = [(stemmer.stem(x) if len(x) > 3 else x) for x in tokens]
     return [x for x in tokens if isinstance(x, str) and len(x) > 0]
 
 
-def _rouge_n_score(
-    pred: Sequence[str], target: Sequence[str], n_gram: int
-) -> dict[str, paddle.Tensor]:
+def _rouge_n_score(pred: Sequence[str], target: Sequence[str], n_gram: int) -> dict[str, paddle.Tensor]:
     """Compute precision, recall and F1 score for the Rouge-N metric.
 
     Args:
@@ -227,9 +209,7 @@ def _rouge_n_score(
             ngrams[ngram] += 1
         return ngrams
 
-    pred_ngrams, target_ngrams = _create_ngrams(pred, n_gram), _create_ngrams(
-        target, n_gram
-    )
+    pred_ngrams, target_ngrams = _create_ngrams(pred, n_gram), _create_ngrams(target, n_gram)
     pred_len, target_len = sum(pred_ngrams.values()), sum(target_ngrams.values())
     if 0 in (pred_len, target_len):
         return {
@@ -241,9 +221,7 @@ def _rouge_n_score(
     return _compute_metrics(hits, max(pred_len, 1), max(target_len, 1))
 
 
-def _rouge_l_score(
-    pred: Sequence[str], target: Sequence[str]
-) -> dict[str, paddle.Tensor]:
+def _rouge_l_score(pred: Sequence[str], target: Sequence[str]) -> dict[str, paddle.Tensor]:
     """Compute precision, recall and F1 score for the Rouge-L metric.
 
     Args:
@@ -262,9 +240,7 @@ def _rouge_l_score(
     return _compute_metrics(lcs, pred_len, target_len)
 
 
-def _rouge_lsum_score(
-    pred: Sequence[Sequence[str]], target: Sequence[Sequence[str]]
-) -> dict[str, paddle.Tensor]:
+def _rouge_lsum_score(pred: Sequence[Sequence[str]], target: Sequence[Sequence[str]]) -> dict[str, paddle.Tensor]:
     """Compute precision, recall and F1 score for the Rouge-LSum metric.
 
     More information can be found in Section 3.2 of the referenced paper [1]. This implementation follow the official
@@ -350,9 +326,7 @@ def _rouge_score_update(
                 'recall': tensor(0.5000)}]}
 
     """
-    results: dict[Union[int, str], list[dict[str, paddle.Tensor]]] = {
-        rouge_key: [] for rouge_key in rouge_keys_values
-    }
+    results: dict[Union[int, str], list[dict[str, paddle.Tensor]]] = {rouge_key: [] for rouge_key in rouge_keys_values}
     for pred_raw, target_raw in zip(preds, target):
         result_inner: dict[Union[int, str], dict[str, paddle.Tensor]] = {
             rouge_key: {} for rouge_key in rouge_keys_values
@@ -364,20 +338,14 @@ def _rouge_score_update(
         pred = _normalize_and_tokenize_text(pred_raw, stemmer, normalizer, tokenizer)
         if "Lsum" in rouge_keys_values:
             pred_lsum = [
-                _normalize_and_tokenize_text(
-                    pred_sentence, stemmer, normalizer, tokenizer
-                )
+                _normalize_and_tokenize_text(pred_sentence, stemmer, normalizer, tokenizer)
                 for pred_sentence in _split_sentence(pred_raw)
             ]
         for target_raw_inner in target_raw:
-            tgt = _normalize_and_tokenize_text(
-                target_raw_inner, stemmer, normalizer, tokenizer
-            )
+            tgt = _normalize_and_tokenize_text(target_raw_inner, stemmer, normalizer, tokenizer)
             if "Lsum" in rouge_keys_values:
                 target_lsum = [
-                    _normalize_and_tokenize_text(
-                        tgt_sentence, stemmer, normalizer, tokenizer
-                    )
+                    _normalize_and_tokenize_text(tgt_sentence, stemmer, normalizer, tokenizer)
                     for tgt_sentence in _split_sentence(target_raw_inner)
                 ]
             for rouge_key in rouge_keys_values:
@@ -392,9 +360,7 @@ def _rouge_score_update(
             list_results.append(result_inner.copy())
         if accumulate == "best":
             for k in rouge_keys_values:
-                index = paddle.argmax(
-                    paddle.tensor([s[k]["fmeasure"] for s in list_results])
-                )
+                index = paddle.argmax(paddle.tensor([s[k]["fmeasure"] for s in list_results]))
                 results[k].append(list_results[index][k])
         elif accumulate == "avg":
             new_result_avg: dict[Union[int, str], dict[str, paddle.Tensor]] = {
@@ -408,17 +374,14 @@ def _rouge_score_update(
                             _dict_metric_score_batch[_type] = []
                         _dict_metric_score_batch[_type].append(value)
                 new_result_avg[rouge_key] = {
-                    _type: paddle.tensor(_dict_metric_score_batch[_type]).mean()
-                    for _type in _dict_metric_score_batch
+                    _type: paddle.tensor(_dict_metric_score_batch[_type]).mean() for _type in _dict_metric_score_batch
                 }
             for rouge_key in rouge_keys_values:
                 results[rouge_key].append(new_result_avg[rouge_key])
     return results
 
 
-def _rouge_score_compute(
-    sentence_results: dict[str, List[paddle.Tensor]]
-) -> dict[str, paddle.Tensor]:
+def _rouge_score_compute(sentence_results: dict[str, List[paddle.Tensor]]) -> dict[str, paddle.Tensor]:
     """Compute the combined ROUGE metric for all the input set of predicted and target sentences.
 
     Args:
@@ -503,18 +466,14 @@ def rouge_score(
     """
     if use_stemmer:
         if not _NLTK_AVAILABLE:
-            raise ModuleNotFoundError(
-                "Stemmer requires that `nltk` is installed. Use `pip install nltk`."
-            )
+            raise ModuleNotFoundError("Stemmer requires that `nltk` is installed. Use `pip install nltk`.")
         import nltk
     stemmer = nltk.stem.porter.PorterStemmer() if use_stemmer else None
     if not isinstance(rouge_keys, tuple):
         rouge_keys = (rouge_keys,)
     for key in rouge_keys:
         if key not in ALLOWED_ROUGE_KEYS:
-            raise ValueError(
-                f"Got unknown rouge key {key}. Expected to be one of {list(ALLOWED_ROUGE_KEYS.keys())}"
-            )
+            raise ValueError(f"Got unknown rouge key {key}. Expected to be one of {list(ALLOWED_ROUGE_KEYS.keys())}")
     rouge_keys_values = [ALLOWED_ROUGE_KEYS[key] for key in rouge_keys]
     if isinstance(target, list) and all(isinstance(tgt, str) for tgt in target):
         target = [target] if isinstance(preds, str) else [[tgt] for tgt in target]
@@ -522,9 +481,7 @@ def rouge_score(
         preds = [preds]
     if isinstance(target, str):
         target = [[target]]
-    sentence_results: dict[
-        Union[int, str], list[dict[str, paddle.Tensor]]
-    ] = _rouge_score_update(
+    sentence_results: dict[Union[int, str], list[dict[str, paddle.Tensor]]] = _rouge_score_update(
         preds,
         target,
         rouge_keys_values,
@@ -534,9 +491,7 @@ def rouge_score(
         accumulate=accumulate,
     )
     output: dict[str, List[paddle.Tensor]] = {
-        f"rouge{rouge_key}_{tp}": []
-        for rouge_key in rouge_keys_values
-        for tp in ["fmeasure", "precision", "recall"]
+        f"rouge{rouge_key}_{tp}": [] for rouge_key in rouge_keys_values for tp in ["fmeasure", "precision", "recall"]
     }
     for rouge_key, metrics in sentence_results.items():
         for metric in metrics:

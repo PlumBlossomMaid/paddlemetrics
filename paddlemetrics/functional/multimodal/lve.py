@@ -70,5 +70,5 @@ def lip_vertex_error(
     vertices_gt = vertices_gt[:min_frames]
     diff = vertices_gt[:, mouth_map, :] - vertices_pred[:, mouth_map, :]
     sq_dist = paddle.sum(diff**2, axis=-1)
-    max_per_frame = paddle.max(sq_dist, axis=1).values
+    max_per_frame = paddle.max(sq_dist, axis=1)[0]
     return paddle.mean(max_per_frame)

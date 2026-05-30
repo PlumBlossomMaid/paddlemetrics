@@ -1,11 +1,11 @@
 from typing import Optional
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.functional.classification.confusion_matrix import (
-    _binary_confusion_matrix_arg_validation, _binary_confusion_matrix_format,
+    _binary_confusion_matrix_arg_validation,
+    _binary_confusion_matrix_format,
     _binary_confusion_matrix_tensor_validation,
     _binary_confusion_matrix_update,
     _multiclass_confusion_matrix_arg_validation,
@@ -15,7 +15,8 @@ from paddlemetrics.functional.classification.confusion_matrix import (
     _multilabel_confusion_matrix_arg_validation,
     _multilabel_confusion_matrix_format,
     _multilabel_confusion_matrix_tensor_validation,
-    _multilabel_confusion_matrix_update)
+    _multilabel_confusion_matrix_update,
+)
 from paddlemetrics.utils.enums import ClassificationTask
 
 
@@ -119,9 +120,7 @@ def binary_matthews_corrcoef(
     if validate_args:
         _binary_confusion_matrix_arg_validation(threshold, ignore_index, normalize=None)
         _binary_confusion_matrix_tensor_validation(preds, target, ignore_index)
-    preds, target = _binary_confusion_matrix_format(
-        preds, target, threshold, ignore_index
-    )
+    preds, target = _binary_confusion_matrix_format(preds, target, threshold, ignore_index)
     confmat = _binary_confusion_matrix_update(preds, target)
     return _matthews_corrcoef_reduce(confmat)
 
@@ -176,12 +175,8 @@ def multiclass_matthews_corrcoef(
 
     """
     if validate_args:
-        _multiclass_confusion_matrix_arg_validation(
-            num_classes, ignore_index, normalize=None
-        )
-        _multiclass_confusion_matrix_tensor_validation(
-            preds, target, num_classes, ignore_index
-        )
+        _multiclass_confusion_matrix_arg_validation(num_classes, ignore_index, normalize=None)
+        _multiclass_confusion_matrix_tensor_validation(preds, target, num_classes, ignore_index)
     preds, target = _multiclass_confusion_matrix_format(preds, target, ignore_index)
     confmat = _multiclass_confusion_matrix_update(preds, target, num_classes)
     return _matthews_corrcoef_reduce(confmat)
@@ -235,15 +230,9 @@ def multilabel_matthews_corrcoef(
 
     """
     if validate_args:
-        _multilabel_confusion_matrix_arg_validation(
-            num_labels, threshold, ignore_index, normalize=None
-        )
-        _multilabel_confusion_matrix_tensor_validation(
-            preds, target, num_labels, ignore_index
-        )
-    preds, target = _multilabel_confusion_matrix_format(
-        preds, target, num_labels, threshold, ignore_index
-    )
+        _multilabel_confusion_matrix_arg_validation(num_labels, threshold, ignore_index, normalize=None)
+        _multilabel_confusion_matrix_tensor_validation(preds, target, num_labels, ignore_index)
+    preds, target = _multilabel_confusion_matrix_format(preds, target, num_labels, threshold, ignore_index)
     confmat = _multilabel_confusion_matrix_update(preds, target, num_labels)
     return _matthews_corrcoef_reduce(confmat)
 
@@ -279,23 +268,13 @@ def matthews_corrcoef(
     """
     task = ClassificationTask.from_str(task)
     if task == ClassificationTask.BINARY:
-        return binary_matthews_corrcoef(
-            preds, target, threshold, ignore_index, validate_args
-        )
+        return binary_matthews_corrcoef(preds, target, threshold, ignore_index, validate_args)
     if task == ClassificationTask.MULTICLASS:
         if not isinstance(num_classes, int):
-            raise ValueError(
-                f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-            )
-        return multiclass_matthews_corrcoef(
-            preds, target, num_classes, ignore_index, validate_args
-        )
+            raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
+        return multiclass_matthews_corrcoef(preds, target, num_classes, ignore_index, validate_args)
     if task == ClassificationTask.MULTILABEL:
         if not isinstance(num_labels, int):
-            raise ValueError(
-                f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-            )
-        return multilabel_matthews_corrcoef(
-            preds, target, num_labels, threshold, ignore_index, validate_args
-        )
+            raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
+        return multilabel_matthews_corrcoef(preds, target, num_labels, threshold, ignore_index, validate_args)
     raise ValueError(f"Not handled value: {task}")

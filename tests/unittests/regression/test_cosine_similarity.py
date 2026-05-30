@@ -4,13 +4,12 @@ import numpy as np
 import paddle
 import pytest
 from sklearn.metrics.pairwise import cosine_similarity as sk_cosine
+
+from paddlemetrics.functional.regression.cosine_similarity import cosine_similarity
+from paddlemetrics.regression.cosine_similarity import CosineSimilarity
 from unittests import BATCH_SIZE, NUM_BATCHES, _Input
 from unittests._helpers import seed_all
 from unittests._helpers.testers import MetricTester
-
-from paddlemetrics.functional.regression.cosine_similarity import \
-    cosine_similarity
-from paddlemetrics.regression.cosine_similarity import CosineSimilarity
 
 seed_all(42)
 NUM_TARGETS = 5

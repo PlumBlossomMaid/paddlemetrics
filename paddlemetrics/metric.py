@@ -2,6 +2,7 @@
 
 Merged from the user's paddle-native implementation and paddlemetrics upstream features.
 """
+
 from __future__ import annotations
 
 import builtins
@@ -12,7 +13,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Optional, Union
 
 import paddle
 import paddle.distributed as dist
@@ -71,20 +72,13 @@ def _apply_to_collection(
     if isinstance(data, dtype):
         return func(data, *args, **kwargs)
     if isinstance(data, (list, tuple)):
-        return type(data)(
-            _apply_to_collection(d, dtype, func, *args, **kwargs) for d in data
-        )
+        return type(data)(_apply_to_collection(d, dtype, func, *args, **kwargs) for d in data)
     if isinstance(data, dict):
-        return {
-            k: _apply_to_collection(v, dtype, func, *args, **kwargs)
-            for k, v in data.items()
-        }
+        return {k: _apply_to_collection(v, dtype, func, *args, **kwargs) for k, v in data.items()}
     return data
 
 
-def _gather_all_tensors(
-    tensor: Tensor, group: ProcessGroup | None = None
-) -> list[Tensor]:
+def _gather_all_tensors(tensor: Tensor, group: ProcessGroup | None = None) -> list[Tensor]:
     if not dist.is_initialized():
         return [tensor]
     group = group or dist.get_world_group()
@@ -173,9 +167,7 @@ class Metric(ABC, nn.Layer):
         self._compute_with_cache = compute_with_cache
         self._compute_on_cpu = compute_on_cpu
         self._dist_sync_fn = dist_sync_fn
-        self._distributed_available_fn = (
-            distributed_available_fn or _distributed_available
-        )
+        self._distributed_available_fn = distributed_available_fn or _distributed_available
 
         # State tracking
         self._defaults: dict[str, Union[list, paddle.Tensor]] = {}
@@ -208,6 +200,14 @@ class Metric(ABC, nn.Layer):
     @property
     def name(self) -> str:
         return self._name
+
+    @property
+    def dist_sync_on_step(self) -> bool:
+        return self._dist_sync_on_step
+
+    @dist_sync_on_step.setter
+    def dist_sync_on_step(self, value: bool) -> None:
+        self._dist_sync_on_step = value
 
     @property
     def update_called(self) -> bool:
@@ -255,12 +255,8 @@ class Metric(ABC, nn.Layer):
                 ``"sum"``, ``"mean"``, ``"cat"``, ``"min"``, ``"max"``, a callable, or None.
             persistent: Whether the state is saved in ``state_dict``.
         """
-        if not isinstance(default, (paddle.Tensor, list)) or (
-            isinstance(default, list) and default
-        ):
-            raise ValueError(
-                "state variable must be a tensor or any empty list (where you can append tensors)"
-            )
+        if not isinstance(default, (paddle.Tensor, list)) or (isinstance(default, list) and default):
+            raise ValueError("state variable must be a tensor or any empty list (where you can append tensors)")
         if dist_reduce_fx == "sum":
             dist_reduce_fx = _dim_zero_sum
         elif dist_reduce_fx == "mean":
@@ -272,9 +268,7 @@ class Metric(ABC, nn.Layer):
         elif dist_reduce_fx == "cat":
             dist_reduce_fx = _dim_zero_cat
         elif dist_reduce_fx is not None and not callable(dist_reduce_fx):
-            raise ValueError(
-                "`dist_reduce_fx` must be callable or one of ['mean', 'sum', 'cat', 'min', 'max', None]"
-            )
+            raise ValueError("`dist_reduce_fx` must be callable or one of ['mean', 'sum', 'cat', 'min', 'max', None]")
         if isinstance(default, paddle.Tensor):
             default = default.contiguous()
             self.register_buffer(name, default, persistable=persistent)
@@ -302,16 +296,16 @@ class Metric(ABC, nn.Layer):
         for attr, default in self._defaults.items():
             current_val = getattr(self, attr)
             if isinstance(default, paddle.Tensor):
-                device = (
-                    current_val.place
-                    if hasattr(current_val, "place")
-                    else paddle.CPUPlace()
-                )
+                device = current_val.place if hasattr(current_val, "place") else paddle.CPUPlace()
                 setattr(self, attr, default.clone().to(device))
             else:
                 getattr(self, attr).clear()
         self._cache = None
         self._is_synced = False
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        """Direct call to forward, bypassing static graph conversion."""
+        return self.forward(*args, **kwargs)
 
     def forward(self, *args: Any, **kwargs: Any) -> Any:
         """Aggregate and evaluate batch input directly.
@@ -320,14 +314,9 @@ class Metric(ABC, nn.Layer):
         """
         if self._is_synced:
             raise RuntimeError(
-                "The Metric shouldn't be synced when performing ``forward``. "
-                "HINT: Did you forget to call ``unsync``?"
+                "The Metric shouldn't be synced when performing ``forward``. HINT: Did you forget to call ``unsync``?"
             )
-        if (
-            self.full_state_update
-            or self.full_state_update is None
-            or self._dist_sync_on_step
-        ):
+        if self.full_state_update or self.full_state_update is None or self._dist_sync_on_step:
             self._forward_cache = self._forward_full_state_update(*args, **kwargs)
         else:
             self._forward_cache = self._forward_reduce_state_update(*args, **kwargs)
@@ -387,14 +376,8 @@ class Metric(ABC, nn.Layer):
     def merge_state(self, incoming_state: Union[dict[str, Any], "Metric"]) -> None:
         """Merge incoming metric state to the current state."""
         if not isinstance(incoming_state, (dict, Metric)):
-            raise ValueError(
-                f"Expected incoming state to be a dict or Metric instance, got {type(incoming_state)}"
-            )
-        if (
-            self.full_state_update
-            or self.full_state_update is None
-            or self._dist_sync_on_step
-        ):
+            raise ValueError(f"Expected incoming state to be a dict or Metric instance, got {type(incoming_state)}")
+        if self.full_state_update or self.full_state_update is None or self._dist_sync_on_step:
             raise RuntimeError(
                 "``merge_state`` is not supported for metrics with ``full_state_update=True`` or "
                 "``dist_sync_on_step=True``. Please overwrite the merge_state method in the metric class."
@@ -412,17 +395,15 @@ class Metric(ABC, nn.Layer):
         for attr in self._defaults:
             local_state = getattr(self, attr)
             if attr not in incoming_state:
-                raise ValueError(
-                    f"Expected state variable {attr} to be present in incoming state {incoming_state}"
-                )
+                raise ValueError(f"Expected state variable {attr} to be present in incoming state {incoming_state}")
             global_state = incoming_state[attr]
             reduce_fn = self._reductions[attr]
             if reduce_fn == _dim_zero_sum:
                 reduced = global_state + local_state
             elif reduce_fn == _dim_zero_mean:
-                reduced = (
-                    (self._update_count - 1) * global_state + local_state
-                ).astype(paddle.get_default_dtype()) / self._update_count
+                reduced = ((self._update_count - 1) * global_state + local_state).astype(
+                    paddle.get_default_dtype()
+                ) / self._update_count
             elif reduce_fn == _dim_zero_max:
                 reduced = paddle.maximum(global_state, local_state)
             elif reduce_fn == _dim_zero_min:
@@ -529,9 +510,7 @@ class Metric(ABC, nn.Layer):
         prefix: str = "",
         keep_vars: bool = False,
     ) -> dict[str, Any]:
-        destination = super().state_dict(
-            destination=destination, prefix=prefix, keep_vars=keep_vars
-        )
+        destination = super().state_dict(destination=destination, prefix=prefix, keep_vars=keep_vars)
         for key in self._defaults:
             if not self._persistent.get(key, False):
                 continue
@@ -542,10 +521,7 @@ class Metric(ABC, nn.Layer):
                 if isinstance(current_val, paddle.Tensor):
                     current_val = current_val.detach()
                 elif isinstance(current_val, list):
-                    current_val = [
-                        (v.detach() if isinstance(v, paddle.Tensor) else v)
-                        for v in current_val
-                    ]
+                    current_val = [(v.detach() if isinstance(v, paddle.Tensor) else v) for v in current_val]
             destination[prefix + key] = deepcopy(current_val)
         return destination
 
@@ -553,8 +529,10 @@ class Metric(ABC, nn.Layer):
         self,
         state_dict: dict[str, Any],
         use_structured_name: bool = True,
-    ) -> None:
+    ) -> tuple[list[str], list[str]]:
         # Load buffer states
+        missing_keys = []
+        unexpected_keys = []
         for name in self._defaults:
             key = name if use_structured_name else name
             if key in state_dict:
@@ -562,6 +540,12 @@ class Metric(ABC, nn.Layer):
                     getattr(self, name).set_value(state_dict[key])
                 else:
                     setattr(self, name, state_dict[key])
+            else:
+                missing_keys.append(key)
+        for key in state_dict:
+            if key not in self._defaults:
+                unexpected_keys.append(key)
+        return missing_keys, unexpected_keys
 
     def _load_from_state_dict(
         self,
@@ -577,9 +561,7 @@ class Metric(ABC, nn.Layer):
             name = prefix + key
             if name in state_dict:
                 setattr(self, key, state_dict.pop(name))
-        super()._load_from_state_dict(
-            state_dict, prefix, local_metadata, missing_keys, unexpected_keys, error_msgs
-        )
+        super()._load_from_state_dict(state_dict, prefix, local_metadata, missing_keys, unexpected_keys, error_msgs)
 
     def _copy_state_dict(self) -> dict[str, paddle.Tensor | list[Any]]:
         cache: dict[str, paddle.Tensor | list[Any]] = {}
@@ -589,12 +571,7 @@ class Metric(ABC, nn.Layer):
                 cache[attr] = current_value.detach().clone()
             else:
                 cache[attr] = [
-                    (
-                        _.detach().clone()
-                        if isinstance(_, paddle.Tensor)
-                        else deepcopy(_)
-                    )
-                    for _ in current_value
+                    (_.detach().clone() if isinstance(_, paddle.Tensor) else deepcopy(_)) for _ in current_value
                 ]
         return cache
 
@@ -609,18 +586,47 @@ class Metric(ABC, nn.Layer):
                     self._non_persistable_buffer_names_set.add(key)
 
     def clone(self) -> "Metric":
-        return deepcopy(self)
+        """Create a deep copy with properly rebound wrapped methods."""
+        # Use pickle round-trip which properly goes through __getstate__/__setstate__
+        import pickle
 
-    # ============ Pickle Support ============
+        buf = pickle.dumps(self)
+        return pickle.loads(buf)
+
+    # ============ Pickle / Deepcopy Support ============
 
     def __getstate__(self) -> dict[str, Any]:
-        return {
-            k: v
-            for k, v in self.__dict__.items()
-            if k not in ["update", "compute", "_update_signature", "_device"]
-        }
+        state = self.__dict__.copy()
+        # Remove wrapped methods that have stale closures
+        state.pop("update", None)
+        state.pop("compute", None)
+        state.pop("_update_signature", None)
+        state.pop("_device", None)
+        # Remove hooks that may contain unpicklable weakrefs
+        for key in list(state.keys()):
+            val = state[key]
+            if "hook" in key.lower():
+                state.pop(key, None)
+                continue
+            # Skip unpicklable Place objects - recreate them in __setstate__
+            if hasattr(val, "__class__") and "Place" in val.__class__.__name__:
+                state[key] = str(val)
+        return state
 
     def __setstate__(self, state: dict[str, Any]) -> None:
+        # Restore Place objects from string representation
+        for key, val in state.items():
+            if isinstance(val, str) and ("cpu" in val or "gpu" in val or "Place" in val):
+                try:
+                    if "cpu" in val.lower():
+                        state[key] = paddle.CPUPlace()
+                    elif "gpu" in val.lower():
+                        dev_id = "".join(c for c in val if c.isdigit())
+                        state[key] = paddle.CUDAPlace(int(dev_id) if dev_id else 0)
+                except Exception:
+                    pass
+        # Initialize nn.Layer internals (state_dict hooks, etc.)
+        paddle.nn.Layer.__init__(self)
         self.__dict__.update(state)
         self._device = paddle.CPUPlace()
         self._update_signature = inspect.signature(self.update)
@@ -631,20 +637,25 @@ class Metric(ABC, nn.Layer):
 
     def __hash__(self) -> int:
         hash_vals = [self.__class__.__name__, id(self)]
-        for key in self._defaults:
-            val = getattr(self, key)
-            if hasattr(val, "__iter__") and not isinstance(val, paddle.Tensor):
-                hash_vals.extend(val)
-            else:
-                hash_vals.append(val)
+        if hasattr(self, "_defaults"):
+            for key in self._defaults:
+                val = getattr(self, key)
+                if hasattr(val, "__iter__") and not isinstance(val, paddle.Tensor):
+                    hash_vals.extend(val)
+                else:
+                    hash_vals.append(val)
         return hash(tuple(hash_vals))
 
     # ============ Attribute Protection ============
 
     def __setattr__(self, name: str, value: Any) -> None:
         _protected = {
-            "higher_is_better", "is_differentiable", "full_state_update",
-            "plot_lower_bound", "plot_upper_bound", "plot_legend_name",
+            "higher_is_better",
+            "is_differentiable",
+            "full_state_update",
+            "plot_lower_bound",
+            "plot_upper_bound",
+            "plot_legend_name",
         }
         if name in _protected:
             for cls in type(self).__mro__:
@@ -673,10 +684,12 @@ class Metric(ABC, nn.Layer):
         out._dtype_convert = False
         return out
 
-    def _apply(self, fn: Callable, exclude_state: Sequence[str] = "") -> nn.Layer:
+    def _apply(self, func, device=None, dtype=None, blocking=None, include_sublayers=True):
         """Overwrite _apply to also move metric states to the correct device."""
-        this = super()._apply(fn)
-        fs = str(fn)
+        super()._apply(func, device, dtype, blocking, include_sublayers)
+        if not hasattr(self, "_defaults") or not self._defaults:
+            return
+        fs = str(func)
         cond = any(
             f in fs
             for f in [
@@ -688,24 +701,40 @@ class Metric(ABC, nn.Layer):
             ]
         )
         if not self._dtype_convert and cond:
-            return this
-        for key, value in this._defaults.items():
-            if key in exclude_state:
+            return
+        _exclude = ()
+        for key, value in self._defaults.items():
+            if key in _exclude:
                 continue
             if isinstance(value, paddle.Tensor):
-                this._defaults[key] = fn(value)
+                self._defaults[key] = func(value, device, dtype, blocking) if device is not None else func(value)
             elif isinstance(value, Sequence):
-                this._defaults[key] = [fn(v) for v in value]
-            current_val = getattr(this, key)
+                self._defaults[key] = [
+                    func(v, device, dtype, blocking) if device is not None else func(v) for v in value
+                ]
+            current_val = getattr(self, key)
             if isinstance(current_val, paddle.Tensor):
-                setattr(this, key, fn(current_val))
+                setattr(
+                    self, key, func(current_val, device, dtype, blocking) if device is not None else func(current_val)
+                )
             elif isinstance(current_val, Sequence):
-                setattr(this, key, [fn(cur_v) for cur_v in current_val])
-        if this._computed is not None:
-            this._computed = _apply_to_collection(this._computed, paddle.Tensor, fn)
-        if this._forward_cache is not None:
-            this._forward_cache = _apply_to_collection(this._forward_cache, paddle.Tensor, fn)
-        return this
+                setattr(
+                    self,
+                    key,
+                    [func(v, device, dtype, blocking) if device is not None else func(v) for v in current_val],
+                )
+        if self._computed is not None:
+            self._computed = _apply_to_collection(
+                self._computed,
+                paddle.Tensor,
+                lambda t: func(t, device, dtype, blocking) if device is not None else func(t),
+            )
+        if self._forward_cache is not None:
+            self._forward_cache = _apply_to_collection(
+                self._forward_cache,
+                paddle.Tensor,
+                lambda t: func(t, device, dtype, blocking) if device is not None else func(t),
+            )
 
     # ============ Method Wrappers ============
 
@@ -754,23 +783,14 @@ class Metric(ABC, nn.Layer):
                 setattr(
                     self,
                     key,
-                    [
-                        cur_v.to("cpu") if isinstance(cur_v, paddle.Tensor) else cur_v
-                        for cur_v in current_val
-                    ],
+                    [cur_v.to("cpu") if isinstance(cur_v, paddle.Tensor) else cur_v for cur_v in current_val],
                 )
 
     def _filter_kwargs(self, **kwargs: Any) -> dict[str, Any]:
         _params = (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD)
         _sign_params = self._update_signature.parameters
-        filtered_kwargs = {
-            k: v
-            for k, v in kwargs.items()
-            if k in _sign_params and _sign_params[k].kind not in _params
-        }
-        exists_var_keyword = any(
-            v.kind == inspect.Parameter.VAR_KEYWORD for v in _sign_params.values()
-        )
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k in _sign_params and _sign_params[k].kind not in _params}
+        exists_var_keyword = any(v.kind == inspect.Parameter.VAR_KEYWORD for v in _sign_params.values())
         if not filtered_kwargs and not exists_var_keyword:
             return {}
         if exists_var_keyword:

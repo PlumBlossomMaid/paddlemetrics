@@ -1,4 +1,3 @@
-import sys
 
 from typing import Callable, Optional, Union
 
@@ -7,19 +6,22 @@ import paddle
 import pytest
 from sklearn.metrics import ndcg_score
 from typing_extensions import Literal
+
+from paddlemetrics.functional.retrieval.ndcg import retrieval_normalized_dcg
+from paddlemetrics.retrieval.ndcg import RetrievalNormalizedDCG
 from unittests._helpers import seed_all
 from unittests.retrieval.helpers import (
-    RetrievalMetricTester, _concat_tests, _custom_aggregate_fn,
+    RetrievalMetricTester,
+    _concat_tests,
+    _custom_aggregate_fn,
     _default_metric_class_input_arguments_ignore_index,
     _default_metric_class_input_arguments_with_non_binary_target,
     _default_metric_functional_input_arguments_with_non_binary_target,
     _errors_test_class_metric_parameters_k,
     _errors_test_class_metric_parameters_with_nonbinary,
     _errors_test_functional_metric_parameters_k,
-    _errors_test_functional_metric_parameters_with_nonbinary)
-
-from paddlemetrics.functional.retrieval.ndcg import retrieval_normalized_dcg
-from paddlemetrics.retrieval.ndcg import RetrievalNormalizedDCG
+    _errors_test_functional_metric_parameters_with_nonbinary,
+)
 
 seed_all(42)
 
@@ -42,12 +44,8 @@ class TestNDCG(RetrievalMetricTester):
     @pytest.mark.parametrize("empty_target_action", ["skip", "neg", "pos"])
     @pytest.mark.parametrize("ignore_index", [None, 3])
     @pytest.mark.parametrize("k", [None, 1, 4, 10])
-    @pytest.mark.parametrize(
-        "aggregation", ["mean", "median", "max", "min", _custom_aggregate_fn]
-    )
-    @pytest.mark.parametrize(
-        **_default_metric_class_input_arguments_with_non_binary_target
-    )
+    @pytest.mark.parametrize("aggregation", ["mean", "median", "max", "min", _custom_aggregate_fn])
+    @pytest.mark.parametrize(**_default_metric_class_input_arguments_with_non_binary_target)
     def test_class_metric(
         self,
         ddp: bool,
@@ -66,7 +64,7 @@ class TestNDCG(RetrievalMetricTester):
             "ignore_index": ignore_index,
             "aggregation": aggregation,
         }
-        target = target if target._min() >= 0 else target - target._min()
+        target = target if target.amin() >= 0 else target - target.amin()
         self.run_class_metric_test(
             ddp=ddp,
             indexes=indexes,
@@ -96,7 +94,7 @@ class TestNDCG(RetrievalMetricTester):
             "top_k": k,
             "ignore_index": -100,
         }
-        target = target if target._min() >= 0 else target - target._min()
+        target = target if target.amin() >= 0 else target - target.amin()
         self.run_class_metric_test(
             ddp=ddp,
             indexes=indexes,
@@ -107,15 +105,11 @@ class TestNDCG(RetrievalMetricTester):
             metric_args=metric_args,
         )
 
-    @pytest.mark.parametrize(
-        **_default_metric_functional_input_arguments_with_non_binary_target
-    )
+    @pytest.mark.parametrize(**_default_metric_functional_input_arguments_with_non_binary_target)
     @pytest.mark.parametrize("k", [None, 1, 4, 10])
-    def test_functional_metric(
-        self, preds: paddle.Tensor, target: paddle.Tensor, k: int
-    ):
+    def test_functional_metric(self, preds: paddle.Tensor, target: paddle.Tensor, k: int):
         """Test functional implementation of metric."""
-        target = target if target._min() >= 0 else target - target._min()
+        target = target if target.amin() >= 0 else target - target.amin()
         self.run_functional_metric_test(
             preds=preds,
             target=target,
@@ -125,14 +119,10 @@ class TestNDCG(RetrievalMetricTester):
             top_k=k,
         )
 
-    @pytest.mark.parametrize(
-        **_default_metric_class_input_arguments_with_non_binary_target
-    )
-    def test_precision_cpu(
-        self, indexes: paddle.Tensor, preds: paddle.Tensor, target: paddle.Tensor
-    ):
+    @pytest.mark.parametrize(**_default_metric_class_input_arguments_with_non_binary_target)
+    def test_precision_cpu(self, indexes: paddle.Tensor, preds: paddle.Tensor, target: paddle.Tensor):
         """Test dtype support of the metric on CPU."""
-        target = target if target._min() >= 0 else target - target._min()
+        target = target if target.amin() >= 0 else target - target.amin()
         self.run_precision_test_cpu(
             indexes=indexes,
             preds=preds,
@@ -141,14 +131,10 @@ class TestNDCG(RetrievalMetricTester):
             metric_functional=retrieval_normalized_dcg,
         )
 
-    @pytest.mark.parametrize(
-        **_default_metric_class_input_arguments_with_non_binary_target
-    )
-    def test_precision_gpu(
-        self, indexes: paddle.Tensor, preds: paddle.Tensor, target: paddle.Tensor
-    ):
+    @pytest.mark.parametrize(**_default_metric_class_input_arguments_with_non_binary_target)
+    def test_precision_gpu(self, indexes: paddle.Tensor, preds: paddle.Tensor, target: paddle.Tensor):
         """Test dtype support of the metric on GPU."""
-        target = target if target._min() >= 0 else target - target._min()
+        target = target if target.amin() >= 0 else target - target.amin()
         self.run_precision_test_gpu(
             indexes=indexes,
             preds=preds,

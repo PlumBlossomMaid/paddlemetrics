@@ -4,14 +4,19 @@ from typing import Optional
 import paddle
 import pytest
 from monai.metrics.meaniou import compute_iou
-from unittests import NUM_CLASSES
-from unittests._helpers.testers import MetricTester
-from unittests.segmentation.inputs import (_index_input_1, _mixed_input_1,
-                                           _mixed_input_2, _mixed_logits_input,
-                                           _one_hot_input_1, _one_hot_input_2)
 
 from paddlemetrics.functional.segmentation.mean_iou import mean_iou
 from paddlemetrics.segmentation.mean_iou import MeanIoU
+from unittests import NUM_CLASSES
+from unittests._helpers.testers import MetricTester
+from unittests.segmentation.inputs import (
+    _index_input_1,
+    _mixed_input_1,
+    _mixed_input_2,
+    _mixed_logits_input,
+    _one_hot_input_1,
+    _one_hot_input_2,
+)
 
 
 def _reference_mean_iou(
@@ -25,31 +30,19 @@ def _reference_mean_iou(
 ):
     """Calculate reference metric for `MeanIoU`."""
     if input_format == "index":
-        preds = paddle.nn.functional.one_hot(preds, num_classes=num_classes).moveaxis(
-            -1, 1
-        )
-        target = paddle.nn.functional.one_hot(target, num_classes=num_classes).moveaxis(
-            -1, 1
-        )
+        preds = paddle.nn.functional.one_hot(preds, num_classes=num_classes).moveaxis(-1, 1)
+        target = paddle.nn.functional.one_hot(target, num_classes=num_classes).moveaxis(-1, 1)
     elif input_format == "mixed":
         if preds.dim() == target.dim() + 1:
             if paddle.is_floating_point(preds):
                 preds = preds.argmax(dim=1)
-                preds = paddle.nn.functional.one_hot(
-                    preds, num_classes=NUM_CLASSES
-                ).moveaxis(-1, 1)
-            target = paddle.nn.functional.one_hot(
-                target, num_classes=NUM_CLASSES
-            ).moveaxis(-1, 1)
+                preds = paddle.nn.functional.one_hot(preds, num_classes=NUM_CLASSES).moveaxis(-1, 1)
+            target = paddle.nn.functional.one_hot(target, num_classes=NUM_CLASSES).moveaxis(-1, 1)
         elif preds.dim() + 1 == target.dim():
             if paddle.is_floating_point(target):
                 target = target.argmax(dim=1)
-                target = paddle.nn.functional.one_hot(
-                    target, num_classes=NUM_CLASSES
-                ).moveaxis(-1, 1)
-            preds = paddle.nn.functional.one_hot(
-                preds, num_classes=NUM_CLASSES
-            ).moveaxis(-1, 1)
+                target = paddle.nn.functional.one_hot(target, num_classes=NUM_CLASSES).moveaxis(-1, 1)
+            preds = paddle.nn.functional.one_hot(preds, num_classes=NUM_CLASSES).moveaxis(-1, 1)
     val = compute_iou(preds, target, include_background=include_background)
     val[paddle.isnan(val)] = 0.0
     if reduce:
@@ -118,9 +111,7 @@ class TestMeanIoU(MetricTester):
             },
         )
 
-    def test_mean_iou_functional(
-        self, preds, target, input_format, num_classes, include_background
-    ):
+    def test_mean_iou_functional(self, preds, target, input_format, num_classes, include_background):
         """Test functional implementation of metric."""
         if input_format == "index" and num_classes is None:
             with pytest.raises(
@@ -156,18 +147,14 @@ def test_mean_iou_absent_class():
     preds = paddle.tensor([[0, 1], [1, 0]])
     metric.update(preds, target)
     miou_per_class = metric.compute()
-    functional_miou = mean_iou(
-        preds, target, num_classes=3, per_class=True, input_format="index"
-    ).mean(dim=0)
+    functional_miou = mean_iou(preds, target, num_classes=3, per_class=True, input_format="index").mean(dim=0)
     expected_ious = [1.0, 1.0, -1.0]
     for idx, (iou, iou_func) in enumerate(zip(miou_per_class, functional_miou)):
         assert iou == iou_func == expected_ious[idx]
     metric = MeanIoU(num_classes=3, per_class=False, input_format="index")
     metric.update(preds, target)
     miou_per_class = metric.compute()
-    miou_func = mean_iou(
-        preds, target, num_classes=3, per_class=False, input_format="index"
-    ).mean(dim=0)
+    miou_func = mean_iou(preds, target, num_classes=3, per_class=False, input_format="index").mean(dim=0)
     assert miou_per_class.item() == miou_func.item() == 1.0
 
 
@@ -178,9 +165,7 @@ def test_mean_iou_perfect_prediction():
     preds = paddle.tensor([[0, 1], [1, 0], [2, 2]])
     metric.update(preds, target)
     miou_per_class = metric.compute()
-    miou_func = mean_iou(
-        preds, target, num_classes=3, per_class=True, input_format="index"
-    ).mean(dim=0)
+    miou_func = mean_iou(preds, target, num_classes=3, per_class=True, input_format="index").mean(dim=0)
     expected_ious = [1.0, 1.0, 1.0]
     for idx, (iou, iou_func) in enumerate(zip(miou_per_class, miou_func)):
         assert iou == iou_func == expected_ious[idx]

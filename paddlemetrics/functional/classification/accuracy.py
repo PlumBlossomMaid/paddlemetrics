@@ -1,18 +1,23 @@
 from typing import Optional
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.functional.classification.stat_scores import (
-    _binary_stat_scores_arg_validation, _binary_stat_scores_format,
-    _binary_stat_scores_tensor_validation, _binary_stat_scores_update,
-    _multiclass_stat_scores_arg_validation, _multiclass_stat_scores_format,
-    _multiclass_stat_scores_tensor_validation, _multiclass_stat_scores_update,
-    _multilabel_stat_scores_arg_validation, _multilabel_stat_scores_format,
-    _multilabel_stat_scores_tensor_validation, _multilabel_stat_scores_update)
-from paddlemetrics.utils.compute import (_adjust_weights_safe_divide,
-                                            _safe_divide)
+    _binary_stat_scores_arg_validation,
+    _binary_stat_scores_format,
+    _binary_stat_scores_tensor_validation,
+    _binary_stat_scores_update,
+    _multiclass_stat_scores_arg_validation,
+    _multiclass_stat_scores_format,
+    _multiclass_stat_scores_tensor_validation,
+    _multiclass_stat_scores_update,
+    _multilabel_stat_scores_arg_validation,
+    _multilabel_stat_scores_format,
+    _multilabel_stat_scores_tensor_validation,
+    _multilabel_stat_scores_update,
+)
+from paddlemetrics.utils.compute import _adjust_weights_safe_divide, _safe_divide
 from paddlemetrics.utils.enums import ClassificationTask
 
 
@@ -65,11 +70,7 @@ def _accuracy_reduce(
             tn = tn.sum(dim=0 if multidim_average == "global" else 1)
             return _safe_divide(tp + tn, tp + tn + fp + fn)
         return _safe_divide(tp, tp + fn)
-    score = (
-        _safe_divide(tp + tn, tp + tn + fp + fn)
-        if multilabel
-        else _safe_divide(tp, tp + fn)
-    )
+    score = _safe_divide(tp + tn, tp + tn + fp + fn) if multilabel else _safe_divide(tp, tp + fn)
     return _adjust_weights_safe_divide(score, average, multilabel, tp, fp, fn, top_k)
 
 
@@ -142,14 +143,10 @@ def binary_accuracy(
     """
     if validate_args:
         _binary_stat_scores_arg_validation(threshold, multidim_average, ignore_index)
-        _binary_stat_scores_tensor_validation(
-            preds, target, multidim_average, ignore_index
-        )
+        _binary_stat_scores_tensor_validation(preds, target, multidim_average, ignore_index)
     preds, target = _binary_stat_scores_format(preds, target, threshold, ignore_index)
     tp, fp, tn, fn = _binary_stat_scores_update(preds, target, multidim_average)
-    return _accuracy_reduce(
-        tp, fp, tn, fn, average="binary", multidim_average=multidim_average
-    )
+    return _accuracy_reduce(tp, fp, tn, fn, average="binary", multidim_average=multidim_average)
 
 
 def multiclass_accuracy(
@@ -251,19 +248,13 @@ def multiclass_accuracy(
 
     """
     if validate_args:
-        _multiclass_stat_scores_arg_validation(
-            num_classes, top_k, average, multidim_average, ignore_index
-        )
-        _multiclass_stat_scores_tensor_validation(
-            preds, target, num_classes, multidim_average, ignore_index
-        )
+        _multiclass_stat_scores_arg_validation(num_classes, top_k, average, multidim_average, ignore_index)
+        _multiclass_stat_scores_tensor_validation(preds, target, num_classes, multidim_average, ignore_index)
     preds, target = _multiclass_stat_scores_format(preds, target, top_k)
     tp, fp, tn, fn = _multiclass_stat_scores_update(
         preds, target, num_classes or 1, top_k, average, multidim_average, ignore_index
     )
-    return _accuracy_reduce(
-        tp, fp, tn, fn, average=average, multidim_average=multidim_average, top_k=top_k
-    )
+    return _accuracy_reduce(tp, fp, tn, fn, average=average, multidim_average=multidim_average, top_k=top_k)
 
 
 def multilabel_accuracy(
@@ -361,15 +352,9 @@ def multilabel_accuracy(
 
     """
     if validate_args:
-        _multilabel_stat_scores_arg_validation(
-            num_labels, threshold, average, multidim_average, ignore_index
-        )
-        _multilabel_stat_scores_tensor_validation(
-            preds, target, num_labels, multidim_average, ignore_index
-        )
-    preds, target = _multilabel_stat_scores_format(
-        preds, target, num_labels, threshold, ignore_index
-    )
+        _multilabel_stat_scores_arg_validation(num_labels, threshold, average, multidim_average, ignore_index)
+        _multilabel_stat_scores_tensor_validation(preds, target, num_labels, multidim_average, ignore_index)
+    preds, target = _multilabel_stat_scores_format(preds, target, num_labels, threshold, ignore_index)
     tp, fp, tn, fn = _multilabel_stat_scores_update(preds, target, multidim_average)
     return _accuracy_reduce(
         tp,
@@ -424,18 +409,14 @@ def accuracy(
     """
     task = ClassificationTask.from_str(task)
     if task == ClassificationTask.BINARY:
-        return binary_accuracy(
-            preds, target, threshold, multidim_average, ignore_index, validate_args
-        )
+        return binary_accuracy(preds, target, threshold, multidim_average, ignore_index, validate_args)
     if task == ClassificationTask.MULTICLASS:
         if not isinstance(num_classes, int):
             raise ValueError(
                 f"Optional arg `num_classes` must be type `int` when task is {task}. Got {type(num_classes)}"
             )
         if not isinstance(top_k, int):
-            raise ValueError(
-                f"Optional arg `top_k` must be type `int` when task is {task}. Got {type(top_k)}"
-            )
+            raise ValueError(f"Optional arg `top_k` must be type `int` when task is {task}. Got {type(top_k)}")
         return multiclass_accuracy(
             preds,
             target,

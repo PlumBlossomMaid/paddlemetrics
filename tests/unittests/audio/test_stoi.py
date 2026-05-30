@@ -4,23 +4,20 @@ import paddle
 import pytest
 from pystoi import stoi as stoi_backend
 from scipy.io import wavfile
-from unittests import _Input
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
-from unittests.audio import (_SAMPLE_AUDIO_SPEECH, _SAMPLE_AUDIO_SPEECH_BAB_DB,
-                             _average_metric_wrapper)
 
 from paddlemetrics.audio import ShortTimeObjectiveIntelligibility
 from paddlemetrics.functional.audio import short_time_objective_intelligibility
+from unittests import _Input
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
+from unittests.audio import _SAMPLE_AUDIO_SPEECH, _SAMPLE_AUDIO_SPEECH_BAB_DB, _average_metric_wrapper
 
 seed_all(42)
 inputs_8k = _Input(preds=paddle.rand(2, 3, 8000), target=paddle.rand(2, 3, 8000))
 inputs_16k = _Input(preds=paddle.rand(2, 3, 16000), target=paddle.rand(2, 3, 16000))
 
 
-def _reference_stoi_batch(
-    preds: paddle.Tensor, target: paddle.Tensor, fs: int, extended: bool
-):
+def _reference_stoi_batch(preds: paddle.Tensor, target: paddle.Tensor, fs: int, extended: bool):
     target = target.detach().cpu().numpy()
     preds = preds.detach().cpu().numpy()
     mss = []
@@ -111,9 +108,7 @@ class TestSTOI(MetricTester):
             preds=preds,
             target=target,
             metric_module=ShortTimeObjectiveIntelligibility,
-            metric_functional=partial(
-                short_time_objective_intelligibility, fs=fs, extended=extended
-            ),
+            metric_functional=partial(short_time_objective_intelligibility, fs=fs, extended=extended),
             metric_args={"fs": fs, "extended": extended},
         )
 
@@ -132,9 +127,5 @@ def test_on_real_audio():
     """Test that metric works on real audio signal."""
     rate, ref = wavfile.read(_SAMPLE_AUDIO_SPEECH)
     rate, deg = wavfile.read(_SAMPLE_AUDIO_SPEECH_BAB_DB)
-    stoi = short_time_objective_intelligibility(
-        paddle.from_numpy(deg), paddle.from_numpy(ref), rate
-    )
-    assert paddle.allclose(
-        x=stoi.float(), y=paddle.tensor(0.6739177), rtol=0.01, atol=0.005
-    ).item()
+    stoi = short_time_objective_intelligibility(paddle.from_numpy(deg), paddle.from_numpy(ref), rate)
+    assert paddle.allclose(x=stoi.float(), y=paddle.tensor(0.6739177), rtol=0.01, atol=0.005).item()

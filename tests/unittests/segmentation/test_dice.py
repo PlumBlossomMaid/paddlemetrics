@@ -3,17 +3,22 @@ from functools import partial
 import paddle
 import pytest
 from sklearn.metrics import f1_score
-from unittests import NUM_CLASSES
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
-from unittests.segmentation.inputs import (_index_input_1, _index_input_2,
-                                           _mixed_input_1, _mixed_input_2,
-                                           _mixed_logits_input,
-                                           _one_hot_input_1, _one_hot_input_2)
 
 from paddlemetrics import MetricCollection
 from paddlemetrics.functional.segmentation.dice import dice_score
 from paddlemetrics.segmentation.dice import DiceScore
+from unittests import NUM_CLASSES
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
+from unittests.segmentation.inputs import (
+    _index_input_1,
+    _index_input_2,
+    _mixed_input_1,
+    _mixed_input_2,
+    _mixed_logits_input,
+    _one_hot_input_1,
+    _one_hot_input_2,
+)
 
 seed_all(42)
 
@@ -37,21 +42,14 @@ def _reference_dice_score(
         target = target.argmax(dim=1)
     preds = preds.cpu().numpy()
     target = target.cpu().numpy()
-    labels = list(
-        range(1, NUM_CLASSES) if not include_background else range(NUM_CLASSES)
-    )
+    labels = list(range(1, NUM_CLASSES) if not include_background else range(NUM_CLASSES))
     if aggregation_level == "samplewise":
         val = paddle.tensor(
-            [
-                f1_score(t.flatten(), p.flatten(), average=average, labels=labels)
-                for t, p in zip(target, preds)
-            ]
+            [f1_score(t.flatten(), p.flatten(), average=average, labels=labels) for t, p in zip(target, preds)]
         )
         return val.mean(0) if reduce else val
     if aggregation_level == "global":
-        val = f1_score(
-            target.flatten(), preds.flatten(), average=average, labels=labels
-        )
+        val = f1_score(target.flatten(), preds.flatten(), average=average, labels=labels)
         return paddle.tensor(val)
     raise ValueError(f"Unknown aggregation level: {aggregation_level}.")
 
@@ -168,9 +166,7 @@ def test_samples_with_missing_classes(average, aggregation_level, expected_score
         aggregation_level=aggregation_level,
     )
     score = dice(preds, target)
-    assert paddle.allclose(
-        x=score, y=paddle.tensor(expected_score), equal_nan=True, atol=0.0001
-    ).item()
+    assert paddle.allclose(x=score, y=paddle.tensor(expected_score), equal_nan=True, atol=0.0001).item()
 
 
 @pytest.mark.parametrize("average", ["micro", "macro", "weighted", None])
@@ -201,9 +197,7 @@ def test_dice_score_metric_collection(compute_groups: bool, num_batches: int = 4
         metrics={
             "DiceScore (micro)": DiceScore(num_classes=NUM_CLASSES, average="micro"),
             "DiceScore (macro)": DiceScore(num_classes=NUM_CLASSES, average="macro"),
-            "DiceScore (weighted)": DiceScore(
-                num_classes=NUM_CLASSES, average="weighted"
-            ),
+            "DiceScore (weighted)": DiceScore(num_classes=NUM_CLASSES, average="weighted"),
         },
         compute_groups=compute_groups,
     )

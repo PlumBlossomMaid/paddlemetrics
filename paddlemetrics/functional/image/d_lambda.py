@@ -1,5 +1,4 @@
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.functional.image.uqi import universal_image_quality_index
@@ -66,25 +65,15 @@ def _spectral_distortion_index_compute(
         if num == 0:
             continue
         stack1 = target[:, k : k + 1, :, :].repeat(num, 1, 1, 1)
-        stack2 = paddle.concat(
-            [target[:, r : r + 1, :, :] for r in range(k + 1, length)], axis=0
-        )
+        stack2 = paddle.concat([target[:, r : r + 1, :, :] for r in range(k + 1, length)], axis=0)
         score = [
-            s.mean()
-            for s in universal_image_quality_index(
-                stack1, stack2, reduction="none"
-            ).split(preds.shape[0])
+            s.mean() for s in universal_image_quality_index(stack1, stack2, reduction="none").split(preds.shape[0])
         ]
         m1[k, k + 1 :] = paddle.stack(score, 0)
         stack1 = preds[:, k : k + 1, :, :].repeat(num, 1, 1, 1)
-        stack2 = paddle.concat(
-            [preds[:, r : r + 1, :, :] for r in range(k + 1, length)], axis=0
-        )
+        stack2 = paddle.concat([preds[:, r : r + 1, :, :] for r in range(k + 1, length)], axis=0)
         score = [
-            s.mean()
-            for s in universal_image_quality_index(
-                stack1, stack2, reduction="none"
-            ).split(preds.shape[0])
+            s.mean() for s in universal_image_quality_index(stack1, stack2, reduction="none").split(preds.shape[0])
         ]
         m2[k, k + 1 :] = paddle.stack(score, 0)
     m1 = m1 + m1.T

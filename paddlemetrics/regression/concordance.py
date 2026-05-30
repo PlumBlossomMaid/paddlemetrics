@@ -3,8 +3,7 @@ from typing import Optional, Union
 
 import paddle
 
-from paddlemetrics.functional.regression.concordance import \
-    _concordance_corrcoef_compute
+from paddlemetrics.functional.regression.concordance import _concordance_corrcoef_compute
 from paddlemetrics.regression.pearson import PearsonCorrCoef, _final_aggregation
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -65,12 +64,7 @@ class ConcordanceCorrCoef(PearsonCorrCoef):
 
     def compute(self) -> paddle.Tensor:
         """Compute final concordance correlation coefficient over metric states."""
-        if (
-            self.num_outputs == 1
-            and self.mean_x.size > 1
-            or self.num_outputs > 1
-            and self.mean_x.ndim > 1
-        ):
+        if self.num_outputs == 1 and self.mean_x.size > 1 or self.num_outputs > 1 and self.mean_x.ndim > 1:
             (
                 mean_x,
                 mean_y,

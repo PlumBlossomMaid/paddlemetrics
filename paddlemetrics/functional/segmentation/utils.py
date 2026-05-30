@@ -3,16 +3,13 @@ import math
 from typing import Optional, Union
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.utils.checks import _check_same_shape
 from paddlemetrics.utils.imports import _SCIPY_AVAILABLE
 
 
-def _ignore_background(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> tuple[paddle.Tensor, paddle.Tensor]:
+def _ignore_background(preds: paddle.Tensor, target: paddle.Tensor) -> tuple[paddle.Tensor, paddle.Tensor]:
     """Ignore the background class in the computation assuming it is the first, index 0."""
     preds = preds[:, 1:] if preds.shape[1] > 1 else preds
     target = target[:, 1:] if target.shape[1] > 1 else target
@@ -51,15 +48,9 @@ def _segmentation_inputs_format(
         _check_same_shape(preds, target)
     if input_format == "index":
         if num_classes is None:
-            raise ValueError(
-                "Argument `num_classes` must be provided when `input_format='index'`."
-            )
-        preds = paddle.nn.functional.one_hot(preds, num_classes=num_classes).moveaxis(
-            -1, 1
-        )
-        target = paddle.nn.functional.one_hot(target, num_classes=num_classes).moveaxis(
-            -1, 1
-        )
+            raise ValueError("Argument `num_classes` must be provided when `input_format='index'`.")
+        preds = paddle.nn.functional.one_hot(preds, num_classes=num_classes).moveaxis(-1, 1)
+        target = paddle.nn.functional.one_hot(target, num_classes=num_classes).moveaxis(-1, 1)
     elif input_format == "one-hot":
         if num_classes is None:
             num_classes = _get_num_classes(preds)
@@ -70,20 +61,14 @@ def _segmentation_inputs_format(
             if num_classes is None:
                 num_classes = _get_num_classes(preds)
             preds = _format_logits(preds, num_classes)
-            target = paddle.nn.functional.one_hot(
-                target, num_classes=num_classes
-            ).moveaxis(-1, 1)
+            target = paddle.nn.functional.one_hot(target, num_classes=num_classes).moveaxis(-1, 1)
         elif preds.dim() + 1 == target.dim():
             if num_classes is None:
                 num_classes = _get_num_classes(target)
             target = _format_logits(target, num_classes)
-            preds = paddle.nn.functional.one_hot(
-                preds, num_classes=num_classes
-            ).moveaxis(-1, 1)
+            preds = paddle.nn.functional.one_hot(preds, num_classes=num_classes).moveaxis(-1, 1)
     if preds.ndim < 3:
-        raise ValueError(
-            f"Expected both `preds` and `target` to have at least 3 dimensions, but got {preds.ndim}."
-        )
+        raise ValueError(f"Expected both `preds` and `target` to have at least 3 dimensions, but got {preds.ndim}.")
     if not include_background:
         preds, target = _ignore_background(preds, target)
     return preds, target
@@ -93,9 +78,7 @@ def _format_logits(tensor: paddle.Tensor, num_classes: int) -> paddle.Tensor:
     """Transform logits or probabilities into integer one-hot encodings."""
     if paddle.is_floating_point(tensor):
         tensor = tensor.argmax(dim=1)
-        tensor = paddle.nn.functional.one_hot(tensor, num_classes=num_classes).moveaxis(
-            -1, 1
-        )
+        tensor = paddle.nn.functional.one_hot(tensor, num_classes=num_classes).moveaxis(-1, 1)
     return tensor
 
 
@@ -104,13 +87,9 @@ def _get_num_classes(tensor: paddle.Tensor) -> int:
     try:
         num_classes = tensor.shape[1]
     except IndexError as err:
-        raise IndexError(
-            f"Cannot determine `num_classes` from tensor: {tensor}."
-        ) from err
+        raise IndexError(f"Cannot determine `num_classes` from tensor: {tensor}.") from err
     if num_classes == 0:
-        raise ValueError(
-            f"Expected argument `num_classes` to be a positive integer, but got {num_classes}."
-        )
+        raise ValueError(f"Expected argument `num_classes` to be a positive integer, but got {num_classes}.")
     return num_classes
 
 
@@ -233,13 +212,9 @@ def binary_erosion(
 
     """
     if not isinstance(image, paddle.Tensor):
-        raise TypeError(
-            f"Expected argument `image` to be of type Tensor but found {type(image)}"
-        )
+        raise TypeError(f"Expected argument `image` to be of type Tensor but found {type(image)}")
     if image.ndim not in [4, 5]:
-        raise ValueError(
-            f"Expected argument `image` to be of rank 4 or 5 but found rank {image.ndim}"
-        )
+        raise ValueError(f"Expected argument `image` to be of rank 4 or 5 but found rank {image.ndim}")
     check_if_binarized(image)
     if structure is None:
         structure = generate_binary_structure(image.ndim - 2, 1).int().to(image.place)
@@ -248,11 +223,7 @@ def binary_erosion(
         origin = structure.ndim * (1,)
     image_pad = paddle.nn.functional.pad(
         image,
-        [
-            x
-            for i in range(len(origin))
-            for x in [origin[i], structure.shape[i] - origin[i] - 1]
-        ],
+        [x for i in range(len(origin)) for x in [origin[i], structure.shape[i] - origin[i] - 1]],
         mode="constant",
         value=border_value,
     )
@@ -309,13 +280,9 @@ def distance_transform(
 
     """
     if not isinstance(x, paddle.Tensor):
-        raise ValueError(
-            f"Expected argument `x` to be of type `paddle.Tensor` but got `{type(x)}`."
-        )
+        raise ValueError(f"Expected argument `x` to be of type `paddle.Tensor` but got `{type(x)}`.")
     if x.ndim != 2:
-        raise ValueError(
-            f"Expected argument `x` to be of rank 2 but got rank `{x.ndim}`."
-        )
+        raise ValueError(f"Expected argument `x` to be of rank 2 but got rank `{x.ndim}`.")
     if sampling is not None and not isinstance(sampling, list):
         raise ValueError(
             f"Expected argument `sampling` to either be `None` or of type `list` but got `{type(sampling)}`."
@@ -325,15 +292,11 @@ def distance_transform(
             f"Expected argument `metric` to be one of `['euclidean', 'chessboard', 'taxicab']` but got `{metric}`."
         )
     if engine not in ["pytorch", "scipy"]:
-        raise ValueError(
-            f"Expected argument `engine` to be one of `['pytorch', 'scipy']` but got `{engine}`."
-        )
+        raise ValueError(f"Expected argument `engine` to be one of `['pytorch', 'scipy']` but got `{engine}`.")
     if sampling is None:
         sampling = [1, 1]
     elif len(sampling) != 2:
-        raise ValueError(
-            f"Expected argument `sampling` to have length 2 but got length `{len(sampling)}`."
-        )
+        raise ValueError(f"Expected argument `sampling` to have length 2 but got length `{len(sampling)}`.")
     if engine == "pytorch":
         x = x.float()
         i0, j0 = paddle.where(x == 0)
@@ -344,9 +307,7 @@ def distance_transform(
         if metric == "euclidean":
             dis = ((sampling[0] * dis_row) ** 2 + (sampling[1] * dis_col) ** 2).sqrt()
         if metric == "chessboard":
-            dis = paddle.max(
-                sampling[0] * dis_row, sampling[1] * dis_col
-            ).float()
+            dis = paddle.max(sampling[0] * dis_row, sampling[1] * dis_col).float()
         if metric == "taxicab":
             dis = (sampling[0] * dis_row + sampling[1] * dis_col).float()
         mindis, _ = paddle.min(dis, axis=1)
@@ -389,9 +350,7 @@ def mask_edges(
     """
     _check_same_shape(preds, target)
     if preds.ndim not in [2, 3]:
-        raise ValueError(
-            f"Expected argument `preds` to be of rank 2 or 3 but got rank `{preds.ndim}`."
-        )
+        raise ValueError(f"Expected argument `preds` to be of rank 2 or 3 but got rank `{preds.ndim}`.")
     check_if_binarized(preds)
     check_if_binarized(target)
     if crop:
@@ -399,9 +358,10 @@ def mask_edges(
         if not or_val.any():
             p, t = paddle.zeros_like(preds), paddle.zeros_like(target)
             return p, t, p, t
-        preds, target = paddle.nn.functional.pad(
-            preds, preds.ndim * [1, 1]
-        ), paddle.nn.functional.pad(target, target.ndim * [1, 1])
+        preds, target = (
+            paddle.nn.functional.pad(preds, preds.ndim * [1, 1]),
+            paddle.nn.functional.pad(target, target.ndim * [1, 1]),
+        )
     if spacing is None:
         be_pred = binary_erosion(preds.unsqueeze(0).unsqueeze(0)).squeeze() ^ preds
         be_target = binary_erosion(target.unsqueeze(0).unsqueeze(0)).squeeze() ^ target
@@ -414,12 +374,8 @@ def mask_edges(
     all_ones = len(table) - 1
     edges_preds = (code_preds != 0) & (code_preds != all_ones)
     edges_target = (code_target != 0) & (code_target != all_ones)
-    areas_preds = paddle.index_select(table, 0, code_preds.view(-1).int()).view_as(
-        code_preds
-    )
-    areas_target = paddle.index_select(table, 0, code_target.view(-1).int()).view_as(
-        code_target
-    )
+    areas_preds = paddle.index_select(table, 0, code_preds.view(-1).int()).view_as(code_preds)
+    areas_target = paddle.index_select(table, 0, code_target.view(-1).int()).view_as(code_target)
     return edges_preds[0], edges_target[0], areas_preds[0], areas_target[0]
 
 
@@ -461,9 +417,7 @@ def surface_distance(
 
     """
     if not (preds.dtype == paddle.bool and target.dtype == paddle.bool):
-        raise ValueError(
-            f"Expected both inputs to be of type `paddle.bool`, but got {preds.dtype} and {target.dtype}."
-        )
+        raise ValueError(f"Expected both inputs to be of type `paddle.bool`, but got {preds.dtype} and {target.dtype}.")
     if not paddle.any(target):
         dis = paddle.inf * paddle.ones_like(target)
     else:
@@ -501,12 +455,8 @@ def edge_surface_distance(
     if symmetric:
         return surface_distance(
             edges_preds, edges_target, distance_metric=distance_metric, spacing=spacing
-        ), surface_distance(
-            edges_target, edges_preds, distance_metric=distance_metric, spacing=spacing
-        )
-    return surface_distance(
-        edges_preds, edges_target, distance_metric=distance_metric, spacing=spacing
-    )
+        ), surface_distance(edges_target, edges_preds, distance_metric=distance_metric, spacing=spacing)
+    return surface_distance(edges_preds, edges_target, distance_metric=distance_metric, spacing=spacing)
 
 
 @functools.lru_cache
@@ -1305,7 +1255,5 @@ def table_surface_area(
     )
     norm = paddle.linalg.norm(table * space, axis=-1)
     table = norm.sum(-1)
-    kernel = paddle.as_tensor(
-        [[[[[128, 64], [32, 16]], [[8, 4], [2, 1]]]]], device=device
-    )
+    kernel = paddle.as_tensor([[[[[128, 64], [32, 16]], [[8, 4], [2, 1]]]]], device=device)
     return table, kernel

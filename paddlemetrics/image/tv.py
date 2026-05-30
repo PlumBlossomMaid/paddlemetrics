@@ -5,8 +5,7 @@ import paddle
 from paddle import Tensor
 from typing_extensions import Literal
 
-from paddlemetrics.functional.image.tv import (_total_variation_compute,
-                                              _total_variation_update)
+from paddlemetrics.functional.image.tv import _total_variation_compute, _total_variation_update
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.data import dim_zero_cat
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
@@ -59,14 +58,10 @@ class TotalVariation(Metric):
     score_list: List[paddle.Tensor]
     score: Tensor
 
-    def __init__(
-        self, reduction: Optional[Literal["mean", "sum", "none"]] = "sum", **kwargs: Any
-    ) -> None:
+    def __init__(self, reduction: Optional[Literal["mean", "sum", "none"]] = "sum", **kwargs: Any) -> None:
         super().__init__(**kwargs)
         if reduction is not None and reduction not in ("sum", "mean", "none"):
-            raise ValueError(
-                "Expected argument `reduction` to either be 'sum', 'mean', 'none' or None"
-            )
+            raise ValueError("Expected argument `reduction` to either be 'sum', 'mean', 'none' or None")
         self.reduction = reduction
         self.add_state("score_list", default=[], dist_reduce_fx="cat")
         self.add_state(
@@ -91,11 +86,7 @@ class TotalVariation(Metric):
 
     def compute(self) -> paddle.Tensor:
         """Compute final total variation."""
-        score = (
-            dim_zero_cat(self.score_list)
-            if self.reduction is None or self.reduction == "none"
-            else self.score
-        )
+        score = dim_zero_cat(self.score_list) if self.reduction is None or self.reduction == "none" else self.score
         return _total_variation_compute(score, self.num_elements, self.reduction)
 
     def plot(

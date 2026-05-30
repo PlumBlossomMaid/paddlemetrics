@@ -1,14 +1,11 @@
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.utils.checks import _check_same_shape
 from paddlemetrics.utils.distributed import reduce
 
 
-def _sam_update(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> tuple[paddle.Tensor, paddle.Tensor]:
+def _sam_update(preds: paddle.Tensor, target: paddle.Tensor) -> tuple[paddle.Tensor, paddle.Tensor]:
     """Update and returns variables required to compute Spectral Angle Mapper.
 
     Args:

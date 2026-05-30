@@ -2,7 +2,6 @@ import math
 from typing import Optional, Union
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.utils.checks import _check_same_shape
@@ -46,9 +45,7 @@ def _scc_update(
         preds = preds.unsqueeze(1)
         target = target.unsqueeze(1)
     if not window_size > 0:
-        raise ValueError(
-            f"Expected `window_size` to be a positive integer. Got {window_size}."
-        )
+        raise ValueError(f"Expected `window_size` to be a positive integer. Got {window_size}.")
     if window_size > preds.size(2) or window_size > preds.size(3):
         raise ValueError(
             f"Expected `window_size` to be less than or equal to the size of the image. Got window_size: {window_size} and image size: {preds.size(2)}x{preds.size(3)}."
@@ -59,9 +56,7 @@ def _scc_update(
     return preds, target, hp_filter
 
 
-def _symmetric_reflect_pad_2d(
-    input_img: paddle.Tensor, pad: Union[int, tuple[int, ...]]
-) -> paddle.Tensor:
+def _symmetric_reflect_pad_2d(input_img: paddle.Tensor, pad: Union[int, tuple[int, ...]]) -> paddle.Tensor:
     """Applies symmetric padding to the 2D image tensor input using ``reflect`` mode (d c b a | a b c d | d c b a)."""
     if isinstance(paddle.nn.functional.pad, int):
         pad = pad, pad, pad, pad
@@ -75,17 +70,13 @@ def _symmetric_reflect_pad_2d(
     return paddle.concat([top_pad, padded, bottom_pad], axis=2)
 
 
-def _signal_convolve_2d(
-    input_img: paddle.Tensor, kernel: paddle.Tensor
-) -> paddle.Tensor:
+def _signal_convolve_2d(input_img: paddle.Tensor, kernel: paddle.Tensor) -> paddle.Tensor:
     """Applies 2D signal convolution to the input tensor with the given kernel."""
     left_padding = math.floor((kernel.size(3) - 1) / 2)
     right_padding = math.ceil((kernel.size(3) - 1) / 2)
     top_padding = math.floor((kernel.size(2) - 1) / 2)
     bottom_padding = math.ceil((kernel.size(2) - 1) / 2)
-    padded = _symmetric_reflect_pad_2d(
-        input_img, pad=(left_padding, right_padding, top_padding, bottom_padding)
-    )
+    padded = _symmetric_reflect_pad_2d(input_img, pad=(left_padding, right_padding, top_padding, bottom_padding))
     kernel = kernel.flip(axis=[2, 3])
     return paddle.nn.functional.conv2d(padded, kernel, stride=1, padding=0)
 
@@ -101,25 +92,14 @@ def _local_variance_covariance(
     """Computes local variance and covariance of the input tensors."""
     left_padding = math.ceil((window.size(3) - 1) / 2)
     right_padding = math.floor((window.size(3) - 1) / 2)
-    preds = paddle.nn.functional.pad(
-        preds, (left_padding, right_padding, left_padding, right_padding)
-    )
-    target = paddle.nn.functional.pad(
-        target, (left_padding, right_padding, left_padding, right_padding)
-    )
+    preds = paddle.nn.functional.pad(preds, (left_padding, right_padding, left_padding, right_padding))
+    target = paddle.nn.functional.pad(target, (left_padding, right_padding, left_padding, right_padding))
     preds_mean = paddle.nn.functional.conv2d(preds, window, stride=1, padding=0)
     target_mean = paddle.nn.functional.conv2d(target, window, stride=1, padding=0)
-    preds_var = (
-        paddle.nn.functional.conv2d(preds**2, window, stride=1, padding=0)
-        - preds_mean**2
-    )
-    target_var = (
-        paddle.nn.functional.conv2d(target**2, window, stride=1, padding=0)
-        - target_mean**2
-    )
+    preds_var = paddle.nn.functional.conv2d(preds**2, window, stride=1, padding=0) - preds_mean**2
+    target_var = paddle.nn.functional.conv2d(target**2, window, stride=1, padding=0) - target_mean**2
     target_preds_cov = (
-        paddle.nn.functional.conv2d(target * preds, window, stride=1, padding=0)
-        - target_mean * preds_mean
+        paddle.nn.functional.conv2d(target * preds, window, stride=1, padding=0) - target_mean * preds_mean
     )
     return preds_var, target_var, target_preds_cov
 
@@ -144,15 +124,10 @@ def _scc_per_channel_compute(
     """
     dtype = preds.dtype
     device = preds.device
-    window = (
-        paddle.ones(size=(1, 1, window_size, window_size), dtype=dtype, device=device)
-        / window_size**2
-    )
+    window = paddle.ones(size=(1, 1, window_size, window_size), dtype=dtype, device=device) / window_size**2
     preds_hp = _hp_2d_laplacian(preds, hp_filter)
     target_hp = _hp_2d_laplacian(target, hp_filter)
-    preds_var, target_var, target_preds_cov = _local_variance_covariance(
-        preds_hp, target_hp, window
-    )
+    preds_var, target_var, target_preds_cov = _local_variance_covariance(preds_hp, target_hp, window)
     preds_var[preds_var < 0] = 0
     target_var[target_var < 0] = 0
     den = paddle.sqrt(target_var) * paddle.sqrt(preds_var)
@@ -203,9 +178,7 @@ def spatial_correlation_coefficient(
     if reduction is None:
         reduction = "none"
     if reduction not in ("mean", "none"):
-        raise ValueError(
-            f"Expected reduction to be 'mean' or 'none', but got {reduction}"
-        )
+        raise ValueError(f"Expected reduction to be 'mean' or 'none', but got {reduction}")
     preds, target, hp_filter = _scc_update(preds, target, hp_filter, window_size)
     per_channel = [
         _scc_per_channel_compute(

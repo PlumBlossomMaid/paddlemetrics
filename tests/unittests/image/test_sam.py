@@ -2,12 +2,12 @@ from functools import partial
 
 import paddle
 import pytest
-from unittests import BATCH_SIZE, NUM_BATCHES, _Input
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
 
 from paddlemetrics.functional.image.sam import spectral_angle_mapper
 from paddlemetrics.image.sam import SpectralAngleMapper
+from unittests import BATCH_SIZE, NUM_BATCHES, _Input
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
 
 seed_all(42)
 _inputs = []
@@ -22,15 +22,11 @@ for size, channel, dtype in [
     _inputs.append(_Input(preds=preds, target=target))
 
 
-def _reference_sam(
-    preds: paddle.Tensor, target: paddle.Tensor, reduction: str = "elementwise_mean"
-) -> paddle.Tensor:
+def _reference_sam(preds: paddle.Tensor, target: paddle.Tensor, reduction: str = "elementwise_mean") -> paddle.Tensor:
     """Baseline implementation of spectral angle mapper."""
     reduction_options = "elementwise_mean", "sum", "none"
     if reduction not in reduction_options:
-        raise ValueError(
-            f"reduction has to be one of {reduction_options}, got: {reduction}."
-        )
+        raise ValueError(f"reduction has to be one of {reduction_options}, got: {reduction}.")
     similarity = paddle.nn.functional.cosine_similarity(preds, target)
     sam_score = paddle.clamp(similarity, -1, 1).acos()
     if reduction == "sum":
@@ -73,16 +69,12 @@ class TestSpectralAngleMapper(MetricTester):
     )
     def test_sam_half_cpu(self, reduction, preds, target):
         """Test dtype support of the metric on CPU."""
-        self.run_precision_test_cpu(
-            preds, target, SpectralAngleMapper, spectral_angle_mapper
-        )
+        self.run_precision_test_cpu(preds, target, SpectralAngleMapper, spectral_angle_mapper)
 
     @pytest.mark.skipif(not paddle.cuda.is_available(), reason="test requires cuda")
     def test_sam_half_gpu(self, reduction, preds, target):
         """Test dtype support of the metric on GPU."""
-        self.run_precision_test_gpu(
-            preds, target, SpectralAngleMapper, spectral_angle_mapper
-        )
+        self.run_precision_test_gpu(preds, target, SpectralAngleMapper, spectral_angle_mapper)
 
 
 def test_error_on_different_shape(metric_class=SpectralAngleMapper):
@@ -98,21 +90,15 @@ def test_error_on_different_shape(metric_class=SpectralAngleMapper):
 def test_error_on_invalid_shape(metric_class=SpectralAngleMapper):
     """Test that error is raised if input is not 4D."""
     metric = metric_class()
-    with pytest.raises(
-        ValueError, match="Expected `preds` and `target` to have BxCxHxW shape.*"
-    ):
+    with pytest.raises(ValueError, match="Expected `preds` and `target` to have BxCxHxW shape.*"):
         metric(paddle.randn([3, 16, 16]), paddle.randn([3, 16, 16]))
 
 
 def test_error_on_invalid_type(metric_class=SpectralAngleMapper):
     """Test that error is raised if preds and target have different dtype."""
     metric = metric_class()
-    with pytest.raises(
-        TypeError, match="Expected `preds` and `target` to have the same data type.*"
-    ):
-        metric(
-            paddle.randn([3, 16, 16]), paddle.randn([3, 16, 16], dtype=paddle.float64)
-        )
+    with pytest.raises(TypeError, match="Expected `preds` and `target` to have the same data type.*"):
+        metric(paddle.randn([3, 16, 16]), paddle.randn([3, 16, 16], dtype=paddle.float64))
 
 
 def test_error_on_grayscale_image(metric_class=SpectralAngleMapper):

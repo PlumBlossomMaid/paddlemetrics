@@ -1,14 +1,11 @@
 import paddle
 import pytest
 from sklearn.metrics import adjusted_rand_score as sklearn_adjusted_rand_score
-from unittests._helpers.testers import MetricTester
-from unittests.clustering._inputs import (_float_inputs_extrinsic,
-                                          _single_target_extrinsic1,
-                                          _single_target_extrinsic2)
 
 from paddlemetrics.clustering.adjusted_rand_score import AdjustedRandScore
-from paddlemetrics.functional.clustering.adjusted_rand_score import \
-    adjusted_rand_score
+from paddlemetrics.functional.clustering.adjusted_rand_score import adjusted_rand_score
+from unittests._helpers.testers import MetricTester
+from unittests.clustering._inputs import _float_inputs_extrinsic, _single_target_extrinsic1, _single_target_extrinsic2
 
 
 @pytest.mark.parametrize(
@@ -56,6 +53,4 @@ def test_rand_score_functional_is_symmetric(
 ):
     """Check that the metric functional is symmetric."""
     for p, t in zip(preds, target):
-        assert paddle.allclose(
-            x=adjusted_rand_score(p, t), y=adjusted_rand_score(t, p)
-        ).item()
+        assert paddle.allclose(x=adjusted_rand_score(p, t), y=adjusted_rand_score(t, p)).item()

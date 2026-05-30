@@ -5,9 +5,7 @@ import paddle
 from typing_extensions import Literal
 
 from paddlemetrics.classification.base import _ClassificationTaskWrapper
-from paddlemetrics.classification.stat_scores import (BinaryStatScores,
-                                                     MulticlassStatScores,
-                                                     MultilabelStatScores)
+from paddlemetrics.classification.stat_scores import BinaryStatScores, MulticlassStatScores, MultilabelStatScores
 from paddlemetrics.functional.classification.accuracy import _accuracy_reduce
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.enums import ClassificationTask
@@ -97,9 +95,7 @@ class BinaryAccuracy(BinaryStatScores):
     def compute(self) -> paddle.Tensor:
         """Compute accuracy based on inputs passed in to ``update`` previously."""
         tp, fp, tn, fn = self._final_state()
-        return _accuracy_reduce(
-            tp, fp, tn, fn, average="binary", multidim_average=self.multidim_average
-        )
+        return _accuracy_reduce(tp, fp, tn, fn, average="binary", multidim_average=self.multidim_average)
 
     def plot(
         self,
@@ -532,9 +528,7 @@ class Accuracy(_ClassificationTaskWrapper):
                     f"Optional arg `num_classes` must be type `int` when task is {task}. Got {type(num_classes)}"
                 )
             if not isinstance(top_k, int):
-                raise ValueError(
-                    f"Optional arg `top_k` must be type `int` when task is {task}. Got {type(top_k)}"
-                )
+                raise ValueError(f"Optional arg `top_k` must be type `int` when task is {task}. Got {type(top_k)}")
             return MulticlassAccuracy(num_classes, top_k, average, **kwargs)
         if task == ClassificationTask.MULTILABEL:
             if not isinstance(num_labels, int):

@@ -1,15 +1,11 @@
 import pytest
-from sklearn.metrics import \
-    calinski_harabasz_score as sklearn_calinski_harabasz_score
+from sklearn.metrics import calinski_harabasz_score as sklearn_calinski_harabasz_score
+
+from paddlemetrics.clustering.calinski_harabasz_score import CalinskiHarabaszScore
+from paddlemetrics.functional.clustering.calinski_harabasz_score import calinski_harabasz_score
 from unittests._helpers import seed_all
 from unittests._helpers.testers import MetricTester
-from unittests.clustering._inputs import (_single_target_intrinsic1,
-                                          _single_target_intrinsic2)
-
-from paddlemetrics.clustering.calinski_harabasz_score import \
-    CalinskiHarabaszScore
-from paddlemetrics.functional.clustering.calinski_harabasz_score import \
-    calinski_harabasz_score
+from unittests.clustering._inputs import _single_target_intrinsic1, _single_target_intrinsic2
 
 seed_all(42)
 

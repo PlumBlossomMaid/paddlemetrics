@@ -1,12 +1,12 @@
 import paddle
 
 from paddlemetrics.functional.clustering.utils import (
-    _validate_intrinsic_cluster_data, _validate_intrinsic_labels_to_samples)
+    _validate_intrinsic_cluster_data,
+    _validate_intrinsic_labels_to_samples,
+)
 
 
-def calinski_harabasz_score(
-    data: paddle.Tensor, labels: paddle.Tensor
-) -> paddle.Tensor:
+def calinski_harabasz_score(data: paddle.Tensor, labels: paddle.Tensor) -> paddle.Tensor:
     """Compute the Calinski Harabasz Score (also known as variance ratio criterion) for clustering algorithms.
 
     Args:
@@ -40,8 +40,4 @@ def calinski_harabasz_score(
         within_cluster_dispersion += ((cluster_k - mean_k) ** 2).sum()
     if within_cluster_dispersion == 0:
         return paddle.tensor(1.0, device=data.device, dtype=paddle.float32)
-    return (
-        between_cluster_dispersion
-        * (num_samples - num_labels)
-        / (within_cluster_dispersion * (num_labels - 1.0))
-    )
+    return between_cluster_dispersion * (num_samples - num_labels) / (within_cluster_dispersion * (num_labels - 1.0))

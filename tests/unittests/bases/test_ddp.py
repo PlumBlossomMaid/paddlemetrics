@@ -1,20 +1,21 @@
 import os
 from copy import deepcopy
 from functools import partial
+from typing import Any, List, Optional
 
 import paddle
-from paddle import Tensor
 import pytest
-from unittests import NUM_PROCESSES, USE_PYTEST_POOL
-from unittests._helpers import _IS_WINDOWS, seed_all
-from unittests._helpers.testers import (DummyListMetric, DummyMetric,
-                                        DummyMetricSum)
-from unittests.conftest import setup_ddp
+from paddle import Tensor
 
 from paddlemetrics import Metric
 from paddlemetrics.utils.exceptions import PaddleMetricsUserError
+from unittests import NUM_PROCESSES, USE_PYTEST_POOL
+from unittests._helpers import _IS_WINDOWS, seed_all
+from unittests._helpers.testers import DummyListMetric, DummyMetric, DummyMetricSum
+from unittests.conftest import setup_ddp
 
 seed_all(42)
+
 
 def gather_all_tensors(result: Tensor, group: Optional[Any] = None) -> List[Tensor]:
     """Gather all tensors from several ddp processes onto a list that is broadcast to all processes.
@@ -72,7 +73,6 @@ def gather_all_tensors(result: Tensor, group: Optional[Any] = None) -> List[Tens
     return gathered_result
 
 
-
 def _test_ddp_sum(rank: int, worldsize: int = NUM_PROCESSES) -> None:
     dummy = DummyMetric()
     dummy._reductions = {"foo": paddle.sum}
@@ -107,9 +107,7 @@ def _test_ddp_gather_uneven_tensors(rank: int, worldsize: int = NUM_PROCESSES) -
         assert (result[idx] == paddle.ones_like(result[idx])).all()
 
 
-def _test_ddp_gather_uneven_tensors_multidim(
-    rank: int, worldsize: int = NUM_PROCESSES
-) -> None:
+def _test_ddp_gather_uneven_tensors_multidim(rank: int, worldsize: int = NUM_PROCESSES) -> None:
     tensor = paddle.ones(rank + 1, 2 - rank)
     result = gather_all_tensors(tensor)
     assert len(result) == worldsize
@@ -146,9 +144,7 @@ def test_ddp(process):
     pytest.pool.map(process, range(NUM_PROCESSES))
 
 
-def _test_ddp_gather_all_autograd_same_shape(
-    rank: int, worldsize: int = NUM_PROCESSES
-) -> None:
+def _test_ddp_gather_all_autograd_same_shape(rank: int, worldsize: int = NUM_PROCESSES) -> None:
     """Test that ddp gather preserves local rank's autograd graph for same-shaped tensors across ranks."""
     setup_ddp(rank, worldsize)
     x = (rank + 1) * paddle.ones(10, requires_grad=True)
@@ -160,9 +156,7 @@ def _test_ddp_gather_all_autograd_same_shape(
     assert paddle.allclose(x=grad, y=a * paddle.ones_like(x)).item()
 
 
-def _test_ddp_gather_all_autograd_different_shape(
-    rank: int, worldsize: int = NUM_PROCESSES
-) -> None:
+def _test_ddp_gather_all_autograd_different_shape(rank: int, worldsize: int = NUM_PROCESSES) -> None:
     """Test that ddp gather preserves local rank's autograd graph for differently-shaped tensors across ranks."""
     setup_ddp(rank, worldsize)
     x = (rank + 1) * paddle.ones(rank + 1, 2 - rank, requires_grad=True)
@@ -259,16 +253,12 @@ def _test_state_dict_is_synced(rank, tmpdir):
         verify_metric(metric, i, 1)
         metric.sync()
         assert metric._is_synced
-        with pytest.raises(
-            PaddleMetricsUserError, match="The Metric has already been synced."
-        ):
+        with pytest.raises(PaddleMetricsUserError, match="The Metric has already been synced."):
             metric.sync()
         verify_metric(metric, i, 2)
         metric.unsync()
         assert not metric._is_synced
-        with pytest.raises(
-            PaddleMetricsUserError, match="The Metric has already been un-synced."
-        ):
+        with pytest.raises(PaddleMetricsUserError, match="The Metric has already been un-synced."):
             metric.unsync()
         with metric.sync_context():
             assert metric._is_synced
@@ -311,9 +301,7 @@ def _test_state_dict_is_synced(rank, tmpdir):
 @pytest.mark.skipif(not USE_PYTEST_POOL, reason="DDP pool is not available.")
 def test_state_dict_is_synced(tmpdir):
     """Tests that metrics are synced while creating the state dict but restored after to continue accumulation."""
-    pytest.pool.map(
-        partial(_test_state_dict_is_synced, tmpdir=tmpdir), range(NUM_PROCESSES)
-    )
+    pytest.pool.map(partial(_test_state_dict_is_synced, tmpdir=tmpdir), range(NUM_PROCESSES))
 
 
 def _test_sync_on_compute_tensor_state(rank, sync_on_compute):
@@ -344,14 +332,10 @@ def _test_sync_on_compute_list_state(rank, sync_on_compute):
 @pytest.mark.skipif(_IS_WINDOWS, reason="DDP not available on windows")
 @pytest.mark.skipif(not USE_PYTEST_POOL, reason="DDP pool is not available.")
 @pytest.mark.parametrize("sync_on_compute", [True, False])
-@pytest.mark.parametrize(
-    "test_func", [_test_sync_on_compute_list_state, _test_sync_on_compute_tensor_state]
-)
+@pytest.mark.parametrize("test_func", [_test_sync_on_compute_list_state, _test_sync_on_compute_tensor_state])
 def test_sync_on_compute(sync_on_compute, test_func):
     """Test that synchronization of states can be enabled and disabled for compute."""
-    pytest.pool.map(
-        partial(test_func, sync_on_compute=sync_on_compute), range(NUM_PROCESSES)
-    )
+    pytest.pool.map(partial(test_func, sync_on_compute=sync_on_compute), range(NUM_PROCESSES))
 
 
 def _test_sync_with_empty_lists(rank):
@@ -361,9 +345,7 @@ def _test_sync_with_empty_lists(rank):
 
 
 @pytest.mark.DDP
-@pytest.mark.skipif(
-    not True, reason="test only works on newer torch versions"
-)
+@pytest.mark.skipif(not True, reason="test only works on newer torch versions")
 @pytest.mark.skipif(_IS_WINDOWS, reason="DDP not available on windows")
 @pytest.mark.skipif(not USE_PYTEST_POOL, reason="DDP pool is not available.")
 def test_sync_with_empty_lists():
@@ -380,9 +362,7 @@ def _test_sync_with_unequal_size_lists(rank):
 
 
 @pytest.mark.DDP
-@pytest.mark.skipif(
-    not True, reason="test only works on newer torch versions"
-)
+@pytest.mark.skipif(not True, reason="test only works on newer torch versions")
 @pytest.mark.skipif(_IS_WINDOWS, reason="DDP not available on windows")
 @pytest.mark.skipif(not USE_PYTEST_POOL, reason="DDP pool is not available.")
 def test_sync_with_unequal_size_lists():

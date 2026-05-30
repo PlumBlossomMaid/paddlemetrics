@@ -4,11 +4,9 @@ from typing import Any, Optional, Union
 import paddle
 from paddle import Tensor
 
-from paddlemetrics.functional.audio.stoi import \
-    short_time_objective_intelligibility
+from paddlemetrics.functional.audio.stoi import short_time_objective_intelligibility
 from paddlemetrics.metric import Metric
-from paddlemetrics.utils.imports import (_MATPLOTLIB_AVAILABLE,
-                                            _PYSTOI_AVAILABLE)
+from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE, _PYSTOI_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
 
 __doctest_requires__ = {"ShortTimeObjectiveIntelligibility": ["pystoi"]}
@@ -85,9 +83,9 @@ class ShortTimeObjectiveIntelligibility(Metric):
 
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update state with predictions and targets."""
-        stoi_batch = short_time_objective_intelligibility(
-            preds, target, self.fs, self.extended, False
-        ).to(self.sum_stoi.place)
+        stoi_batch = short_time_objective_intelligibility(preds, target, self.fs, self.extended, False).to(
+            self.sum_stoi.place
+        )
         self.sum_stoi += stoi_batch.sum()
         self.total += stoi_batch.size
 

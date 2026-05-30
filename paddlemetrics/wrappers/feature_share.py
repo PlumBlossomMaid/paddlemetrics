@@ -80,9 +80,7 @@ class FeatureShare(MetricCollection):
         if max_cache_size is None:
             max_cache_size = len(self)
         if not isinstance(max_cache_size, int):
-            raise TypeError(
-                f"max_cache_size should be an integer, but got {max_cache_size}"
-            )
+            raise TypeError(f"max_cache_size should be an integer, but got {max_cache_size}")
         try:
             first_net = next(iter(self.values()))
             if not isinstance(first_net.feature_network, str):
@@ -93,9 +91,7 @@ class FeatureShare(MetricCollection):
                 "Tried to extract the network to share from the first metric, but it did not have a `feature_network` attribute. Please make sure that the metric has an attribute with that name, else it cannot be shared."
             ) from err
         except TypeError as err:
-            raise TypeError(
-                "The `feature_network` attribute must be a string representing the network name."
-            ) from err
+            raise TypeError("The `feature_network` attribute must be a string representing the network name.") from err
         cached_net = NetworkCache(network_to_share, max_size=max_cache_size)
         for metric_name, metric in self.items():
             if not hasattr(metric, "feature_network"):
@@ -103,9 +99,7 @@ class FeatureShare(MetricCollection):
                     f"Tried to set the cached network to all metrics, but one of the metrics did not have a `feature_network` attribute. Please make sure that all metrics have a attribute with that name, else it cannot be shared. Failed on metric {metric_name}."
                 )
             if not isinstance(metric.feature_network, str):
-                raise TypeError(
-                    f"Metric {metric_name}'s `feature_network` attribute must be a string."
-                )
+                raise TypeError(f"Metric {metric_name}'s `feature_network` attribute must be a string.")
             if str(getattr(metric, metric.feature_network)) != str(network_to_share):
                 rank_zero_warn(
                     f"The network to share between the metrics is not the same for all metrics. Metric {metric_name} has a different network than the first metric. This may lead to unexpected behavior.",

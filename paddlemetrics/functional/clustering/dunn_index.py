@@ -1,13 +1,10 @@
-import sys
 
 from itertools import combinations
 
 import paddle
 
 
-def _dunn_index_update(
-    data: paddle.Tensor, labels: paddle.Tensor, p: float
-) -> tuple[paddle.Tensor, paddle.Tensor]:
+def _dunn_index_update(data: paddle.Tensor, labels: paddle.Tensor, p: float) -> tuple[paddle.Tensor, paddle.Tensor]:
     """Update and return variables required to compute the Dunn index.
 
     Args:
@@ -21,19 +18,15 @@ def _dunn_index_update(
 
     """
     unique_labels, inverse_indices = labels.unique(return_inverse=True)
-    clusters = [
-        data[inverse_indices == label_idx] for label_idx in range(len(unique_labels))
-    ]
+    clusters = [data[inverse_indices == label_idx] for label_idx in range(len(unique_labels))]
     centroids = [c.mean(dim=0) for c in clusters]
     intercluster_distance = paddle.linalg.norm(
         paddle.stack([(a - b) for a, b in combinations(centroids, 2)], axis=0),
-        ord=p, axis=1,
+        ord=p,
+        axis=1,
     )
     max_intracluster_distance = paddle.stack(
-        [
-            paddle.linalg.norm(ci - mu, ord=p, axis=1)._max()
-            for ci, mu in zip(clusters, centroids)
-        ]
+        [paddle.linalg.norm(ci - mu, ord=p, axis=1).amax() for ci, mu in zip(clusters, centroids)]
     )
     return intercluster_distance, max_intracluster_distance
 
@@ -51,12 +44,10 @@ def _dunn_index_compute(
         scalar tensor with the dunn index
 
     """
-    return intercluster_distance._min() / max_intracluster_distance._max()
+    return intercluster_distance.amin() / max_intracluster_distance.amax()
 
 
-def dunn_index(
-    data: paddle.Tensor, labels: paddle.Tensor, p: float = 2
-) -> paddle.Tensor:
+def dunn_index(data: paddle.Tensor, labels: paddle.Tensor, p: float = 2) -> paddle.Tensor:
     """Compute the Dunn index.
 
     Args:

@@ -1,4 +1,3 @@
-import sys
 
 import math
 from functools import partial
@@ -7,21 +6,23 @@ import numpy as np
 import paddle
 import pytest
 from sewar.utils import _compute_bef
+
+from paddlemetrics.functional.image.psnrb import peak_signal_noise_ratio_with_blocked_effect
+from paddlemetrics.image import PeakSignalNoiseRatioWithBlockedEffect
 from unittests import BATCH_SIZE, NUM_BATCHES
 from unittests._helpers import seed_all
 from unittests._helpers.testers import MetricTester
 
-from paddlemetrics.functional.image.psnrb import \
-    peak_signal_noise_ratio_with_blocked_effect
-from paddlemetrics.image import PeakSignalNoiseRatioWithBlockedEffect
-
 seed_all(42)
 _input = (
-    paddle.rand(NUM_BATCHES, BATCH_SIZE, 1, 16, 16),
-    paddle.rand(NUM_BATCHES, BATCH_SIZE, 1, 16, 16),
-), (
-    paddle.randint(low=0, high=255, shape=(NUM_BATCHES, BATCH_SIZE, 1, 16, 16)),
-    paddle.randint(low=0, high=255, shape=(NUM_BATCHES, BATCH_SIZE, 1, 16, 16)),
+    (
+        paddle.rand(NUM_BATCHES, BATCH_SIZE, 1, 16, 16),
+        paddle.rand(NUM_BATCHES, BATCH_SIZE, 1, 16, 16),
+    ),
+    (
+        paddle.randint(low=0, high=255, shape=(NUM_BATCHES, BATCH_SIZE, 1, 16, 16)),
+        paddle.randint(low=0, high=255, shape=(NUM_BATCHES, BATCH_SIZE, 1, 16, 16)),
+    ),
 )
 
 
@@ -63,7 +64,7 @@ class TestPSNR(MetricTester):
     @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
     def test_psnr(self, preds, target, ddp):
         """Test that modular PSNRB metric returns the same result as the reference implementation."""
-        data_range = 1.0 if preds._max() <= 1.0 else 255.0
+        data_range = 1.0 if preds.amax() <= 1.0 else 255.0
         self.run_class_metric_test(
             ddp,
             preds,
@@ -75,7 +76,7 @@ class TestPSNR(MetricTester):
 
     def test_psnr_functional(self, preds, target):
         """Test that functional PSNRB metric returns the same result as the reference implementation."""
-        data_range = 1.0 if preds._max() <= 1.0 else 255.0
+        data_range = 1.0 if preds.amax() <= 1.0 else 255.0
         self.run_functional_metric_test(
             preds,
             target,
@@ -86,9 +87,9 @@ class TestPSNR(MetricTester):
 
     def test_psnr_half_cpu(self, preds, target):
         """Test that PSNRB metric works with half precision on cpu."""
-        if target._max() - target._min() < 2:
+        if target.amax() - target.amin() < 2:
             pytest.xfail("PSNRB metric does not support cpu + half precision")
-        data_range = 1.0 if preds._max() <= 1.0 else 255.0
+        data_range = 1.0 if preds.amax() <= 1.0 else 255.0
         self.run_precision_test_cpu(
             preds,
             target,
@@ -100,7 +101,7 @@ class TestPSNR(MetricTester):
     @pytest.mark.skipif(not paddle.cuda.is_available(), reason="test requires cuda")
     def test_psnr_half_gpu(self, preds, target):
         """Test that PSNRB metric works with half precision on gpu."""
-        data_range = 1.0 if preds._max() <= 1.0 else 255.0
+        data_range = 1.0 if preds.amax() <= 1.0 else 255.0
         self.run_precision_test_gpu(
             preds,
             target,

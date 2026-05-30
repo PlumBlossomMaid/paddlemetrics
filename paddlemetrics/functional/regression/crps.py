@@ -1,14 +1,11 @@
 from typing import Tuple
 
 import paddle
-from paddle import Tensor
 
 from paddlemetrics.utils.checks import _check_same_shape
 
 
-def _crps_update(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> Tuple[int, paddle.Tensor, paddle.Tensor]:
+def _crps_update(preds: paddle.Tensor, target: paddle.Tensor) -> Tuple[int, paddle.Tensor, paddle.Tensor]:
     """Compute intermediate CRPS values before aggregation.
 
     Args:
@@ -24,31 +21,21 @@ def _crps_update(
     _check_same_shape(preds[:, 0], target)
     batch_size, n_ensemble_members = preds.shape
     if n_ensemble_members < 2:
-        raise ValueError(
-            f"CRPS requires at least 2 ensemble members, but you provided {preds.shape}."
-        )
+        raise ValueError(f"CRPS requires at least 2 ensemble members, but you provided {preds.shape}.")
     preds = paddle.sort(preds, axis=1)[0]
     observation_inflated = target.unsqueeze(1).expand_as(preds)
-    diff = (
-        paddle.sum(paddle.abs(preds - observation_inflated), axis=1) / n_ensemble_members
-    )
+    diff = paddle.sum(paddle.abs(preds - observation_inflated), axis=1) / n_ensemble_members
     ensemble_diffs = paddle.abs(preds.unsqueeze(2) - preds.unsqueeze(1))
-    ensemble_sum = paddle.sum(ensemble_diffs, axis=(1, 2)) / (
-        2 * n_ensemble_members * n_ensemble_members
-    )
+    ensemble_sum = paddle.sum(ensemble_diffs, axis=(1, 2)) / (2 * n_ensemble_members * n_ensemble_members)
     return batch_size, diff, ensemble_sum
 
 
-def _crps_compute(
-    batch_size: int, diff: paddle.Tensor, ensemble_sum: paddle.Tensor
-) -> paddle.Tensor:
+def _crps_compute(batch_size: int, diff: paddle.Tensor, ensemble_sum: paddle.Tensor) -> paddle.Tensor:
     """Final CRPS computation."""
     return paddle.mean(diff - ensemble_sum)
 
 
-def continuous_ranked_probability_score(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> paddle.Tensor:
+def continuous_ranked_probability_score(preds: paddle.Tensor, target: paddle.Tensor) -> paddle.Tensor:
     """Computes continuous ranked probability score.
 
     .. math::

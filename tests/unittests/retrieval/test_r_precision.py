@@ -4,18 +4,21 @@ import numpy as np
 import paddle
 import pytest
 from typing_extensions import Literal
+
+from paddlemetrics.functional.retrieval.r_precision import retrieval_r_precision
+from paddlemetrics.retrieval.r_precision import RetrievalRPrecision
 from unittests._helpers import seed_all
 from unittests.retrieval.helpers import (
-    RetrievalMetricTester, _concat_tests, _custom_aggregate_fn,
+    RetrievalMetricTester,
+    _concat_tests,
+    _custom_aggregate_fn,
     _default_metric_class_input_arguments,
     _default_metric_class_input_arguments_ignore_index,
     _default_metric_functional_input_arguments,
     _errors_test_class_metric_parameters_default,
     _errors_test_class_metric_parameters_no_pos_target,
-    _errors_test_functional_metric_parameters_default)
-
-from paddlemetrics.functional.retrieval.r_precision import retrieval_r_precision
-from paddlemetrics.retrieval.r_precision import RetrievalRPrecision
+    _errors_test_functional_metric_parameters_default,
+)
 
 seed_all(42)
 
@@ -42,9 +45,7 @@ class TestRPrecision(RetrievalMetricTester):
     @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
     @pytest.mark.parametrize("empty_target_action", ["skip", "neg", "pos"])
     @pytest.mark.parametrize("ignore_index", [None, 1])
-    @pytest.mark.parametrize(
-        "aggregation", ["mean", "median", "max", "min", _custom_aggregate_fn]
-    )
+    @pytest.mark.parametrize("aggregation", ["mean", "median", "max", "min", _custom_aggregate_fn])
     @pytest.mark.parametrize(**_default_metric_class_input_arguments)
     def test_class_metric(
         self,
@@ -107,9 +108,7 @@ class TestRPrecision(RetrievalMetricTester):
         )
 
     @pytest.mark.parametrize(**_default_metric_class_input_arguments)
-    def test_precision_cpu(
-        self, indexes: paddle.Tensor, preds: paddle.Tensor, target: paddle.Tensor
-    ):
+    def test_precision_cpu(self, indexes: paddle.Tensor, preds: paddle.Tensor, target: paddle.Tensor):
         """Test dtype support of the metric on CPU."""
         self.run_precision_test_cpu(
             indexes=indexes,
@@ -120,9 +119,7 @@ class TestRPrecision(RetrievalMetricTester):
         )
 
     @pytest.mark.parametrize(**_default_metric_class_input_arguments)
-    def test_precision_gpu(
-        self, indexes: paddle.Tensor, preds: paddle.Tensor, target: paddle.Tensor
-    ):
+    def test_precision_gpu(self, indexes: paddle.Tensor, preds: paddle.Tensor, target: paddle.Tensor):
         """Test dtype support of the metric on GPU."""
         self.run_precision_test_gpu(
             indexes=indexes,

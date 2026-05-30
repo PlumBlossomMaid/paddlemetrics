@@ -4,23 +4,20 @@ import paddle
 import pytest
 from pesq import pesq as pesq_backend
 from scipy.io import wavfile
-from unittests import _Input
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
-from unittests.audio import (_SAMPLE_AUDIO_SPEECH, _SAMPLE_AUDIO_SPEECH_BAB_DB,
-                             _average_metric_wrapper)
 
 from paddlemetrics.audio import PerceptualEvaluationSpeechQuality
 from paddlemetrics.functional.audio import perceptual_evaluation_speech_quality
+from unittests import _Input
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
+from unittests.audio import _SAMPLE_AUDIO_SPEECH, _SAMPLE_AUDIO_SPEECH_BAB_DB, _average_metric_wrapper
 
 seed_all(42)
 inputs_8k = _Input(preds=paddle.rand(2, 3, 2100), target=paddle.rand(2, 3, 2100))
 inputs_16k = _Input(preds=paddle.rand(2, 3, 4100), target=paddle.rand(2, 3, 4100))
 
 
-def _reference_pesq_batch(
-    preds: paddle.Tensor, target: paddle.Tensor, fs: int, mode: str
-):
+def _reference_pesq_batch(preds: paddle.Tensor, target: paddle.Tensor, fs: int, mode: str):
     """Comparison function."""
     target = target.detach().cpu().numpy()
     preds = preds.detach().cpu().numpy()
@@ -109,9 +106,7 @@ class TestPESQ(MetricTester):
             preds=preds,
             target=target,
             metric_module=PerceptualEvaluationSpeechQuality,
-            metric_functional=partial(
-                perceptual_evaluation_speech_quality, fs=fs, mode=mode
-            ),
+            metric_functional=partial(perceptual_evaluation_speech_quality, fs=fs, mode=mode),
             metric_args={"fs": fs, "mode": mode},
         )
 
@@ -130,15 +125,7 @@ def test_on_real_audio():
     """Test that metric works as expected on real audio signals."""
     rate, ref = wavfile.read(_SAMPLE_AUDIO_SPEECH)
     rate, deg = wavfile.read(_SAMPLE_AUDIO_SPEECH_BAB_DB)
-    pesq_score = perceptual_evaluation_speech_quality(
-        paddle.from_numpy(deg), paddle.from_numpy(ref), rate, "wb"
-    )
-    assert paddle.allclose(
-        x=pesq_score, y=paddle.tensor(1.0832337141036987), atol=0.0001
-    ).item()
-    pesq_score = perceptual_evaluation_speech_quality(
-        paddle.from_numpy(deg), paddle.from_numpy(ref), rate, "nb"
-    )
-    assert paddle.allclose(
-        x=pesq_score, y=paddle.tensor(1.6072081327438354), atol=0.0001
-    ).item()
+    pesq_score = perceptual_evaluation_speech_quality(paddle.from_numpy(deg), paddle.from_numpy(ref), rate, "wb")
+    assert paddle.allclose(x=pesq_score, y=paddle.tensor(1.0832337141036987), atol=0.0001).item()
+    pesq_score = perceptual_evaluation_speech_quality(paddle.from_numpy(deg), paddle.from_numpy(ref), rate, "nb")
+    assert paddle.allclose(x=pesq_score, y=paddle.tensor(1.6072081327438354), atol=0.0001).item()

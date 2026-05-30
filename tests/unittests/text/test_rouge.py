@@ -6,15 +6,13 @@ from typing import Callable, Union
 import paddle
 import pytest
 from typing_extensions import Literal
-from unittests._helpers import skip_on_connection_issues
-from unittests.text._helpers import TextTester
-from unittests.text._inputs import (_Input, _inputs_multiple_references,
-                                    _inputs_single_sentence_single_reference)
 
 from paddlemetrics.functional.text.rouge import rouge_score
 from paddlemetrics.text.rouge import ROUGEScore
-from paddlemetrics.utils.imports import (_NLTK_AVAILABLE,
-                                            _ROUGE_SCORE_AVAILABLE)
+from paddlemetrics.utils.imports import _NLTK_AVAILABLE, _ROUGE_SCORE_AVAILABLE
+from unittests._helpers import skip_on_connection_issues
+from unittests.text._helpers import TextTester
+from unittests.text._inputs import _Input, _inputs_multiple_references, _inputs_single_sentence_single_reference
 
 if _ROUGE_SCORE_AVAILABLE:
     from rouge_score.rouge_scorer import RougeScorer
@@ -57,24 +55,17 @@ def _reference_rouge_score(
         if accumulate == "best":
             scores = {}
             for rouge_key in list_results[0]:
-                all_fmeasure = paddle.tensor(
-                    [v[rouge_key].fmeasure for v in list_results]
-                )
+                all_fmeasure = paddle.tensor([v[rouge_key].fmeasure for v in list_results])
                 highest_idx = paddle.argmax(all_fmeasure).item()
                 scores[rouge_key] = list_results[highest_idx][rouge_key]
             aggregator.add_scores(scores)
         elif accumulate == "avg":
             for _score in list_results:
                 aggregator_avg.add_scores(_score)
-            _score = {
-                rouge_key: scores.mid
-                for rouge_key, scores in aggregator_avg.aggregate().items()
-            }
+            _score = {rouge_key: scores.mid for rouge_key, scores in aggregator_avg.aggregate().items()}
             aggregator.add_scores(_score)
         else:
-            raise ValueError(
-                f"Got unknown accumulate value {accumulate}. Expected to be one of ['best', 'avg']"
-            )
+            raise ValueError(f"Got unknown accumulate value {accumulate}. Expected to be one of ['best', 'avg']")
     rs_scores = aggregator.aggregate()
     rs_result = getattr(rs_scores[rouge_level].mid, metric)
     return paddle.tensor(rs_result, dtype=paddle.float32)
@@ -84,16 +75,16 @@ def _reference_rouge_score(
 @pytest.mark.parametrize(
     ("pl_rouge_metric_key", "use_stemmer"),
     [
-        ("rouge1_precision"),
-        ("rouge1_recall"),
+        ("rouge1_precision", False),
+        ("rouge1_recall", False),
         ("rouge1_fmeasure", False),
         ("rouge2_precision", False),
-        ("rouge2_recall"),
-        ("rouge2_fmeasure"),
+        ("rouge2_recall", False),
+        ("rouge2_fmeasure", False),
         ("rougeL_precision", False),
         ("rougeL_recall", False),
-        ("rougeL_fmeasure"),
-        ("rougeLsum_precision"),
+        ("rougeL_fmeasure", False),
+        ("rougeLsum_precision", False),
         ("rougeLsum_recall", False),
         ("rougeLsum_fmeasure", False),
     ],
@@ -108,9 +99,7 @@ class TestROUGEScore(TextTester):
 
     @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
     @skip_on_connection_issues(reason="could not download nltk relevant data")
-    def test_rouge_score_class(
-        self, ddp, preds, targets, pl_rouge_metric_key, use_stemmer, accumulate
-    ):
+    def test_rouge_score_class(self, ddp, preds, targets, pl_rouge_metric_key, use_stemmer, accumulate):
         """Test class implementation of metric."""
         metric_args = {"use_stemmer": use_stemmer, "accumulate": accumulate}
         rouge_level, metric = pl_rouge_metric_key.split("_")
@@ -132,9 +121,7 @@ class TestROUGEScore(TextTester):
         )
 
     @skip_on_connection_issues(reason="could not download nltk relevant data")
-    def test_rouge_score_functional(
-        self, preds, targets, pl_rouge_metric_key, use_stemmer, accumulate
-    ):
+    def test_rouge_score_functional(self, preds, targets, pl_rouge_metric_key, use_stemmer, accumulate):
         """Test functional implementation of metric."""
         metric_args = {"use_stemmer": use_stemmer, "accumulate": accumulate}
         rouge_level, metric = pl_rouge_metric_key.split("_")
@@ -168,13 +155,9 @@ def test_rouge_metric_raises_errors_and_warnings():
 def test_rouge_metric_wrong_key_value_error():
     """Test errors are raised on wrongly provided keys."""
     key = "rouge1", "rouge"
-    with pytest.raises(
-        ValueError, match="Got unknown rouge key rouge. Expected to be one of"
-    ):
+    with pytest.raises(ValueError, match="Got unknown rouge key rouge. Expected to be one of"):
         ROUGEScore(rouge_keys=key)
-    with pytest.raises(
-        ValueError, match="Got unknown rouge key rouge. Expected to be one of"
-    ):
+    with pytest.raises(ValueError, match="Got unknown rouge key rouge. Expected to be one of"):
         rouge_score(
             _inputs_single_sentence_single_reference.preds,
             _inputs_single_sentence_single_reference.target,
@@ -203,9 +186,7 @@ def test_rouge_metric_wrong_key_value_error():
 @skip_on_connection_issues(reason="could not download nltk relevant data")
 def test_rouge_metric_normalizer_tokenizer(pl_rouge_metric_key):
     """Test that rouge metric works for different rouge levels."""
-    normalizer: Callable[[str], str] = lambda text: re.sub(
-        "[^a-z0-9]+", " ", text.lower()
-    )
+    normalizer: Callable[[str], str] = lambda text: re.sub("[^a-z0-9]+", " ", text.lower())
     tokenizer: Callable[[str], Sequence[str]] = lambda text: re.split("\\s+", text)
     rouge_level, metric = pl_rouge_metric_key.split("_")
     original_score = _reference_rouge_score(
@@ -309,6 +290,6 @@ def test_rouge_score_accumulate_best(preds, references, expected_scores):
     """Issue: https://github.com/Lightning-AI/paddlemetrics/issues/2148."""
     result = rouge_score(preds, references, accumulate="best")
     for key in expected_scores:
-        assert paddle.isclose(
-            result[key], paddle.tensor(expected_scores[key])
-        ), f"Expected {expected_scores[key]} for {key}, but got {result[key]}"
+        assert paddle.isclose(result[key], paddle.tensor(expected_scores[key])), (
+            f"Expected {expected_scores[key]} for {key}, but got {result[key]}"
+        )

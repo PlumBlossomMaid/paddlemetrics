@@ -87,13 +87,10 @@ class RetrievalFallOut(RetrievalMetric):
         ignore_index: Optional[int] = None,
         top_k: Optional[int] = None,
         aggregation: Union[Literal["mean", "median", "min", "max"], Callable] = "mean",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__(
-            empty_target_action=empty_target_action,
-            ignore_index=ignore_index,
-            aggregation=aggregation,
-            **kwargs
+            empty_target_action=empty_target_action, ignore_index=ignore_index, aggregation=aggregation, **kwargs
         )
         if top_k is not None and not (isinstance(top_k, int) and top_k > 0):
             raise ValueError("`top_k` has to be a positive integer or None")
@@ -110,7 +107,8 @@ class RetrievalFallOut(RetrievalMetric):
         indexes = dim_zero_cat(self.indexes)
         preds = dim_zero_cat(self.preds)
         target = dim_zero_cat(self.target)
-        indexes, indices = paddle.sort(indexes)
+        indices = paddle.argsort(indexes)
+        indexes = indexes[indices]
         preds = preds[indices]
         target = target[indices]
         split_sizes = _flexible_bincount(indexes).detach().cpu().tolist()
@@ -121,9 +119,7 @@ class RetrievalFallOut(RetrievalMetric):
         ):
             if not (1 - mini_target).sum():
                 if self.empty_target_action == "error":
-                    raise ValueError(
-                        "`compute` method was provided with a query with no negative target."
-                    )
+                    raise ValueError("`compute` method was provided with a query with no negative target.")
                 if self.empty_target_action == "pos":
                     res.append(paddle.tensor(1.0))
                 elif self.empty_target_action == "neg":
@@ -131,9 +127,7 @@ class RetrievalFallOut(RetrievalMetric):
             else:
                 res.append(self._metric(mini_preds, mini_target))
         return (
-            _retrieval_aggregate(
-                paddle.stack([x.to(preds) for x in res]), aggregation=self.aggregation
-            )
+            _retrieval_aggregate(paddle.stack([x.to(preds) for x in res]), aggregation=self.aggregation)
             if res
             else paddle.tensor(0.0).to(preds)
         )

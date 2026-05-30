@@ -4,8 +4,7 @@ from typing import Any, Optional, Union
 import paddle
 from paddle import Tensor
 
-from paddlemetrics.functional.regression.r2 import (_r2_score_compute,
-                                                   _r2_score_update)
+from paddlemetrics.functional.regression.r2 import _r2_score_compute, _r2_score_update
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -94,14 +93,10 @@ class R2Score(Metric):
     residual: Tensor
     total: Tensor
 
-    def __init__(
-        self, adjusted: int = 0, multioutput: str = "uniform_average", **kwargs: Any
-    ) -> None:
+    def __init__(self, adjusted: int = 0, multioutput: str = "uniform_average", **kwargs: Any) -> None:
         super().__init__(**kwargs)
         if adjusted < 0 or not isinstance(adjusted, int):
-            raise ValueError(
-                "`adjusted` parameter should be an integer larger or equal to 0."
-            )
+            raise ValueError("`adjusted` parameter should be an integer larger or equal to 0.")
         self.adjusted = adjusted
         allowed_multioutput = ("raw_values", "uniform_average", "variance_weighted")
         if multioutput not in allowed_multioutput:
@@ -109,9 +104,7 @@ class R2Score(Metric):
                 f"Invalid input to argument `multioutput`. Choose one of the following: {allowed_multioutput}"
             )
         self.multioutput = multioutput
-        self.add_state(
-            "sum_squared_error", default=paddle.tensor(0.0), dist_reduce_fx="sum"
-        )
+        self.add_state("sum_squared_error", default=paddle.tensor(0.0), dist_reduce_fx="sum")
         self.add_state("sum_error", default=paddle.tensor(0.0), dist_reduce_fx="sum")
         self.add_state("residual", default=paddle.tensor(0.0), dist_reduce_fx="sum")
         self.add_state("total", default=paddle.tensor(0), dist_reduce_fx="sum")

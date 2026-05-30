@@ -3,13 +3,13 @@ from functools import partial
 import paddle
 import pytest
 from scipy.spatial.distance import minkowski as scipy_minkowski
-from unittests import BATCH_SIZE, NUM_BATCHES, _Input
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
 
 from paddlemetrics.functional import minkowski_distance
 from paddlemetrics.regression import MinkowskiDistance
 from paddlemetrics.utils.exceptions import PaddleMetricsUserError
+from unittests import BATCH_SIZE, NUM_BATCHES, _Input
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
 
 seed_all(42)
 NUM_TARGETS = 5
@@ -56,9 +56,7 @@ class TestMinkowskiDistance(MetricTester):
 
     @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
     @pytest.mark.parametrize("dist_sync_on_step", [True, False])
-    def test_minkowski_distance_class(
-        self, preds, target, ref_metric, p, ddp, dist_sync_on_step
-    ):
+    def test_minkowski_distance_class(self, preds, target, ref_metric, p, ddp, dist_sync_on_step):
         """Test class implementation of metric."""
         self.run_class_metric_test(
             ddp=ddp,
@@ -82,16 +80,12 @@ class TestMinkowskiDistance(MetricTester):
 
     def test_minkowski_distance_half_cpu(self, preds, target, ref_metric, p):
         """Test dtype support of the metric on CPU."""
-        self.run_precision_test_cpu(
-            preds, target, MinkowskiDistance, minkowski_distance, metric_args={"p": p}
-        )
+        self.run_precision_test_cpu(preds, target, MinkowskiDistance, minkowski_distance, metric_args={"p": p})
 
     @pytest.mark.skipif(not paddle.cuda.is_available(), reason="test requires cuda")
     def test_minkowski_distance_half_gpu(self, preds, target, ref_metric, p):
         """Test dtype support of the metric on GPU."""
-        self.run_precision_test_gpu(
-            preds, target, MinkowskiDistance, minkowski_distance, metric_args={"p": p}
-        )
+        self.run_precision_test_gpu(preds, target, MinkowskiDistance, minkowski_distance, metric_args={"p": p})
 
 
 def test_error_on_different_shape():

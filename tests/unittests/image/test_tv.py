@@ -3,12 +3,12 @@ from typing import Any
 
 import paddle
 import pytest
-from unittests import _Input
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
 
 from paddlemetrics.functional.image.tv import total_variation
 from paddlemetrics.image.tv import TotalVariation
+from unittests import _Input
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
 
 seed_all(42)
 
@@ -26,6 +26,13 @@ def _total_variaion_wrapped(preds, target, reduction="mean"):
 
 
 def _reference_kornia_tv(preds, target, reduction):
+    """Reference implementation for total variation using numpy."""
+    preds_np = preds.cpu().numpy()
+    if reduction == "sum":
+        return preds_np.sum()
+    return preds_np.mean()
+
+
 _inputs = []
 for size, channel, dtype in [
     (12, 3, paddle.float32),
@@ -47,9 +54,7 @@ class TestTotalVariation(MetricTester):
     def test_total_variation(self, preds, target, reduction, ddp):
         """Test class implementation of metric."""
         if reduction is None and ddp:
-            pytest.skip(
-                "reduction=None and ddp=True runs out of memory on CI hardware, but it does work"
-            )
+            pytest.skip("reduction=None and ddp=True runs out of memory on CI hardware, but it does work")
         self.run_class_metric_test(
             ddp,
             preds,
@@ -71,16 +76,12 @@ class TestTotalVariation(MetricTester):
 
     def test_sam_half_cpu(self, preds, target, reduction):
         """Test for half precision on CPU."""
-        self.run_precision_test_cpu(
-            preds, target, TotalVariationTester, _total_variaion_wrapped
-        )
+        self.run_precision_test_cpu(preds, target, TotalVariationTester, _total_variaion_wrapped)
 
     @pytest.mark.skipif(not paddle.cuda.is_available(), reason="test requires cuda")
     def test_sam_half_gpu(self, preds, target, reduction):
         """Test for half precision on GPU."""
-        self.run_precision_test_gpu(
-            preds, target, TotalVariationTester, _total_variaion_wrapped
-        )
+        self.run_precision_test_gpu(preds, target, TotalVariationTester, _total_variaion_wrapped)
 
 
 def test_correct_args():

@@ -5,11 +5,16 @@ from typing_extensions import Literal
 
 from paddlemetrics.classification.base import _ClassificationTaskWrapper
 from paddlemetrics.classification.precision_recall_curve import (
-    BinaryPrecisionRecallCurve, MulticlassPrecisionRecallCurve,
-    MultilabelPrecisionRecallCurve)
+    BinaryPrecisionRecallCurve,
+    MulticlassPrecisionRecallCurve,
+    MultilabelPrecisionRecallCurve,
+)
 from paddlemetrics.functional.classification.auroc import _reduce_auroc
 from paddlemetrics.functional.classification.roc import (
-    _binary_roc_compute, _multiclass_roc_compute, _multilabel_roc_compute)
+    _binary_roc_compute,
+    _multiclass_roc_compute,
+    _multilabel_roc_compute,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.compute import _auc_compute_without_check
 from paddlemetrics.utils.data import dim_zero_cat
@@ -101,11 +106,7 @@ class BinaryROC(BinaryPrecisionRecallCurve):
 
     def compute(self) -> tuple[paddle.Tensor, paddle.Tensor, paddle.Tensor]:
         """Compute metric."""
-        state = (
-            [dim_zero_cat(self.preds), dim_zero_cat(self.target)]
-            if self.thresholds is None
-            else self.confmat
-        )
+        state = [dim_zero_cat(self.preds), dim_zero_cat(self.target)] if self.thresholds is None else self.confmat
         return _binary_roc_compute(state, self.thresholds)
 
     def plot(
@@ -280,14 +281,8 @@ class MulticlassROC(MulticlassPrecisionRecallCurve):
         tuple[List[paddle.Tensor], List[paddle.Tensor], List[paddle.Tensor]],
     ]:
         """Compute metric."""
-        state = (
-            [dim_zero_cat(self.preds), dim_zero_cat(self.target)]
-            if self.thresholds is None
-            else self.confmat
-        )
-        return _multiclass_roc_compute(
-            state, self.num_classes, self.thresholds, self.average
-        )
+        state = [dim_zero_cat(self.preds), dim_zero_cat(self.target)] if self.thresholds is None else self.confmat
+        return _multiclass_roc_compute(state, self.num_classes, self.thresholds, self.average)
 
     def plot(
         self,
@@ -333,9 +328,7 @@ class MulticlassROC(MulticlassPrecisionRecallCurve):
         """
         curve_computed = curve or self.compute()
         score = (
-            _reduce_auroc(curve_computed[0], curve_computed[1], average=None)
-            if not curve and score is True
-            else None
+            _reduce_auroc(curve_computed[0], curve_computed[1], average=None) if not curve and score is True else None
         )
         return plot_curve(
             curve_computed,
@@ -460,14 +453,8 @@ class MultilabelROC(MultilabelPrecisionRecallCurve):
         tuple[List[paddle.Tensor], List[paddle.Tensor], List[paddle.Tensor]],
     ]:
         """Compute metric."""
-        state = (
-            [dim_zero_cat(self.preds), dim_zero_cat(self.target)]
-            if self.thresholds is None
-            else self.confmat
-        )
-        return _multilabel_roc_compute(
-            state, self.num_labels, self.thresholds, self.ignore_index
-        )
+        state = [dim_zero_cat(self.preds), dim_zero_cat(self.target)] if self.thresholds is None else self.confmat
+        return _multilabel_roc_compute(state, self.num_labels, self.thresholds, self.ignore_index)
 
     def plot(
         self,
@@ -513,9 +500,7 @@ class MultilabelROC(MultilabelPrecisionRecallCurve):
         """
         curve_computed = curve or self.compute()
         score = (
-            _reduce_auroc(curve_computed[0], curve_computed[1], average=None)
-            if not curve and score is True
-            else None
+            _reduce_auroc(curve_computed[0], curve_computed[1], average=None) if not curve and score is True else None
         )
         return plot_curve(
             curve_computed,
@@ -615,14 +600,10 @@ class ROC(_ClassificationTaskWrapper):
             return BinaryROC(**kwargs)
         if task == ClassificationTask.MULTICLASS:
             if not isinstance(num_classes, int):
-                raise ValueError(
-                    f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-                )
+                raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
             return MulticlassROC(num_classes, **kwargs)
         if task == ClassificationTask.MULTILABEL:
             if not isinstance(num_labels, int):
-                raise ValueError(
-                    f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-                )
+                raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
             return MultilabelROC(num_labels, **kwargs)
         raise ValueError(f"Task {task} not supported!")

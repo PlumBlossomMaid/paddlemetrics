@@ -4,8 +4,7 @@ from typing import Any, Optional, Union
 import paddle
 from paddle import Tensor
 
-from paddlemetrics.functional.text.perplexity import (_perplexity_compute,
-                                                     _perplexity_update)
+from paddlemetrics.functional.text.perplexity import _perplexity_compute, _perplexity_update
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -54,18 +53,12 @@ class Perplexity(Metric):
     total_log_probs: Tensor
     count: Tensor
 
-    def __init__(
-        self, ignore_index: Optional[int] = None, **kwargs: dict[str, Any]
-    ) -> None:
+    def __init__(self, ignore_index: Optional[int] = None, **kwargs: dict[str, Any]) -> None:
         super().__init__(**kwargs)
         if ignore_index is not None and not isinstance(ignore_index, int):
-            raise ValueError(
-                f"Argument `ignore_index` expected to either be `None` or an `int` but got {ignore_index}"
-            )
+            raise ValueError(f"Argument `ignore_index` expected to either be `None` or an `int` but got {ignore_index}")
         self.ignore_index = ignore_index
-        self.add_state(
-            "total_log_probs", default=paddle.tensor(0.0), dist_reduce_fx="sum"
-        )
+        self.add_state("total_log_probs", default=paddle.tensor(0.0), dist_reduce_fx="sum")
         self.add_state("count", default=paddle.tensor(0.0), dist_reduce_fx="sum")
 
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:

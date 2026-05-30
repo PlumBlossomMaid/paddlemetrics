@@ -5,7 +5,9 @@ import paddle
 from paddle import Tensor
 
 from paddlemetrics.functional.regression.tweedie_deviance import (
-    _tweedie_deviance_score_compute, _tweedie_deviance_score_update)
+    _tweedie_deviance_score_compute,
+    _tweedie_deviance_score_update,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -79,17 +81,13 @@ class TweedieDevianceScore(Metric):
 
     def update(self, preds: paddle.Tensor, targets: paddle.Tensor) -> None:
         """Update metric states with predictions and targets."""
-        sum_deviance_score, num_observations = _tweedie_deviance_score_update(
-            preds, targets, self.power
-        )
+        sum_deviance_score, num_observations = _tweedie_deviance_score_update(preds, targets, self.power)
         self.sum_deviance_score += sum_deviance_score
         self.num_observations += num_observations
 
     def compute(self) -> paddle.Tensor:
         """Compute metric."""
-        return _tweedie_deviance_score_compute(
-            self.sum_deviance_score, self.num_observations
-        )
+        return _tweedie_deviance_score_compute(self.sum_deviance_score, self.num_observations)
 
     def plot(
         self,

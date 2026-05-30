@@ -3,14 +3,13 @@ from functools import partial
 import numpy as np
 import paddle
 import pytest
+
+from paddlemetrics.audio import ScaleInvariantSignalDistortionRatio
+from paddlemetrics.functional.audio import scale_invariant_signal_distortion_ratio
 from unittests import BATCH_SIZE, NUM_BATCHES, _Input
 from unittests._helpers import seed_all
 from unittests._helpers.testers import MetricTester
 from unittests.audio import _average_metric_wrapper
-
-from paddlemetrics.audio import ScaleInvariantSignalDistortionRatio
-from paddlemetrics.functional.audio import \
-    scale_invariant_signal_distortion_ratio
 
 seed_all(42)
 NUM_SAMPLES = 100
@@ -23,8 +22,7 @@ inputs = _Input(
 class _SpeechMetricsSISDR:
     """The code from speechmetrics."""
 
-    def __init__(self) -> None:
-        ...
+    def __init__(self) -> None: ...
 
     def _test_window(self, audios, rate):
         eps = np.finfo(audios[0].dtype).eps
@@ -39,9 +37,7 @@ class _SpeechMetricsSISDR:
         return {"sisdr": 10 * np.log10((eps + sss) / (eps + snn))}
 
 
-def _reference_speechmetrics_si_sdr(
-    preds: paddle.Tensor, target: paddle.Tensor, zero_mean: bool
-):
+def _reference_speechmetrics_si_sdr(preds: paddle.Tensor, target: paddle.Tensor, zero_mean: bool):
     speechmetrics_sisdr = _SpeechMetricsSISDR()
     if zero_mean:
         preds = preds - preds.mean(dim=2, keepdim=True)
@@ -52,9 +48,7 @@ def _reference_speechmetrics_si_sdr(
     for i in range(preds.shape[0]):
         ms = []
         for j in range(preds.shape[1]):
-            metric = speechmetrics_sisdr._test_window(
-                [preds[i, j], target[i, j]], rate=16000
-            )
+            metric = speechmetrics_sisdr._test_window([preds[i, j], target[i, j]], rate=16000)
             ms.append(metric["sisdr"])
         mss.append(ms)
     return paddle.tensor(mss)

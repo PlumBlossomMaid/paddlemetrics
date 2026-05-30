@@ -1,15 +1,17 @@
 import paddle
 import pytest
-from unittests._helpers import seed_all
 
 from paddlemetrics import Metric, MetricCollection
-from paddlemetrics.classification import (MulticlassAccuracy,
-                                         MulticlassConfusionMatrix,
-                                         MulticlassPrecision, MulticlassRecall)
+from paddlemetrics.classification import (
+    MulticlassAccuracy,
+    MulticlassConfusionMatrix,
+    MulticlassPrecision,
+    MulticlassRecall,
+)
 from paddlemetrics.regression import MeanAbsoluteError, MeanSquaredError
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
-from paddlemetrics.wrappers import (ClasswiseWrapper, MetricTracker,
-                                   MultioutputWrapper)
+from paddlemetrics.wrappers import ClasswiseWrapper, MetricTracker, MultioutputWrapper
+from unittests._helpers import seed_all
 
 seed_all(42)
 
@@ -274,9 +276,7 @@ def test_metric_tracker_and_collection_multioutput(input_to_tracker, assert_type
         MulticlassAccuracy(num_classes=10),
         MetricCollection([MeanSquaredError(), MeanAbsoluteError()]),
         ClasswiseWrapper(MulticlassAccuracy(num_classes=10, average=None)),
-        MetricCollection(
-            [ClasswiseWrapper(MulticlassAccuracy(num_classes=10, average=None))]
-        ),
+        MetricCollection([ClasswiseWrapper(MulticlassAccuracy(num_classes=10, average=None))]),
     ],
 )
 def test_tracker_higher_is_better_integration(base_metric):
@@ -288,9 +288,7 @@ def test_tracker_higher_is_better_integration(base_metric):
         collection_higher_is_better = []
         for m in base_metric.values():
             if isinstance(m, ClasswiseWrapper):
-                collection_higher_is_better.extend(
-                    [m.higher_is_better] * m.metric.num_classes
-                )
+                collection_higher_is_better.extend([m.higher_is_better] * m.metric.num_classes)
             else:
                 collection_higher_is_better.append(m.higher_is_better)
         assert tracker.maximize == collection_higher_is_better
@@ -335,11 +333,7 @@ def test_compute_all_edge_cases():
     tracker = MetricTracker(MulticlassAccuracy(num_classes=10))
     with pytest.raises(ValueError, match="`compute_all` cannot be called before"):
         tracker.compute_all()
-    tracker = MetricTracker(
-        MetricCollection(
-            [MulticlassAccuracy(num_classes=10), MulticlassPrecision(num_classes=10)]
-        )
-    )
+    tracker = MetricTracker(MetricCollection([MulticlassAccuracy(num_classes=10), MulticlassPrecision(num_classes=10)]))
     for _ in range(3):
         tracker.increment()
         for _ in range(5):

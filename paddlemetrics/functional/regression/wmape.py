@@ -1,5 +1,4 @@
 import paddle
-from paddle import Tensor
 
 from paddlemetrics.utils.checks import _check_same_shape
 
@@ -36,9 +35,7 @@ def _weighted_mean_absolute_percentage_error_compute(
     return sum_abs_error / paddle.clamp(sum_scale, min=epsilon)
 
 
-def weighted_mean_absolute_percentage_error(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> paddle.Tensor:
+def weighted_mean_absolute_percentage_error(preds: paddle.Tensor, target: paddle.Tensor) -> paddle.Tensor:
     """Compute weighted mean absolute percentage error (`WMAPE`_).
 
     The output of WMAPE metric is a non-negative floating point, where the optimal value is 0. It is computes as:
@@ -63,7 +60,5 @@ def weighted_mean_absolute_percentage_error(
         tensor(1.3967)
 
     """
-    sum_abs_error, sum_scale = _weighted_mean_absolute_percentage_error_update(
-        preds, target
-    )
+    sum_abs_error, sum_scale = _weighted_mean_absolute_percentage_error_update(preds, target)
     return _weighted_mean_absolute_percentage_error_compute(sum_abs_error, sum_scale)

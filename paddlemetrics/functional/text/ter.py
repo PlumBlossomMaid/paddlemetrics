@@ -5,10 +5,12 @@ from typing import List, Optional, Union
 
 import paddle
 
-from paddlemetrics.functional.text.helper import (_flip_trace,
-                                                 _LevenshteinEditDistance,
-                                                 _trace_to_alignment,
-                                                 _validate_inputs)
+from paddlemetrics.functional.text.helper import (
+    _flip_trace,
+    _LevenshteinEditDistance,
+    _trace_to_alignment,
+    _validate_inputs,
+)
 
 _MAX_SHIFT_SIZE = 10
 _MAX_SHIFT_DIST = 50
@@ -26,12 +28,8 @@ class _TercomTokenizer:
 
     """
 
-    _ASIAN_PUNCTUATION = (
-        "([\\u3001\\u3002\\u3008-\\u3011\\u3014-\\u301f\\uff61-\\uff65\\u30fb])"
-    )
-    _FULL_WIDTH_PUNCTUATION = (
-        "([\\uff0e\\uff0c\\uff1f\\uff1a\\uff1b\\uff01\\uff02\\uff08\\uff09])"
-    )
+    _ASIAN_PUNCTUATION = "([\\u3001\\u3002\\u3008-\\u3011\\u3014-\\u301f\\uff61-\\uff65\\u30fb])"
+    _FULL_WIDTH_PUNCTUATION = "([\\uff0e\\uff0c\\uff1f\\uff1a\\uff1b\\uff01\\uff02\\uff08\\uff09])"
 
     def __init__(
         self,
@@ -106,9 +104,7 @@ class _TercomTokenizer:
         """Split Chinese chars and Japanese kanji down to character level."""
         sentence = re.sub("([\\u4e00-\\u9fff\\u3400-\\u4dbf])", " \\1 ", sentence)
         sentence = re.sub("([\\u31c0-\\u31ef\\u2e80-\\u2eff])", " \\1 ", sentence)
-        sentence = re.sub(
-            "([\\u3300-\\u33ff\\uf900-\\ufaff\\ufe30-\\ufe4f])", " \\1 ", sentence
-        )
+        sentence = re.sub("([\\u3300-\\u33ff\\uf900-\\ufaff\\ufe30-\\ufe4f])", " \\1 ", sentence)
         sentence = re.sub("([\\u3200-\\u3f22])", " \\1 ", sentence)
         sentence = re.sub(
             "(^|^[\\u3040-\\u309f])([\\u3040-\\u309f]+)(?=$|^[\\u3040-\\u309f])",
@@ -154,9 +150,7 @@ def _preprocess_sentence(sentence: str, tokenizer: _TercomTokenizer) -> str:
     return tokenizer(sentence.rstrip())
 
 
-def _find_shifted_pairs(
-    pred_words: list[str], target_words: list[str]
-) -> Iterator[tuple[int, int, int]]:
+def _find_shifted_pairs(pred_words: list[str], target_words: list[str]) -> Iterator[tuple[int, int, int]]:
     """Find matching word sub-sequences in two lists of words. Ignores sub- sequences starting at the same position.
 
     Args:
@@ -180,10 +174,7 @@ def _find_shifted_pairs(
             if abs(target_start - pred_start) > _MAX_SHIFT_DIST:
                 continue
             for length in range(1, _MAX_SHIFT_SIZE):
-                if (
-                    pred_words[pred_start + length - 1]
-                    != target_words[target_start + length - 1]
-                ):
+                if pred_words[pred_start + length - 1] != target_words[target_start + length - 1]:
                     break
                 yield pred_start, target_start, length
                 _hyp = len(pred_words) == pred_start + length
@@ -235,29 +226,13 @@ def _perform_shift(words: list[str], start: int, length: int, target: int) -> li
 
     """
 
-    def _shift_word_before_previous_position(
-        words: list[str], start: int, target: int, length: int
-    ) -> list[str]:
-        return (
-            words[:target]
-            + words[start : start + length]
-            + words[target:start]
-            + words[start + length :]
-        )
+    def _shift_word_before_previous_position(words: list[str], start: int, target: int, length: int) -> list[str]:
+        return words[:target] + words[start : start + length] + words[target:start] + words[start + length :]
 
-    def _shift_word_after_previous_position(
-        words: list[str], start: int, target: int, length: int
-    ) -> list[str]:
-        return (
-            words[:start]
-            + words[start + length : target]
-            + words[start : start + length]
-            + words[target:]
-        )
+    def _shift_word_after_previous_position(words: list[str], start: int, target: int, length: int) -> list[str]:
+        return words[:start] + words[start + length : target] + words[start : start + length] + words[target:]
 
-    def _shift_word_within_shifted_string(
-        words: list[str], start: int, target: int, length: int
-    ) -> list[str]:
+    def _shift_word_within_shifted_string(words: list[str], start: int, target: int, length: int) -> list[str]:
         shifted_words = words[:start]
         shifted_words += words[start + length : length + target]
         shifted_words += words[start : start + length]
@@ -304,9 +279,7 @@ def _shift_words(
     trace = _flip_trace(inverted_trace)
     alignments, target_errors, pred_errors = _trace_to_alignment(trace)
     best: Optional[tuple[int, int, int, int, list[str]]] = None
-    for pred_start, target_start, length in _find_shifted_pairs(
-        pred_words, target_words
-    ):
+    for pred_start, target_start, length in _find_shifted_pairs(pred_words, target_words):
         if _handle_corner_cases_during_shifting(
             alignments, pred_errors, target_errors, pred_start, target_start, length
         ):
@@ -341,9 +314,7 @@ def _shift_words(
     return best_score, shifted_words, checked_candidates
 
 
-def _translation_edit_rate(
-    pred_words: list[str], target_words: list[str]
-) -> paddle.Tensor:
+def _translation_edit_rate(pred_words: list[str], target_words: list[str]) -> paddle.Tensor:
     """Compute translation edit rate between hypothesis and reference sentences.
 
     Args:
@@ -400,9 +371,7 @@ def _compute_sentence_statistics(
     return best_num_edits, avg_tgt_len
 
 
-def _compute_ter_score_from_statistics(
-    num_edits: paddle.Tensor, tgt_length: paddle.Tensor
-) -> paddle.Tensor:
+def _compute_ter_score_from_statistics(num_edits: paddle.Tensor, tgt_length: paddle.Tensor) -> paddle.Tensor:
     """Compute TER score based on pre-computed a number of edits and an average reference length.
 
     Args:
@@ -453,23 +422,17 @@ def _ter_update(
     """
     target, preds = _validate_inputs(target, preds)
     for pred, tgt in zip(preds, target):
-        tgt_words_: list[list[str]] = [
-            _preprocess_sentence(_tgt, tokenizer).split() for _tgt in tgt
-        ]
+        tgt_words_: list[list[str]] = [_preprocess_sentence(_tgt, tokenizer).split() for _tgt in tgt]
         pred_words_: list[str] = _preprocess_sentence(pred, tokenizer).split()
         num_edits, tgt_length = _compute_sentence_statistics(pred_words_, tgt_words_)
         total_num_edits += num_edits
         total_tgt_length += tgt_length
         if sentence_ter is not None:
-            sentence_ter.append(
-                _compute_ter_score_from_statistics(num_edits, tgt_length).unsqueeze(0)
-            )
+            sentence_ter.append(_compute_ter_score_from_statistics(num_edits, tgt_length).unsqueeze(0))
     return total_num_edits, total_tgt_length, sentence_ter
 
 
-def _ter_compute(
-    total_num_edits: paddle.Tensor, total_tgt_length: paddle.Tensor
-) -> paddle.Tensor:
+def _ter_compute(total_num_edits: paddle.Tensor, total_tgt_length: paddle.Tensor) -> paddle.Tensor:
     """Compute TER based on pre-computed a total number of edits and a total average reference length.
 
     Args:
@@ -523,29 +486,17 @@ def translation_edit_rate(
 
     """
     if not isinstance(normalize, bool):
-        raise ValueError(
-            f"Expected argument `normalize` to be of type boolean but got {normalize}."
-        )
+        raise ValueError(f"Expected argument `normalize` to be of type boolean but got {normalize}.")
     if not isinstance(no_punctuation, bool):
-        raise ValueError(
-            f"Expected argument `no_punctuation` to be of type boolean but got {no_punctuation}."
-        )
+        raise ValueError(f"Expected argument `no_punctuation` to be of type boolean but got {no_punctuation}.")
     if not isinstance(lowercase, bool):
-        raise ValueError(
-            f"Expected argument `lowercase` to be of type boolean but got {lowercase}."
-        )
+        raise ValueError(f"Expected argument `lowercase` to be of type boolean but got {lowercase}.")
     if not isinstance(asian_support, bool):
-        raise ValueError(
-            f"Expected argument `asian_support` to be of type boolean but got {asian_support}."
-        )
-    tokenizer: _TercomTokenizer = _TercomTokenizer(
-        normalize, no_punctuation, lowercase, asian_support
-    )
+        raise ValueError(f"Expected argument `asian_support` to be of type boolean but got {asian_support}.")
+    tokenizer: _TercomTokenizer = _TercomTokenizer(normalize, no_punctuation, lowercase, asian_support)
     total_num_edits = paddle.tensor(0.0)
     total_tgt_length = paddle.tensor(0.0)
-    sentence_ter: Optional[List[paddle.Tensor]] = (
-        [] if return_sentence_level_score else None
-    )
+    sentence_ter: Optional[List[paddle.Tensor]] = [] if return_sentence_level_score else None
     total_num_edits, total_tgt_length, sentence_ter = _ter_update(
         preds, target, tokenizer, total_num_edits, total_tgt_length, sentence_ter
     )

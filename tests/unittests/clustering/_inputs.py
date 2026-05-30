@@ -3,6 +3,7 @@ from typing import NamedTuple
 import paddle
 from paddle import Tensor
 from sklearn.datasets import make_blobs
+
 from unittests import BATCH_SIZE, EXTRA_DIM, NUM_BATCHES, NUM_CLASSES, _Input
 from unittests._helpers import seed_all
 
@@ -35,9 +36,5 @@ _float_inputs_extrinsic = _Input(
     preds=paddle.rand((NUM_BATCHES, BATCH_SIZE)),
     target=paddle.rand((NUM_BATCHES, BATCH_SIZE)),
 )
-_single_target_intrinsic1 = _batch_blobs(
-    NUM_BATCHES, BATCH_SIZE, EXTRA_DIM, NUM_CLASSES
-)
-_single_target_intrinsic2 = _batch_blobs(
-    NUM_BATCHES, BATCH_SIZE, EXTRA_DIM, NUM_CLASSES
-)
+_single_target_intrinsic1 = _batch_blobs(NUM_BATCHES, BATCH_SIZE, EXTRA_DIM, NUM_CLASSES)
+_single_target_intrinsic2 = _batch_blobs(NUM_BATCHES, BATCH_SIZE, EXTRA_DIM, NUM_CLASSES)

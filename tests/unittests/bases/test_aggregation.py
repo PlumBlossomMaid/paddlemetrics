@@ -1,6 +1,6 @@
 """Tests for aggregation metrics."""
+
 import paddle
-import pytest
 
 from paddlemetrics.aggregation import (
     CatMetric,

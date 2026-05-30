@@ -1,13 +1,12 @@
 from typing import Union
 
 import pytest
-from unittests._helpers import seed_all
-from unittests.text._helpers import TextTester
-from unittests.text._inputs import (_inputs_error_rate_batch_size_1,
-                                    _inputs_error_rate_batch_size_2)
 
 from paddlemetrics.functional.text.mer import match_error_rate
 from paddlemetrics.text.mer import MatchErrorRate
+from unittests._helpers import seed_all
+from unittests.text._helpers import TextTester
+from unittests.text._inputs import _inputs_error_rate_batch_size_1, _inputs_error_rate_batch_size_2
 
 seed_all(42)
 

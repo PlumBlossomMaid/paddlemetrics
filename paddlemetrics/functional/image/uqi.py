@@ -1,10 +1,8 @@
-import sys
 
 from collections.abc import Sequence
 from typing import Optional
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.functional.image.utils import _gaussian_kernel_2d
@@ -12,9 +10,7 @@ from paddlemetrics.utils.checks import _check_same_shape
 from paddlemetrics.utils.distributed import reduce
 
 
-def _uqi_update(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> tuple[paddle.Tensor, paddle.Tensor]:
+def _uqi_update(preds: paddle.Tensor, target: paddle.Tensor) -> tuple[paddle.Tensor, paddle.Tensor]:
     """Update and returns variables required to compute Universal Image Quality Index.
 
     Args:
@@ -39,9 +35,7 @@ def _uqi_compute(
     target: paddle.Tensor,
     kernel_size: Sequence[int] = (11, 11),
     sigma: Sequence[float] = (1.5, 1.5),
-    reduction: Optional[
-        Literal["elementwise_mean", "sum", "none"]
-    ] = "elementwise_mean",
+    reduction: Optional[Literal["elementwise_mean", "sum", "none"]] = "elementwise_mean",
 ) -> paddle.Tensor:
     """Compute Universal Image Quality Index.
 
@@ -69,9 +63,7 @@ def _uqi_compute(
             f"Expected `kernel_size` and `sigma` to have the length of two. Got kernel_size: {len(kernel_size)} and sigma: {len(sigma)}."
         )
     if any(x % 2 == 0 or x <= 0 for x in kernel_size):
-        raise ValueError(
-            f"Expected `kernel_size` to have odd positive number. Got {kernel_size}."
-        )
+        raise ValueError(f"Expected `kernel_size` to have odd positive number. Got {kernel_size}.")
     if any(y <= 0 for y in sigma):
         raise ValueError(f"Expected `sigma` to have positive number. Got {sigma}.")
     device = preds.device
@@ -80,15 +72,9 @@ def _uqi_compute(
     kernel = _gaussian_kernel_2d(channel, kernel_size, sigma, dtype, device)
     pad_h = (kernel_size[0] - 1) // 2
     pad_w = (kernel_size[1] - 1) // 2
-    preds = paddle.nn.functional.pad(
-        preds, (pad_h, pad_h, pad_w, pad_w), mode="reflect"
-    )
-    target = paddle.nn.functional.pad(
-        target, (pad_h, pad_h, pad_w, pad_w), mode="reflect"
-    )
-    input_list = paddle.concat(
-        (preds, target, preds * preds, target * target, preds * target)
-    )
+    preds = paddle.nn.functional.pad(preds, (pad_h, pad_h, pad_w, pad_w), mode="reflect")
+    target = paddle.nn.functional.pad(target, (pad_h, pad_h, pad_w, pad_w), mode="reflect")
+    input_list = paddle.concat((preds, target, preds * preds, target * target, preds * target))
     outputs = paddle.nn.functional.conv2d(input_list, kernel, groups=channel)
     output_list = outputs.split(preds.shape[0])
     mu_pred_sq = output_list[0].pow(2)
@@ -110,9 +96,7 @@ def universal_image_quality_index(
     target: paddle.Tensor,
     kernel_size: Sequence[int] = (11, 11),
     sigma: Sequence[float] = (1.5, 1.5),
-    reduction: Optional[
-        Literal["elementwise_mean", "sum", "none"]
-    ] = "elementwise_mean",
+    reduction: Optional[Literal["elementwise_mean", "sum", "none"]] = "elementwise_mean",
 ) -> paddle.Tensor:
     """Universal Image Quality Index.
 

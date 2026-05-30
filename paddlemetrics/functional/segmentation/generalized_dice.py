@@ -3,8 +3,7 @@ from typing import Tuple
 import paddle
 from typing_extensions import Literal
 
-from paddlemetrics.functional.segmentation.utils import \
-    _segmentation_inputs_format
+from paddlemetrics.functional.segmentation.utils import _segmentation_inputs_format
 from paddlemetrics.utils.compute import _safe_divide
 
 
@@ -17,17 +16,11 @@ def _generalized_dice_validate_args(
 ) -> None:
     """Validate the arguments of the metric."""
     if not isinstance(num_classes, int) or num_classes <= 0:
-        raise ValueError(
-            f"Expected argument `num_classes` must be a positive integer, but got {num_classes}."
-        )
+        raise ValueError(f"Expected argument `num_classes` must be a positive integer, but got {num_classes}.")
     if not isinstance(include_background, bool):
-        raise ValueError(
-            f"Expected argument `include_background` must be a boolean, but got {include_background}."
-        )
+        raise ValueError(f"Expected argument `include_background` must be a boolean, but got {include_background}.")
     if not isinstance(per_class, bool):
-        raise ValueError(
-            f"Expected argument `per_class` must be a boolean, but got {per_class}."
-        )
+        raise ValueError(f"Expected argument `per_class` must be a boolean, but got {per_class}.")
     if weight_type not in ["square", "simple", "linear"]:
         raise ValueError(
             f"Expected argument `weight_type` to be one of 'square', 'simple', 'linear', but got {weight_type}."
@@ -47,9 +40,7 @@ def _generalized_dice_update(
     input_format: Literal["one-hot", "index", "mixed"] = "one-hot",
 ) -> Tuple[paddle.Tensor, paddle.Tensor]:
     """Update the state with the current prediction and target."""
-    preds, target = _segmentation_inputs_format(
-        preds, target, include_background, num_classes, input_format
-    )
+    preds, target = _segmentation_inputs_format(preds, target, include_background, num_classes, input_format)
     reduce_axis = list(range(2, target.ndim))
     intersection = paddle.sum(preds * target, axis=reduce_axis)
     target_sum = paddle.sum(target, axis=reduce_axis)
@@ -69,6 +60,8 @@ def _generalized_dice_update(
     weights_flatten = weights.flatten()
     infs = paddle.isinf(weights_flatten)
     weights_flatten[infs] = 0
+
+
 def _generalized_dice_compute(
     numerator: paddle.Tensor, denominator: paddle.Tensor, per_class: bool = True
 ) -> paddle.Tensor:
@@ -131,9 +124,7 @@ def generalized_dice_score(
                 [0.1978, 0.2804, 0.1714, 0.1915, 0.2783]])
 
     """
-    _generalized_dice_validate_args(
-        num_classes, include_background, per_class, weight_type, input_format
-    )
+    _generalized_dice_validate_args(num_classes, include_background, per_class, weight_type, input_format)
     numerator, denominator = _generalized_dice_update(
         preds, target, num_classes, include_background, weight_type, input_format
     )

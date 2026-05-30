@@ -38,9 +38,7 @@ def _wip_update(
     return errors - total, target_total, preds_total
 
 
-def _wip_compute(
-    errors: paddle.Tensor, target_total: paddle.Tensor, preds_total: paddle.Tensor
-) -> paddle.Tensor:
+def _wip_compute(errors: paddle.Tensor, target_total: paddle.Tensor, preds_total: paddle.Tensor) -> paddle.Tensor:
     """Compute the Word Information Preserved.
 
     Args:
@@ -55,9 +53,7 @@ def _wip_compute(
     return errors / target_total * (errors / preds_total)
 
 
-def word_information_preserved(
-    preds: Union[str, list[str]], target: Union[str, list[str]]
-) -> paddle.Tensor:
+def word_information_preserved(preds: Union[str, list[str]], target: Union[str, list[str]]) -> paddle.Tensor:
     """Word Information Preserved rate is a metric of the performance of an automatic speech recognition system.
 
     This value indicates the percentage of characters that were incorrectly predicted. The lower the value, the

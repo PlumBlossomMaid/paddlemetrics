@@ -32,24 +32,12 @@ def _prepare_n_grams_dicts(
         n-grams.
 
     """
-    total_preds_char_n_grams: dict[int, paddle.Tensor] = {
-        (n + 1): paddle.tensor(0.0) for n in range(n_char_order)
-    }
-    total_preds_word_n_grams: dict[int, paddle.Tensor] = {
-        (n + 1): paddle.tensor(0.0) for n in range(n_word_order)
-    }
-    total_target_char_n_grams: dict[int, paddle.Tensor] = {
-        (n + 1): paddle.tensor(0.0) for n in range(n_char_order)
-    }
-    total_target_word_n_grams: dict[int, paddle.Tensor] = {
-        (n + 1): paddle.tensor(0.0) for n in range(n_word_order)
-    }
-    total_matching_char_n_grams: dict[int, paddle.Tensor] = {
-        (n + 1): paddle.tensor(0.0) for n in range(n_char_order)
-    }
-    total_matching_word_n_grams: dict[int, paddle.Tensor] = {
-        (n + 1): paddle.tensor(0.0) for n in range(n_word_order)
-    }
+    total_preds_char_n_grams: dict[int, paddle.Tensor] = {(n + 1): paddle.tensor(0.0) for n in range(n_char_order)}
+    total_preds_word_n_grams: dict[int, paddle.Tensor] = {(n + 1): paddle.tensor(0.0) for n in range(n_word_order)}
+    total_target_char_n_grams: dict[int, paddle.Tensor] = {(n + 1): paddle.tensor(0.0) for n in range(n_char_order)}
+    total_target_word_n_grams: dict[int, paddle.Tensor] = {(n + 1): paddle.tensor(0.0) for n in range(n_word_order)}
+    total_matching_char_n_grams: dict[int, paddle.Tensor] = {(n + 1): paddle.tensor(0.0) for n in range(n_char_order)}
+    total_matching_word_n_grams: dict[int, paddle.Tensor] = {(n + 1): paddle.tensor(0.0) for n in range(n_word_order)}
     return (
         total_preds_char_n_grams,
         total_preds_word_n_grams,
@@ -108,16 +96,10 @@ def _get_words_and_punctuation(sentence: str) -> list[str]:
         An aggregated list of separated words and punctuation.
 
     """
-    return list(
-        chain.from_iterable(
-            _separate_word_and_punctuation(word) for word in sentence.strip().split()
-        )
-    )
+    return list(chain.from_iterable(_separate_word_and_punctuation(word) for word in sentence.strip().split()))
 
 
-def _ngram_counts(
-    char_or_word_list: list[str], n_gram_order: int
-) -> dict[int, dict[tuple[str, ...], paddle.Tensor]]:
+def _ngram_counts(char_or_word_list: list[str], n_gram_order: int) -> dict[int, dict[tuple[str, ...], paddle.Tensor]]:
     """Calculate n-gram counts.
 
     Args:
@@ -132,10 +114,7 @@ def _ngram_counts(
         lambda: defaultdict(lambda: paddle.tensor(0.0))
     )
     for n in range(1, n_gram_order + 1):
-        for ngram in (
-            tuple(char_or_word_list[i : i + n])
-            for i in range(len(char_or_word_list) - n + 1)
-        ):
+        for ngram in (tuple(char_or_word_list[i : i + n]) for i in range(len(char_or_word_list) - n + 1)):
             ngrams[n][ngram] += paddle.tensor(1)
     return ngrams
 
@@ -178,21 +157,13 @@ def _get_n_grams_counts_and_total_ngrams(
         """Get a dictionary of dictionaries with a counts of given n-grams."""
         if lowercase:
             sentence = sentence.lower()
-        char_n_grams_counts = _ngram_counts(
-            _get_characters(sentence, whitespace), n_char_order
-        )
-        word_n_grams_counts = _ngram_counts(
-            _get_words_and_punctuation(sentence), n_word_order
-        )
+        char_n_grams_counts = _ngram_counts(_get_characters(sentence, whitespace), n_char_order)
+        word_n_grams_counts = _ngram_counts(_get_words_and_punctuation(sentence), n_word_order)
         return char_n_grams_counts, word_n_grams_counts
 
-    def _get_total_ngrams(
-        n_grams_counts: dict[int, dict[tuple[str, ...], paddle.Tensor]]
-    ) -> dict[int, paddle.Tensor]:
+    def _get_total_ngrams(n_grams_counts: dict[int, dict[tuple[str, ...], paddle.Tensor]]) -> dict[int, paddle.Tensor]:
         """Get total sum of n-grams over n-grams w.r.t n."""
-        total_n_grams: dict[int, paddle.Tensor] = defaultdict(
-            lambda: paddle.tensor(0.0)
-        )
+        total_n_grams: dict[int, paddle.Tensor] = defaultdict(lambda: paddle.tensor(0.0))
         for n in n_grams_counts:
             total_n_grams[n] = sum(n_grams_counts[n].values()).detach().clone()
         return total_n_grams
@@ -227,10 +198,7 @@ def _get_ngram_matches(
     matching_n_grams: dict[int, paddle.Tensor] = defaultdict(lambda: paddle.tensor(0.0))
     for n in hyp_n_grams_counts:
         min_n_grams = [
-            paddle.min(
-                ref_n_grams_counts[n][n_gram], hyp_n_grams_counts[n][n_gram]
-            )
-            for n_gram in hyp_n_grams_counts[n]
+            paddle.min(ref_n_grams_counts[n][n_gram], hyp_n_grams_counts[n][n_gram]) for n_gram in hyp_n_grams_counts[n]
         ]
         matching_n_grams[n] = sum(min_n_grams).detach().clone()
     return matching_n_grams
@@ -294,40 +262,24 @@ def _calculate_fscore(
     ) -> dict[int, paddle.Tensor]:
         """Get n-gram level f-score."""
         precision: dict[int, paddle.Tensor] = {
-            n: (
-                matching_n_grams[n] / hyp_n_grams[n]
-                if hyp_n_grams[n] > 0
-                else paddle.tensor(0.0)
-            )
+            n: (matching_n_grams[n] / hyp_n_grams[n] if hyp_n_grams[n] > 0 else paddle.tensor(0.0))
             for n in matching_n_grams
         }
         recall: dict[int, paddle.Tensor] = {
-            n: (
-                matching_n_grams[n] / ref_n_grams[n]
-                if ref_n_grams[n] > 0
-                else paddle.tensor(0.0)
-            )
+            n: (matching_n_grams[n] / ref_n_grams[n] if ref_n_grams[n] > 0 else paddle.tensor(0.0))
             for n in matching_n_grams
         }
         denominator: dict[int, paddle.Tensor] = {
-            n: paddle.max(beta**2 * precision[n] + recall[n], _EPS_SMOOTHING)
-            for n in matching_n_grams
+            n: paddle.max(beta**2 * precision[n] + recall[n], _EPS_SMOOTHING) for n in matching_n_grams
         }
         f_score: dict[int, paddle.Tensor] = {
-            n: ((1 + beta**2) * precision[n] * recall[n] / denominator[n])
-            for n in matching_n_grams
+            n: ((1 + beta**2) * precision[n] * recall[n] / denominator[n]) for n in matching_n_grams
         }
         return f_score
 
-    char_n_gram_f_score = _get_n_gram_fscore(
-        matching_char_n_grams, ref_char_n_grams, hyp_char_n_grams, beta
-    )
-    word_n_gram_f_score = _get_n_gram_fscore(
-        matching_word_n_grams, ref_word_n_grams, hyp_word_n_grams, beta
-    )
-    return (
-        sum(char_n_gram_f_score.values()) + sum(word_n_gram_f_score.values())
-    ) / paddle.tensor(n_order)
+    char_n_gram_f_score = _get_n_gram_fscore(matching_char_n_grams, ref_char_n_grams, hyp_char_n_grams, beta)
+    word_n_gram_f_score = _get_n_gram_fscore(matching_word_n_grams, ref_word_n_grams, hyp_word_n_grams, beta)
+    return (sum(char_n_gram_f_score.values()) + sum(word_n_gram_f_score.values())) / paddle.tensor(n_order)
 
 
 def _calculate_sentence_level_chrf_score(
@@ -380,33 +332,19 @@ def _calculate_sentence_level_chrf_score(
 
     """
     best_f_score = paddle.tensor(0.0)
-    best_matching_char_n_grams: dict[int, paddle.Tensor] = defaultdict(
-        lambda: paddle.tensor(0.0)
-    )
-    best_matching_word_n_grams: dict[int, paddle.Tensor] = defaultdict(
-        lambda: paddle.tensor(0.0)
-    )
-    best_target_char_n_grams: dict[int, paddle.Tensor] = defaultdict(
-        lambda: paddle.tensor(0.0)
-    )
-    best_target_word_n_grams: dict[int, paddle.Tensor] = defaultdict(
-        lambda: paddle.tensor(0.0)
-    )
+    best_matching_char_n_grams: dict[int, paddle.Tensor] = defaultdict(lambda: paddle.tensor(0.0))
+    best_matching_word_n_grams: dict[int, paddle.Tensor] = defaultdict(lambda: paddle.tensor(0.0))
+    best_target_char_n_grams: dict[int, paddle.Tensor] = defaultdict(lambda: paddle.tensor(0.0))
+    best_target_word_n_grams: dict[int, paddle.Tensor] = defaultdict(lambda: paddle.tensor(0.0))
     for target in targets:
         (
             target_char_n_grams_counts,
             target_word_n_grams_counts,
             target_char_n_grams,
             target_word_n_grams,
-        ) = _get_n_grams_counts_and_total_ngrams(
-            target, n_char_order, n_word_order, lowercase, whitespace
-        )
-        matching_char_n_grams = _get_ngram_matches(
-            target_char_n_grams_counts, pred_char_n_grams_counts
-        )
-        matching_word_n_grams = _get_ngram_matches(
-            target_word_n_grams_counts, pred_word_n_grams_counts
-        )
+        ) = _get_n_grams_counts_and_total_ngrams(target, n_char_order, n_word_order, lowercase, whitespace)
+        matching_char_n_grams = _get_ngram_matches(target_char_n_grams_counts, pred_char_n_grams_counts)
+        matching_word_n_grams = _get_ngram_matches(target_word_n_grams_counts, pred_word_n_grams_counts)
         f_score = _calculate_fscore(
             matching_char_n_grams,
             matching_word_n_grams,
@@ -499,15 +437,9 @@ def _chrf_score_update(
             pred_word_n_grams_counts,
             pred_char_n_grams,
             pred_word_n_grams,
-        ) = _get_n_grams_counts_and_total_ngrams(
-            pred, n_char_order, n_word_order, lowercase, whitespace
-        )
-        total_preds_char_n_grams = _sum_over_dicts(
-            total_preds_char_n_grams, pred_char_n_grams
-        )
-        total_preds_word_n_grams = _sum_over_dicts(
-            total_preds_word_n_grams, pred_word_n_grams
-        )
+        ) = _get_n_grams_counts_and_total_ngrams(pred, n_char_order, n_word_order, lowercase, whitespace)
+        total_preds_char_n_grams = _sum_over_dicts(total_preds_char_n_grams, pred_char_n_grams)
+        total_preds_word_n_grams = _sum_over_dicts(total_preds_word_n_grams, pred_word_n_grams)
         (
             sentence_level_f_score,
             matching_char_n_grams,
@@ -529,18 +461,10 @@ def _chrf_score_update(
         )
         if sentence_chrf_score is not None:
             sentence_chrf_score.append(sentence_level_f_score.unsqueeze(0))
-        total_target_char_n_grams = _sum_over_dicts(
-            total_target_char_n_grams, target_char_n_grams
-        )
-        total_target_word_n_grams = _sum_over_dicts(
-            total_target_word_n_grams, target_word_n_grams
-        )
-        total_matching_char_n_grams = _sum_over_dicts(
-            total_matching_char_n_grams, matching_char_n_grams
-        )
-        total_matching_word_n_grams = _sum_over_dicts(
-            total_matching_word_n_grams, matching_word_n_grams
-        )
+        total_target_char_n_grams = _sum_over_dicts(total_target_char_n_grams, target_char_n_grams)
+        total_target_word_n_grams = _sum_over_dicts(total_target_word_n_grams, target_word_n_grams)
+        total_matching_char_n_grams = _sum_over_dicts(total_matching_char_n_grams, matching_char_n_grams)
+        total_matching_word_n_grams = _sum_over_dicts(total_matching_word_n_grams, matching_word_n_grams)
     return (
         total_preds_char_n_grams,
         total_preds_word_n_grams,
@@ -647,13 +571,9 @@ def chrf_score(
 
     """
     if not isinstance(n_char_order, int) or n_char_order < 1:
-        raise ValueError(
-            "Expected argument `n_char_order` to be an integer greater than or equal to 1."
-        )
+        raise ValueError("Expected argument `n_char_order` to be an integer greater than or equal to 1.")
     if not isinstance(n_word_order, int) or n_word_order < 0:
-        raise ValueError(
-            "Expected argument `n_word_order` to be an integer greater than or equal to 0."
-        )
+        raise ValueError("Expected argument `n_word_order` to be an integer greater than or equal to 0.")
     if beta < 0:
         raise ValueError("Expected argument `beta` to be greater than 0.")
     n_order = float(n_char_order + n_word_order)
@@ -665,9 +585,7 @@ def chrf_score(
         total_matching_char_n_grams,
         total_matching_word_n_grams,
     ) = _prepare_n_grams_dicts(n_char_order, n_word_order)
-    sentence_chrf_score: Optional[List[paddle.Tensor]] = (
-        [] if return_sentence_level_score else None
-    )
+    sentence_chrf_score: Optional[List[paddle.Tensor]] = [] if return_sentence_level_score else None
     (
         total_preds_char_n_grams,
         total_preds_word_n_grams,

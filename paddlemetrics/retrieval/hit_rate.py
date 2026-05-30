@@ -89,13 +89,10 @@ class RetrievalHitRate(RetrievalMetric):
         ignore_index: Optional[int] = None,
         top_k: Optional[int] = None,
         aggregation: Union[Literal["mean", "median", "min", "max"], Callable] = "mean",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__(
-            empty_target_action=empty_target_action,
-            ignore_index=ignore_index,
-            aggregation=aggregation,
-            **kwargs
+            empty_target_action=empty_target_action, ignore_index=ignore_index, aggregation=aggregation, **kwargs
         )
         if top_k is not None and not (isinstance(top_k, int) and top_k > 0):
             raise ValueError("`top_k` has to be a positive integer or None")

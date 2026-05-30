@@ -6,38 +6,36 @@ import pytest
 from netcal.metrics import ECE, MCE
 from scipy.special import expit as sigmoid
 from scipy.special import softmax
-from unittests import NUM_CLASSES
-from unittests._helpers import seed_all
-from unittests._helpers.testers import (MetricTester, inject_ignore_index,
-                                        remove_ignore_index)
-from unittests.classification._inputs import _binary_cases, _multiclass_cases
 
 from paddlemetrics.classification.calibration_error import (
-    BinaryCalibrationError, CalibrationError, MulticlassCalibrationError)
+    BinaryCalibrationError,
+    CalibrationError,
+    MulticlassCalibrationError,
+)
 from paddlemetrics.functional.classification.calibration_error import (
-    binary_calibration_error, multiclass_calibration_error)
+    binary_calibration_error,
+    multiclass_calibration_error,
+)
 from paddlemetrics.metric import Metric
+from unittests import NUM_CLASSES
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester, inject_ignore_index, remove_ignore_index
+from unittests.classification._inputs import _binary_cases, _multiclass_cases
 
 seed_all(42)
 
 
-def _reference_netcal_binary_calibration_error(
-    preds, target, n_bins, norm, ignore_index
-):
+def _reference_netcal_binary_calibration_error(preds, target, n_bins, norm, ignore_index):
     preds = preds.numpy().flatten()
     target = target.numpy().flatten()
     if not ((preds > 0) & (preds < 1)).all():
         preds = sigmoid(preds)
-    target, preds = remove_ignore_index(
-        target=target, preds=preds, ignore_index=ignore_index
-    )
+    target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
     metric = ECE if norm == "l1" else MCE
     return metric(n_bins).measure(preds, target)
 
 
-@pytest.mark.parametrize(
-    "inputs", [_binary_cases[1], _binary_cases[2], _binary_cases[4], _binary_cases[5]]
-)
+@pytest.mark.parametrize("inputs", [_binary_cases[1], _binary_cases[2], _binary_cases[4], _binary_cases[5]])
 class TestBinaryCalibrationError(MetricTester):
     """Test class for `BinaryCalibrationError` metric."""
 
@@ -67,9 +65,7 @@ class TestBinaryCalibrationError(MetricTester):
     @pytest.mark.parametrize("n_bins", [10, 15, 20])
     @pytest.mark.parametrize("norm", ["l1", "max"])
     @pytest.mark.parametrize("ignore_index", [None, -1, 0])
-    def test_binary_calibration_error_functional(
-        self, inputs, n_bins, norm, ignore_index
-    ):
+    def test_binary_calibration_error_functional(self, inputs, n_bins, norm, ignore_index):
         """Test functional implementation of metric."""
         preds, target = inputs
         if ignore_index is not None:
@@ -101,14 +97,8 @@ class TestBinaryCalibrationError(MetricTester):
     def test_binary_calibration_error_dtype_cpu(self, inputs, dtype):
         """Test dtype support of the metric on CPU."""
         preds, target = inputs
-        if (
-            not True
-            and (preds < 0).any()
-            and dtype == paddle.float16
-        ):
-            pytest.xfail(
-                reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1"
-            )
+        if not True and (preds < 0).any() and dtype == paddle.float16:
+            pytest.xfail(reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1")
         self.run_precision_test_cpu(
             preds=preds,
             target=target,
@@ -135,22 +125,16 @@ def test_binary_with_zero_pred():
     """Test that metric works with edge case where confidence is zero for a bin."""
     preds = paddle.tensor([1.0, 1.0, 1.0, 1.0, 0.0])
     target = paddle.tensor([0, 0, 1, 1, 1])
-    assert binary_calibration_error(
-        preds, target, n_bins=2, norm="l1"
-    ) == paddle.tensor(0.6)
+    assert binary_calibration_error(preds, target, n_bins=2, norm="l1") == paddle.tensor(0.6)
 
 
-def _reference_netcal_multiclass_calibration_error(
-    preds, target, n_bins, norm, ignore_index
-):
+def _reference_netcal_multiclass_calibration_error(preds, target, n_bins, norm, ignore_index):
     preds = preds.numpy()
     target = target.numpy().flatten()
     if not ((preds > 0) & (preds < 1)).all():
         preds = softmax(preds, 1)
     preds = np.moveaxis(preds, 1, -1).reshape((-1, preds.shape[1]))
-    target, preds = remove_ignore_index(
-        target=target, preds=preds, ignore_index=ignore_index
-    )
+    target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
     metric = ECE if norm == "l1" else MCE
     return metric(n_bins).measure(preds, target)
 
@@ -171,9 +155,7 @@ class TestMulticlassCalibrationError(MetricTester):
     @pytest.mark.parametrize("norm", ["l1", "max"])
     @pytest.mark.parametrize("ignore_index", [None, -1, 0])
     @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
-    def test_multiclass_calibration_error(
-        self, inputs, ddp, n_bins, norm, ignore_index
-    ):
+    def test_multiclass_calibration_error(self, inputs, ddp, n_bins, norm, ignore_index):
         """Test class implementation of metric."""
         preds, target = inputs
         if ignore_index is not None:
@@ -200,9 +182,7 @@ class TestMulticlassCalibrationError(MetricTester):
     @pytest.mark.parametrize("n_bins", [15, 20])
     @pytest.mark.parametrize("norm", ["l1", "max"])
     @pytest.mark.parametrize("ignore_index", [None, -1, 0])
-    def test_multiclass_calibration_error_functional(
-        self, inputs, n_bins, norm, ignore_index
-    ):
+    def test_multiclass_calibration_error_functional(self, inputs, n_bins, norm, ignore_index):
         """Test functional implementation of metric."""
         preds, target = inputs
         if ignore_index is not None:
@@ -241,9 +221,7 @@ class TestMulticlassCalibrationError(MetricTester):
         """Test dtype support of the metric on CPU."""
         preds, target = inputs
         if (preds < 0).any() and dtype == paddle.float16:
-            pytest.xfail(
-                reason="paddle.softmax in metric does not support cpu + half precision"
-            )
+            pytest.xfail(reason="paddle.softmax in metric does not support cpu + half precision")
         self.run_precision_test_cpu(
             preds=preds,
             target=target,

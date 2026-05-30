@@ -51,9 +51,7 @@ class _LevenshteinEditDistance:
         self.op_nothing = 0
         self.op_undefined = _INT_INFINITY
 
-    def __call__(
-        self, prediction_tokens: list[str]
-    ) -> tuple[int, tuple[_EditOperations, ...]]:
+    def __call__(self, prediction_tokens: list[str]) -> tuple[int, tuple[_EditOperations, ...]]:
         """Calculate edit distance between self._words_ref and the hypothesis. Uses cache to skip some computations.
 
         Args:
@@ -75,9 +73,7 @@ class _LevenshteinEditDistance:
         prediction_tokens: list[str],
         prediction_start: int,
         cache: list[list[tuple[int, _EditOperations]]],
-    ) -> tuple[
-        int, list[list[tuple[int, _EditOperations]]], tuple[_EditOperations, ...]
-    ]:
+    ) -> tuple[int, list[list[tuple[int, _EditOperations]]], tuple[_EditOperations, ...]]:
         """Dynamic programming algorithm to compute the Levenhstein edit distance.
 
         Args:
@@ -91,23 +87,16 @@ class _LevenshteinEditDistance:
         """
         prediction_len = len(prediction_tokens)
         empty_rows: list[list[tuple[int, _EditOperations]]] = [
-            list(self._get_empty_row(self.reference_len))
-            for _ in range(prediction_len - prediction_start)
+            list(self._get_empty_row(self.reference_len)) for _ in range(prediction_len - prediction_start)
         ]
         edit_distance: list[list[tuple[int, _EditOperations]]] = cache + empty_rows
         length_ratio = self.reference_len / prediction_len if prediction_tokens else 1.0
-        beam_width = (
-            math.ceil(length_ratio / 2 + _BEAM_WIDTH)
-            if length_ratio / 2 > _BEAM_WIDTH
-            else _BEAM_WIDTH
-        )
+        beam_width = math.ceil(length_ratio / 2 + _BEAM_WIDTH) if length_ratio / 2 > _BEAM_WIDTH else _BEAM_WIDTH
         for i in range(prediction_start + 1, prediction_len + 1):
             pseudo_diag = math.floor(i * length_ratio)
             min_j = max(0, pseudo_diag - beam_width)
             max_j = (
-                self.reference_len + 1
-                if i == prediction_len
-                else min(self.reference_len + 1, pseudo_diag + beam_width)
+                self.reference_len + 1 if i == prediction_len else min(self.reference_len + 1, pseudo_diag + beam_width)
             )
             for j in range(min_j, max_j):
                 if j == 0:
@@ -210,9 +199,7 @@ class _LevenshteinEditDistance:
             value = node[word]
             node = value[0]
 
-    def _find_cache(
-        self, prediction_tokens: list[str]
-    ) -> tuple[int, list[list[tuple[int, _EditOperations]]]]:
+    def _find_cache(self, prediction_tokens: list[str]) -> tuple[int, list[list[tuple[int, _EditOperations]]]]:
         """Find the already calculated rows of the Levenshtein edit distance metric.
 
         Args:
@@ -229,9 +216,7 @@ class _LevenshteinEditDistance:
         """
         node = self.cache
         start_position = 0
-        edit_distance: list[list[tuple[int, _EditOperations]]] = [
-            self._get_initial_row(self.reference_len)
-        ]
+        edit_distance: list[list[tuple[int, _EditOperations]]] = [self._get_initial_row(self.reference_len)]
         for word in prediction_tokens:
             if word in node:
                 start_position += 1
@@ -263,9 +248,7 @@ class _LevenshteinEditDistance:
             A list of tuples containing edit operation costs of insert and insert edit operations.
 
         """
-        return [
-            (i * self.op_insert, _EditOperations.OP_INSERT) for i in range(length + 1)
-        ]
+        return [(i * self.op_insert, _EditOperations.OP_INSERT) for i in range(length + 1)]
 
 
 def _validate_inputs(
@@ -290,19 +273,9 @@ def _validate_inputs(
     if isinstance(hypothesis_corpus, str):
         hypothesis_corpus = [hypothesis_corpus]
     if all(isinstance(ref, str) for ref in ref_corpus):
-        ref_corpus = (
-            [ref_corpus]
-            if len(hypothesis_corpus) == 1
-            else [[ref] for ref in ref_corpus]
-        )
-    if (
-        hypothesis_corpus
-        and all(ref for ref in ref_corpus)
-        and len(ref_corpus) != len(hypothesis_corpus)
-    ):
-        raise ValueError(
-            f"Corpus has different size {len(ref_corpus)} != {len(hypothesis_corpus)}"
-        )
+        ref_corpus = [ref_corpus] if len(hypothesis_corpus) == 1 else [[ref] for ref in ref_corpus]
+    if hypothesis_corpus and all(ref for ref in ref_corpus) and len(ref_corpus) != len(hypothesis_corpus):
+        raise ValueError(f"Corpus has different size {len(ref_corpus)} != {len(hypothesis_corpus)}")
     return ref_corpus, hypothesis_corpus
 
 
@@ -316,9 +289,7 @@ def _edit_distance(prediction_tokens: list[str], reference_tokens: list[str]) ->
         Edit distance between the predicted sentence and the reference sentence
 
     """
-    dp = [
-        ([0] * (len(reference_tokens) + 1)) for _ in range(len(prediction_tokens) + 1)
-    ]
+    dp = [([0] * (len(reference_tokens) + 1)) for _ in range(len(prediction_tokens) + 1)]
     for i in range(len(prediction_tokens) + 1):
         dp[i][0] = i
     for j in range(len(reference_tokens) + 1):
@@ -358,14 +329,10 @@ def _flip_trace(trace: tuple[_EditOperations, ...]) -> tuple[_EditOperations, ..
             return _flip_operations.get(operation)
         return operation
 
-    return tuple(
-        _replace_operation_or_retain(operation, _flip_operations) for operation in trace
-    )
+    return tuple(_replace_operation_or_retain(operation, _flip_operations) for operation in trace)
 
 
-def _trace_to_alignment(
-    trace: tuple[_EditOperations, ...]
-) -> tuple[dict[int, int], list[int], list[int]]:
+def _trace_to_alignment(trace: tuple[_EditOperations, ...]) -> tuple[dict[int, int], list[int], list[int]]:
     """Transform trace of edit operations into an alignment of the sequences.
 
     Args:

@@ -2,15 +2,14 @@ from functools import partial
 from typing import NamedTuple
 
 import paddle
-from paddle import Tensor
 import pytest
+from paddle import Tensor
+
+from paddlemetrics.functional.image.ergas import error_relative_global_dimensionless_synthesis
+from paddlemetrics.image.ergas import ErrorRelativeGlobalDimensionlessSynthesis
 from unittests import BATCH_SIZE, NUM_BATCHES
 from unittests._helpers import seed_all
 from unittests._helpers.testers import MetricTester
-
-from paddlemetrics.functional.image.ergas import \
-    error_relative_global_dimensionless_synthesis
-from paddlemetrics.image.ergas import ErrorRelativeGlobalDimensionlessSynthesis
 
 seed_all(42)
 
@@ -41,9 +40,7 @@ def _reference_ergas(
     """Baseline implementation of Erreur Relative Globale Adimensionnelle de Synthèse."""
     reduction_options = "elementwise_mean", "sum", "none"
     if reduction not in reduction_options:
-        raise ValueError(
-            f"reduction has to be one of {reduction_options}, got: {reduction}."
-        )
+        raise ValueError(f"reduction has to be one of {reduction_options}, got: {reduction}.")
     b, c, h, w = preds.shape
     sk_preds = preds.reshape(b, c, h * w)
     sk_target = target.reshape(b, c, h * w)
@@ -51,11 +48,7 @@ def _reference_ergas(
     sum_squared_error = paddle.sum(diff * diff, axis=2)
     rmse_per_band = paddle.sqrt(sum_squared_error / (h * w))
     mean_target = paddle.mean(sk_target, axis=2)
-    ergas_score = (
-        100
-        / ratio
-        * paddle.sqrt(paddle.sum((rmse_per_band / mean_target) ** 2, axis=1) / c)
-    )
+    ergas_score = 100 / ratio * paddle.sqrt(paddle.sum((rmse_per_band / mean_target) ** 2, axis=1) / c)
     if reduction == "sum":
         return paddle.sum(ergas_score)
     if reduction == "elementwise_mean":
@@ -64,9 +57,7 @@ def _reference_ergas(
 
 
 @pytest.mark.parametrize("reduction", ["sum", "elementwise_mean"])
-@pytest.mark.parametrize(
-    ("preds", "target", "ratio"), [(i.preds, i.target, i.ratio) for i in _inputs]
-)
+@pytest.mark.parametrize(("preds", "target", "ratio"), [(i.preds, i.target, i.ratio) for i in _inputs])
 class TestErrorRelativeGlobalDimensionlessSynthesis(MetricTester):
     """Test class for `ErrorRelativeGlobalDimensionlessSynthesis` metric."""
 
@@ -78,9 +69,7 @@ class TestErrorRelativeGlobalDimensionlessSynthesis(MetricTester):
             preds,
             target,
             metric_class=ErrorRelativeGlobalDimensionlessSynthesis,
-            reference_metric=partial(
-                _reference_ergas, ratio=ratio, reduction=reduction
-            ),
+            reference_metric=partial(_reference_ergas, ratio=ratio, reduction=reduction),
             metric_args={"ratio": ratio, "reduction": reduction},
         )
 
@@ -90,9 +79,7 @@ class TestErrorRelativeGlobalDimensionlessSynthesis(MetricTester):
             preds,
             target,
             metric_functional=error_relative_global_dimensionless_synthesis,
-            reference_metric=partial(
-                _reference_ergas, ratio=ratio, reduction=reduction
-            ),
+            reference_metric=partial(_reference_ergas, ratio=ratio, reduction=reduction),
             metric_args={"ratio": ratio, "reduction": reduction},
         )
 
@@ -135,18 +122,12 @@ def test_error_on_different_shape(
 def test_error_on_invalid_shape(metric_class=ErrorRelativeGlobalDimensionlessSynthesis):
     """Check that error is raised when input is not 4D."""
     metric = metric_class()
-    with pytest.raises(
-        ValueError, match="Expected `preds` and `target` to have BxCxHxW shape.*"
-    ):
+    with pytest.raises(ValueError, match="Expected `preds` and `target` to have BxCxHxW shape.*"):
         metric(paddle.randn([3, 16, 16]), paddle.randn([3, 16, 16]))
 
 
 def test_error_on_invalid_type(metric_class=ErrorRelativeGlobalDimensionlessSynthesis):
     """Test that error is raised if preds and target have different dtype."""
     metric = metric_class()
-    with pytest.raises(
-        TypeError, match="Expected `preds` and `target` to have the same data type.*"
-    ):
-        metric(
-            paddle.randn([3, 16, 16]), paddle.randn([3, 16, 16], dtype=paddle.float64)
-        )
+    with pytest.raises(TypeError, match="Expected `preds` and `target` to have the same data type.*"):
+        metric(paddle.randn([3, 16, 16]), paddle.randn([3, 16, 16], dtype=paddle.float64))

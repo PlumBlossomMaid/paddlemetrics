@@ -2,16 +2,14 @@ from functools import partial
 
 import paddle
 import pytest
+
+from paddlemetrics.functional.text import squad
+from paddlemetrics.text.squad import SQuAD
 from unittests import NUM_PROCESSES, USE_PYTEST_POOL
 from unittests._helpers import _IS_WINDOWS
 from unittests._helpers.testers import _assert_allclose, _assert_tensor
 from unittests.conftest import setup_ddp
-from unittests.text._inputs import (_inputs_squad_batch_match,
-                                    _inputs_squad_exact_match,
-                                    _inputs_squad_exact_mismatch)
-
-from paddlemetrics.functional.text import squad
-from paddlemetrics.text.squad import SQuAD
+from unittests.text._inputs import _inputs_squad_batch_match, _inputs_squad_exact_match, _inputs_squad_exact_mismatch
 
 
 @pytest.mark.parametrize(
@@ -59,9 +57,7 @@ def test_accumulation(preds, targets, exact_match, f1):
     metrics_score = squad_metric.compute()
     _assert_tensor(metrics_score["exact_match"])
     _assert_tensor(metrics_score["f1"])
-    _assert_allclose(
-        metrics_score["exact_match"], paddle.mean(paddle.tensor(exact_match))
-    )
+    _assert_allclose(metrics_score["exact_match"], paddle.mean(paddle.tensor(exact_match)))
     _assert_allclose(metrics_score["f1"], paddle.mean(paddle.tensor(f1)))
 
 
@@ -81,9 +77,7 @@ def _test_score_ddp_fn(rank, world_size, preds, targets, exact_match, f1):
     """Core functionality for the `test_score_ddp` test."""
     mean_exact_match = paddle.tensor(exact_match, dtype=paddle.float32).mean()
     mean_f1 = paddle.tensor(f1, dtype=paddle.float32).mean()
-    _squad_score_ddp(
-        rank, world_size, [preds[rank]], [targets[rank]], mean_exact_match, mean_f1
-    )
+    _squad_score_ddp(rank, world_size, [preds[rank]], [targets[rank]], mean_exact_match, mean_f1)
 
 
 @pytest.mark.parametrize(

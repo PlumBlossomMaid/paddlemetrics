@@ -4,6 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 from __future__ import annotations
+
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
@@ -57,12 +58,12 @@ def allclose(tensor1: paddle.Tensor, tensor2: paddle.Tensor) -> bool:
 
 def _remove_prefix(string: str, prefix: str) -> str:
     """Remove prefix from string if present."""
-    return string[len(prefix):] if string.startswith(prefix) else string
+    return string[len(prefix) :] if string.startswith(prefix) else string
 
 
 def _remove_suffix(string: str, suffix: str) -> str:
     """Remove suffix from string if present."""
-    return string[:-len(suffix)] if string.endswith(suffix) else string
+    return string[: -len(suffix)] if string.endswith(suffix) else string
 
 
 def plot_single_or_multi_val(
@@ -120,7 +121,11 @@ def plot_single_or_multi_val(
         ax.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, 1.15), ncol=3, fancybox=True, shadow=True)
 
     ylim = ax.get_ylim()
-    factor = 0.1 * (upper_bound - lower_bound) if (lower_bound is not None and upper_bound is not None) else 0.1 * (ylim[1] - ylim[0])
+    factor = (
+        0.1 * (upper_bound - lower_bound)
+        if (lower_bound is not None and upper_bound is not None)
+        else 0.1 * (ylim[1] - ylim[0])
+    )
     ax.set_ylim(
         bottom=lower_bound - factor if lower_bound is not None else ylim[0] - factor,
         top=upper_bound + factor if upper_bound is not None else ylim[1] + factor,
@@ -137,10 +142,14 @@ def plot_single_or_multi_val(
     if higher_is_better is not None:
         if lower_bound is not None and not higher_is_better:
             ax.set_xlim(xlim[0] - xfactor, xlim[1])
-            ax.text(xlim[0], lower_bound, s="Optimal \n value", horizontalalignment="center", verticalalignment="center")
+            ax.text(
+                xlim[0], lower_bound, s="Optimal \n value", horizontalalignment="center", verticalalignment="center"
+            )
         if upper_bound is not None and higher_is_better:
             ax.set_xlim(xlim[0] - xfactor, xlim[1])
-            ax.text(xlim[0], upper_bound, s="Optimal \n value", horizontalalignment="center", verticalalignment="center")
+            ax.text(
+                xlim[0], upper_bound, s="Optimal \n value", horizontalalignment="center", verticalalignment="center"
+            )
 
     return fig, ax
 
@@ -157,7 +166,10 @@ class MetricCollection(paddle.nn.LayerDict):
 
     def __init__(
         self,
-        metrics: Metric | "MetricCollection" | Sequence[Metric | "MetricCollection"] | dict[str, Metric | "MetricCollection"],
+        metrics: Metric
+        | "MetricCollection"
+        | Sequence[Metric | "MetricCollection"]
+        | dict[str, Metric | "MetricCollection"],
         *additional_metrics: Metric,
         prefix: str | None = None,
         postfix: str | None = None,
@@ -262,7 +274,9 @@ class MetricCollection(paddle.nn.LayerDict):
         """Compute the result for each metric in the collection."""
         return self._compute_and_reduce("compute")
 
-    def _compute_and_reduce(self, method_name: Literal["compute", "forward"], *args: Any, **kwargs: Any) -> dict[str, Any]:
+    def _compute_and_reduce(
+        self, method_name: Literal["compute", "forward"], *args: Any, **kwargs: Any
+    ) -> dict[str, Any]:
         """Compute result from collection and reduce into a single dictionary."""
         result = {}
         for k, m in self.items(keep_base=True, copy_state=False):
@@ -315,7 +329,10 @@ class MetricCollection(paddle.nn.LayerDict):
 
     def add_metrics(
         self,
-        metrics: Metric | "MetricCollection" | Sequence[Metric | "MetricCollection"] | dict[str, Metric | "MetricCollection"],
+        metrics: Metric
+        | "MetricCollection"
+        | Sequence[Metric | "MetricCollection"]
+        | dict[str, Metric | "MetricCollection"],
         *additional_metrics: Metric,
     ) -> None:
         """Add new metrics to Metric Collection."""
@@ -328,7 +345,9 @@ class MetricCollection(paddle.nn.LayerDict):
                 sel = metrics if isinstance(m, Metric) else remain
                 sel.append(m)
             if remain:
-                warnings.warn(f"You have passes extra arguments {remain} which are not `Metric` so they will be ignored.")
+                warnings.warn(
+                    f"You have passes extra arguments {remain} which are not `Metric` so they will be ignored."
+                )
         elif additional_metrics:
             raise ValueError(
                 f"You have passes extra arguments {additional_metrics} which are not compatible with first passed dictionary {metrics} so they will be ignored."
@@ -337,7 +356,9 @@ class MetricCollection(paddle.nn.LayerDict):
             for name in sorted(metrics.keys()):
                 metric = metrics[name]
                 if not isinstance(metric, (Metric, MetricCollection)):
-                    raise ValueError(f"Value {metric} belonging to key {name} is not an instance of `Metric` or `MetricCollection`")
+                    raise ValueError(
+                        f"Value {metric} belonging to key {name} is not an instance of `Metric` or `MetricCollection`"
+                    )
                 if isinstance(metric, Metric):
                     self[name] = metric
                 else:
@@ -349,7 +370,9 @@ class MetricCollection(paddle.nn.LayerDict):
         elif isinstance(metrics, Sequence):
             for metric in metrics:
                 if not isinstance(metric, (Metric, MetricCollection)):
-                    raise ValueError(f"Input {metric} to `MetricCollection` is not a instance of `Metric` or `MetricCollection`")
+                    raise ValueError(
+                        f"Input {metric} to `MetricCollection` is not a instance of `Metric` or `MetricCollection`"
+                    )
                 if isinstance(metric, Metric):
                     name = metric.__class__.__name__
                     if name in self:
@@ -479,9 +502,15 @@ class MetricCollection(paddle.nn.LayerDict):
             raise ValueError(f"Expected argument `together` to be a boolean, but got {type(together)}")
         if ax is not None:
             if together and not isinstance(ax, plt.Axes):
-                raise ValueError(f"Expected argument `ax` to be a matplotlib axis object, but got {type(ax)} when `together=True`")
-            if not together and not (isinstance(ax, Sequence) and all(isinstance(a, plt.Axes) for a in ax) and len(ax) == len(self)):
-                raise ValueError(f"Expected argument `ax` to be a sequence of matplotlib axis objects, but got {type(ax)} when `together=False`")
+                raise ValueError(
+                    f"Expected argument `ax` to be a matplotlib axis object, but got {type(ax)} when `together=True`"
+                )
+            if not together and not (
+                isinstance(ax, Sequence) and all(isinstance(a, plt.Axes) for a in ax) and len(ax) == len(self)
+            ):
+                raise ValueError(
+                    f"Expected argument `ax` to be a sequence of matplotlib axis objects, but got {type(ax)} when `together=False`"
+                )
         val = val or self.compute()
         if together:
             return plot_single_or_multi_val(val, ax=ax)

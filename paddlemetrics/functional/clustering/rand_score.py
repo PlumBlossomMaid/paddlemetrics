@@ -1,8 +1,10 @@
 import paddle
 
 from paddlemetrics.functional.clustering.utils import (
-    calculate_contingency_matrix, calculate_pair_cluster_confusion_matrix,
-    check_cluster_labels)
+    calculate_contingency_matrix,
+    calculate_pair_cluster_confusion_matrix,
+    check_cluster_labels,
+)
 
 
 def _rand_score_update(preds: paddle.Tensor, target: paddle.Tensor) -> paddle.Tensor:

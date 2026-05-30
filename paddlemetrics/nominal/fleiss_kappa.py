@@ -4,8 +4,7 @@ from typing import Any, List, Optional, Union
 import paddle
 from typing_extensions import Literal
 
-from paddlemetrics.functional.nominal.fleiss_kappa import (
-    _fleiss_kappa_compute, _fleiss_kappa_update)
+from paddlemetrics.functional.nominal.fleiss_kappa import _fleiss_kappa_compute, _fleiss_kappa_update
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.data import dim_zero_cat
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
@@ -67,9 +66,7 @@ class FleissKappa(Metric):
     plot_upper_bound: float = 1.0
     counts: List[paddle.Tensor]
 
-    def __init__(
-        self, mode: Literal["counts", "probs"] = "counts", **kwargs: Any
-    ) -> None:
+    def __init__(self, mode: Literal["counts", "probs"] = "counts", **kwargs: Any) -> None:
         super().__init__(**kwargs)
         if mode not in ["counts", "probs"]:
             raise ValueError("Argument ``mode`` must be one of 'counts' or 'probs'.")

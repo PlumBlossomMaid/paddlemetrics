@@ -3,12 +3,12 @@ from functools import partial
 import numpy as np
 import paddle
 import pytest
-from unittests import BATCH_SIZE, NUM_BATCHES, _Input
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
 
 from paddlemetrics.audio import ScaleInvariantSignalNoiseRatio
 from paddlemetrics.functional.audio import scale_invariant_signal_noise_ratio
+from unittests import BATCH_SIZE, NUM_BATCHES, _Input
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
 
 seed_all(42)
 NUM_SAMPLES = 100
@@ -21,8 +21,7 @@ inputs = _Input(
 class _SpeechMetricsSISDR:
     """The code from speechmetrics."""
 
-    def __init__(self) -> None:
-        ...
+    def __init__(self) -> None: ...
 
     def _test_window(self, audios, rate):
         eps = np.finfo(audios[0].dtype).eps
@@ -55,9 +54,7 @@ def _reference_speechmetrics_si_sdr(
     for i in range(preds.shape[0]):
         ms = []
         for j in range(preds.shape[1]):
-            metric = speechmetrics_sisdr._test_window(
-                [preds[i, j], target[i, j]], rate=16000
-            )
+            metric = speechmetrics_sisdr._test_window([preds[i, j], target[i, j]], rate=16000)
             ms.append(metric["sisdr"])
         mss.append(ms)
     si_sdr = paddle.tensor(mss)
@@ -88,9 +85,7 @@ class TestSISNR(MetricTester):
 
     def test_si_snr_functional(self, preds, target, ref_metric):
         """Test functional implementation of metric."""
-        self.run_functional_metric_test(
-            preds, target, scale_invariant_signal_noise_ratio, ref_metric
-        )
+        self.run_functional_metric_test(preds, target, scale_invariant_signal_noise_ratio, ref_metric)
 
     def test_si_snr_differentiability(self, preds, target, ref_metric):
         """Test the differentiability of the metric, according to its `is_differentiable` attribute."""

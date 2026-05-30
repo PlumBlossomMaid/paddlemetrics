@@ -64,14 +64,10 @@ class ProcrustesDisparity(Metric):
     plot_lower_bound: float = 0.0
     plot_upper_bound: float = 1.0
 
-    def __init__(
-        self, reduction: Literal["mean", "sum"] = "mean", **kwargs: Any
-    ) -> None:
+    def __init__(self, reduction: Literal["mean", "sum"] = "mean", **kwargs: Any) -> None:
         super().__init__(**kwargs)
         if reduction not in ("mean", "sum"):
-            raise ValueError(
-                f"Argument `reduction` must be one of ['mean', 'sum'], got {reduction}"
-            )
+            raise ValueError(f"Argument `reduction` must be one of ['mean', 'sum'], got {reduction}")
         self.reduction = reduction
         self.add_state("disparity", default=paddle.tensor(0.0), dist_reduce_fx="sum")
         self.add_state("total", default=paddle.tensor(0), dist_reduce_fx="sum")

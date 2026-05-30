@@ -3,13 +3,12 @@ from functools import partial
 import paddle
 import pytest
 from scipy.stats import rankdata, spearmanr
+
+from paddlemetrics.functional.regression.spearman import _rank_data, spearman_corrcoef
+from paddlemetrics.regression.spearman import SpearmanCorrCoef
 from unittests import BATCH_SIZE, EXTRA_DIM, NUM_BATCHES, _Input
 from unittests._helpers import seed_all
 from unittests._helpers.testers import MetricTester
-
-from paddlemetrics.functional.regression.spearman import (_rank_data,
-                                                         spearman_corrcoef)
-from paddlemetrics.regression.spearman import SpearmanCorrCoef
 
 seed_all(42)
 _single_target_inputs1 = _Input(
@@ -29,12 +28,8 @@ _multi_target_inputs2 = _Input(
     target=paddle.randn(NUM_BATCHES, BATCH_SIZE, EXTRA_DIM),
 )
 _specific_input = _Input(
-    preds=paddle.stack(
-        [paddle.tensor([1.0, 0.0, 4.0, 1.0, 0.0, 3.0, 0.0]) for _ in range(NUM_BATCHES)]
-    ),
-    target=paddle.stack(
-        [paddle.tensor([4.0, 0.0, 3.0, 3.0, 3.0, 1.0, 1.0]) for _ in range(NUM_BATCHES)]
-    ),
+    preds=paddle.stack([paddle.tensor([1.0, 0.0, 4.0, 1.0, 0.0, 3.0, 0.0]) for _ in range(NUM_BATCHES)]),
+    target=paddle.stack([paddle.tensor([4.0, 0.0, 3.0, 3.0, 3.0, 1.0, 1.0]) for _ in range(NUM_BATCHES)]),
 )
 
 
@@ -91,9 +86,7 @@ class TestSpearmanCorrCoef(MetricTester):
 
     def test_spearman_corrcoef_functional(self, preds, target):
         """Test functional implementation of metric."""
-        self.run_functional_metric_test(
-            preds, target, spearman_corrcoef, _reference_scipy_spearman
-        )
+        self.run_functional_metric_test(preds, target, spearman_corrcoef, _reference_scipy_spearman)
 
     def test_spearman_corrcoef_differentiability(self, preds, target):
         """Test the differentiability of the metric, according to its `is_differentiable` attribute."""

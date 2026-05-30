@@ -7,9 +7,7 @@ from paddlemetrics.functional.regression.kl_divergence import kl_divergence
 from paddlemetrics.utils.checks import _check_same_shape
 
 
-def _jsd_update(
-    p: paddle.Tensor, q: paddle.Tensor, log_prob: bool
-) -> tuple[paddle.Tensor, int]:
+def _jsd_update(p: paddle.Tensor, q: paddle.Tensor, log_prob: bool) -> tuple[paddle.Tensor, int]:
     """Update and returns jensen-shannon divergence scores for each observation and the total number of observations.
 
     Args:
@@ -21,24 +19,20 @@ def _jsd_update(
     """
     _check_same_shape(p, q)
     if p.ndim != 2 or q.ndim != 2:
-        raise ValueError(
-            f"Expected both p and q distribution to be 2D but got {p.ndim} and {q.ndim} respectively"
-        )
+        raise ValueError(f"Expected both p and q distribution to be 2D but got {p.ndim} and {q.ndim} respectively")
     total = p.shape[0]
     if log_prob:
-        mean = paddle.logsumexp(paddle.stack([p, q]), axis=0) - paddle.log(
-            paddle.tensor(2.0)
+        mean = paddle.logsumexp(paddle.stack([p, q]), axis=0) - paddle.log(paddle.tensor(2.0))
+        measures = 0.5 * kl_divergence(p, mean, log_prob=log_prob, reduction=None) + 0.5 * kl_divergence(
+            q, mean, log_prob=log_prob, reduction=None
         )
-        measures = 0.5 * kl_divergence(
-            p, mean, log_prob=log_prob, reduction=None
-        ) + 0.5 * kl_divergence(q, mean, log_prob=log_prob, reduction=None)
     else:
         p = p / p.sum(axis=-1, keepdim=True)
         q = q / q.sum(axis=-1, keepdim=True)
         mean = (p + q) / 2
-        measures = 0.5 * kl_divergence(
-            p, mean, log_prob=log_prob, reduction=None
-        ) + 0.5 * kl_divergence(q, mean, log_prob=log_prob, reduction=None)
+        measures = 0.5 * kl_divergence(p, mean, log_prob=log_prob, reduction=None) + 0.5 * kl_divergence(
+            q, mean, log_prob=log_prob, reduction=None
+        )
     return measures, total
 
 

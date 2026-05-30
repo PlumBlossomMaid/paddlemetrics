@@ -1,11 +1,9 @@
 from typing import Optional
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
-from paddlemetrics.functional.pairwise.helpers import (_check_input,
-                                                      _reduce_distance_matrix)
+from paddlemetrics.functional.pairwise.helpers import _check_input, _reduce_distance_matrix
 from paddlemetrics.utils.exceptions import PaddleMetricsUserError
 
 
@@ -26,19 +24,11 @@ def _pairwise_minkowski_distance_update(
     """
     x, y, zero_diagonal = _check_input(x, y, zero_diagonal)
     if not (isinstance(exponent, (float, int)) and exponent >= 1):
-        raise PaddleMetricsUserError(
-            f"Argument ``p`` must be a float or int greater than 1, but got {exponent}"
-        )
+        raise PaddleMetricsUserError(f"Argument ``p`` must be a float or int greater than 1, but got {exponent}")
     _orig_dtype = x.dtype
     x = x.to(paddle.float64)
     y = y.to(paddle.float64)
-    distance = (
-        (x.unsqueeze(1) - y.unsqueeze(0))
-        .abs()
-        .pow(exponent)
-        .sum(-1)
-        .pow(1.0 / exponent)
-    )
+    distance = (x.unsqueeze(1) - y.unsqueeze(0)).abs().pow(exponent).sum(-1).pow(1.0 / exponent)
     if zero_diagonal:
         distance.fill_diagonal_(value=0)
     return distance.to(_orig_dtype)

@@ -5,9 +5,7 @@ import paddle
 from paddlemetrics.utils.checks import _check_retrieval_functional_inputs
 
 
-def retrieval_fall_out(
-    preds: paddle.Tensor, target: paddle.Tensor, top_k: Optional[int] = None
-) -> paddle.Tensor:
+def retrieval_fall_out(preds: paddle.Tensor, target: paddle.Tensor, top_k: Optional[int] = None) -> paddle.Tensor:
     """Compute the Fall-out for information retrieval, as explained in `IR Fall-out`_.
 
     Fall-out is the fraction of non-relevant documents retrieved among all the non-relevant documents.
@@ -43,7 +41,5 @@ def retrieval_fall_out(
     target = 1 - target
     if not target.sum():
         return paddle.tensor(0.0, device=preds.place)
-    relevant = (
-        target[paddle.argsort(preds, axis=-1, descending=True)][:top_k].sum().float()
-    )
+    relevant = target[paddle.argsort(preds, axis=-1, descending=True)][:top_k].sum().float()
     return relevant / target.sum()

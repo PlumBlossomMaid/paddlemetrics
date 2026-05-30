@@ -3,7 +3,6 @@ import warnings
 from typing import Optional
 
 import paddle
-from paddle import Tensor
 
 
 def _dB2Linear(x: float) -> float:
@@ -28,7 +27,7 @@ def _generate_wave_table(
         min (float): desired min value
         max (float): desired max value
         phase (float): desired phase
-        device (paddle.place): Torch device on which table must be generated
+        device (paddle.Place): Paddle device on which table must be generated
     Returns:
         Tensor: A 1D tensor with wave table values
     """
@@ -56,9 +55,7 @@ def _generate_wave_table(
     return d
 
 
-def allpass_biquad(
-    waveform: paddle.Tensor, sample_rate: int, central_freq: float, Q: float = 0.707
-) -> paddle.Tensor:
+def allpass_biquad(waveform: paddle.Tensor, sample_rate: int, central_freq: float, Q: float = 0.707) -> paddle.Tensor:
     """Design two-pole all-pass filter.  Similar to SoX implementation.
 
     .. devices:: CPU CUDA
@@ -306,15 +303,11 @@ def biquad(
     a0 = paddle.as_tensor(a0, dtype=dtype, device=device).view(1)
     a1 = paddle.as_tensor(a1, dtype=dtype, device=device).view(1)
     a2 = paddle.as_tensor(a2, dtype=dtype, device=device).view(1)
-    output_waveform = lfilter(
-        waveform, paddle.concat([a0, a1, a2]), paddle.concat([b0, b1, b2])
-    )
+    output_waveform = lfilter(waveform, paddle.concat([a0, a1, a2]), paddle.concat([b0, b1, b2]))
     return output_waveform
 
 
-def contrast(
-    waveform: paddle.Tensor, enhancement_amount: float = 75.0
-) -> paddle.Tensor:
+def contrast(waveform: paddle.Tensor, enhancement_amount: float = 75.0) -> paddle.Tensor:
     """Apply contrast effect.  Similar to SoX implementation.
 
     .. devices:: CPU CUDA
@@ -344,9 +337,7 @@ def contrast(
     return output_waveform
 
 
-def dcshift(
-    waveform: paddle.Tensor, shift: float, limiter_gain: Optional[float] = None
-) -> paddle.Tensor:
+def dcshift(waveform: paddle.Tensor, shift: float, limiter_gain: Optional[float] = None) -> paddle.Tensor:
     """Apply a DC shift to the audio. Similar to SoX implementation.
 
     .. devices:: CPU CUDA
@@ -375,25 +366,13 @@ def dcshift(
         limiter_threshold = 1.0 - (abs(shift) - limiter_gain)
     if limiter_gain is not None and shift > 0:
         mask = waveform > limiter_threshold
-        temp = (
-            (waveform[mask] - limiter_threshold)
-            * limiter_gain
-            / (1 - limiter_threshold)
-        )
-        output_waveform[mask] = (temp + limiter_threshold + shift).clamp(
-            max=limiter_threshold
-        )
+        temp = (waveform[mask] - limiter_threshold) * limiter_gain / (1 - limiter_threshold)
+        output_waveform[mask] = (temp + limiter_threshold + shift).clamp(max=limiter_threshold)
         output_waveform[~mask] = (waveform[~mask] + shift).clamp(min=-1, max=1)
     elif limiter_gain is not None and shift < 0:
         mask = waveform < -limiter_threshold
-        temp = (
-            (waveform[mask] + limiter_threshold)
-            * limiter_gain
-            / (1 - limiter_threshold)
-        )
-        output_waveform[mask] = (temp - limiter_threshold + shift).clamp(
-            min=-limiter_threshold
-        )
+        temp = (waveform[mask] + limiter_threshold) * limiter_gain / (1 - limiter_threshold)
+        output_waveform[mask] = (temp - limiter_threshold + shift).clamp(min=-limiter_threshold)
         output_waveform[~mask] = (waveform[~mask] + shift).clamp(min=-1, max=1)
     else:
         output_waveform = (waveform + shift).clamp(min=-1, max=1)
@@ -443,9 +422,7 @@ def deemph_biquad(waveform: paddle.Tensor, sample_rate: int) -> paddle.Tensor:
     return biquad(waveform, b0, b1, b2, a0, a1, a2)
 
 
-def _add_noise_shaping(
-    dithered_waveform: paddle.Tensor, waveform: paddle.Tensor
-) -> paddle.Tensor:
+def _add_noise_shaping(dithered_waveform: paddle.Tensor, waveform: paddle.Tensor) -> paddle.Tensor:
     """Noise shaping is calculated by error:
     error[n] = dithered[n] - original[n]
     noise_shaped_waveform[n] = dithered[n] + error[n-1]
@@ -464,9 +441,7 @@ def _add_noise_shaping(
     return noise_shaped.reshape(dithered_shape[:-1] + noise_shaped.shape[-1:])
 
 
-def _apply_probability_distribution(
-    waveform: paddle.Tensor, density_function: str = "TPDF"
-) -> paddle.Tensor:
+def _apply_probability_distribution(waveform: paddle.Tensor, density_function: str = "TPDF") -> paddle.Tensor:
     """Apply a probability distribution function on a waveform.
 
     Triangular probability density function (TPDF) dither noise has a
@@ -494,16 +469,8 @@ def _apply_probability_distribution(
     waveform = waveform.reshape(-1, shape[-1])
     channel_size = waveform.size()[0] - 1
     time_size = waveform.size()[-1] - 1
-    random_channel = (
-        int(paddle.randint(low=0, high=channel_size, shape=[1]).item())
-        if channel_size > 0
-        else 0
-    )
-    random_time = (
-        int(paddle.randint(low=0, high=time_size, shape=[1]).item())
-        if time_size > 0
-        else 0
-    )
+    random_channel = int(paddle.randint(low=0, high=channel_size, shape=[1]).item()) if channel_size > 0 else 0
+    random_time = int(paddle.randint(low=0, high=time_size, shape=[1]).item()) if time_size > 0 else 0
     number_of_bits = 16
     up_scaling = 2 ** (number_of_bits - 1) - 2
     signal_scaled = waveform * up_scaling
@@ -517,9 +484,7 @@ def _apply_probability_distribution(
         gaussian = waveform[random_channel][random_time]
         for ws in num_rand_variables * [time_size]:
             rand_chan = int(paddle.randint(low=0, high=channel_size, shape=[1]).item())
-            gaussian += waveform[rand_chan][
-                int(paddle.randint(low=0, high=ws, shape=[1]).item())
-            ]
+            gaussian += waveform[rand_chan][int(paddle.randint(low=0, high=ws, shape=[1]).item())]
         signal_scaled_dis = signal_scaled + gaussian
     else:
         TPDF = paddle.audio.functional.get_window("bartlett", win_length=time_size + 1, dtype=signal_scaled.dtype)
@@ -530,9 +495,7 @@ def _apply_probability_distribution(
     return quantised_signal.reshape(shape[:-1] + quantised_signal.shape[-1:])
 
 
-def dither(
-    waveform: paddle.Tensor, density_function: str = "TPDF", noise_shaping: bool = False
-) -> paddle.Tensor:
+def dither(waveform: paddle.Tensor, density_function: str = "TPDF", noise_shaping: bool = False) -> paddle.Tensor:
     """Apply dither
 
     .. devices:: CPU CUDA
@@ -556,9 +519,7 @@ def dither(
     Returns:
        Tensor: waveform dithered
     """
-    dithered = _apply_probability_distribution(
-        waveform, density_function=density_function
-    )
+    dithered = _apply_probability_distribution(waveform, density_function=density_function)
     if noise_shaping:
         return _add_noise_shaping(dithered, waveform)
     else:
@@ -636,9 +597,9 @@ def filtfilt(
         are 2D Tensors, or `(..., time)` otherwise.
     """
     forward_filtered = lfilter(waveform, a_coeffs, b_coeffs, clamp=False, batching=True)
-    backward_filtered = lfilter(
-        forward_filtered.flip(axis=-1), a_coeffs, b_coeffs, clamp=clamp, batching=True
-    ).flip(axis=-1)
+    backward_filtered = lfilter(forward_filtered.flip(axis=-1), a_coeffs, b_coeffs, clamp=clamp, batching=True).flip(
+        axis=-1
+    )
     return backward_filtered
 
 
@@ -715,9 +676,7 @@ def flanger(
     delay_gain = delay_gain * (1 - abs(feedback_gain))
     delay_buf_length = int((delay_min + delay_depth) * sample_rate + 0.5)
     delay_buf_length = delay_buf_length + 2
-    delay_bufs = paddle.zeros(
-        waveform.shape[0], n_channels, delay_buf_length, dtype=dtype, device=device
-    )
+    delay_bufs = paddle.zeros(waveform.shape[0], n_channels, delay_buf_length, dtype=dtype, device=device)
     delay_last = paddle.zeros(waveform.shape[0], n_channels, dtype=dtype, device=device)
     lfo_length = int(sample_rate / speed)
     table_min = math.floor(delay_min * sample_rate + 0.5)
@@ -737,29 +696,21 @@ def flanger(
     channel_idxs = paddle.arange(0, n_channels, device=device)
     for i in range(waveform.shape[-1]):
         delay_buf_pos = (delay_buf_pos + delay_buf_length - 1) % delay_buf_length
-        cur_channel_phase = (channel_idxs * lfo_length * channel_phase + 0.5).to(
-            paddle.int64
-        )
+        cur_channel_phase = (channel_idxs * lfo_length * channel_phase + 0.5).to(paddle.int64)
         delay_tensor = lfo[(lfo_pos + cur_channel_phase) % lfo_length]
         frac_delay = paddle.frac(delay_tensor)
         delay_tensor = paddle.floor(delay_tensor)
         int_delay = delay_tensor.to(paddle.int64)
         temp = waveform[:, :, i]
         delay_bufs[:, :, delay_buf_pos] = temp + delay_last * feedback_gain
-        delayed_0 = delay_bufs[
-            :, channel_idxs, (delay_buf_pos + int_delay) % delay_buf_length
-        ]
+        delayed_0 = delay_bufs[:, channel_idxs, (delay_buf_pos + int_delay) % delay_buf_length]
         int_delay = int_delay + 1
-        delayed_1 = delay_bufs[
-            :, channel_idxs, (delay_buf_pos + int_delay) % delay_buf_length
-        ]
+        delayed_1 = delay_bufs[:, channel_idxs, (delay_buf_pos + int_delay) % delay_buf_length]
         int_delay = int_delay + 1
         if interpolation == "linear":
             delayed = delayed_0 + (delayed_1 - delayed_0) * frac_delay
         else:
-            delayed_2 = delay_bufs[
-                :, channel_idxs, (delay_buf_pos + int_delay) % delay_buf_length
-            ]
+            delayed_2 = delay_bufs[:, channel_idxs, (delay_buf_pos + int_delay) % delay_buf_length]
             int_delay = int_delay + 1
             delayed_2 = delayed_2 - delayed_0
             delayed_1 = delayed_1 - delayed_0
@@ -792,9 +743,7 @@ def gain(waveform: paddle.Tensor, gain_db: float = 1.0) -> paddle.Tensor:
     return waveform * ratio
 
 
-def highpass_biquad(
-    waveform: paddle.Tensor, sample_rate: int, cutoff_freq: float, Q: float = 0.707
-) -> paddle.Tensor:
+def highpass_biquad(waveform: paddle.Tensor, sample_rate: int, cutoff_freq: float, Q: float = 0.707) -> paddle.Tensor:
     """Design biquad highpass filter and perform filtering.  Similar to SoX implementation.
 
     .. devices:: CPU CUDA
@@ -833,9 +782,7 @@ def _lfilter_core_loop(
     n_order = a_coeffs_flipped.size(1)
     a_coeffs_flipped = a_coeffs_flipped.unsqueeze(2)
     for i_sample, o0 in enumerate(input_signal_windows.permute(2, 0, 1)):
-        windowed_output_signal = padded_output_waveform[
-            :, :, i_sample : i_sample + n_order
-        ]
+        windowed_output_signal = padded_output_waveform[:, :, i_sample : i_sample + n_order]
         o0 -= (windowed_output_signal.transpose(0, 1) @ a_coeffs_flipped)[..., 0].t()
         padded_output_waveform[:, :, i_sample + n_order - 1] = o0
 
@@ -847,9 +794,7 @@ class DifferentiableFIR(paddle.autograd.PyLayer):
         n_channel = b_coeffs.size(0)
         b_coeff_flipped = b_coeffs.flip(axis=1)
         padded_waveform = paddle.nn.functional.pad(waveform, (n_order - 1, 0))
-        output = paddle.nn.functional.conv1d(
-            padded_waveform, b_coeff_flipped.unsqueeze(1), groups=n_channel
-        )
+        output = paddle.nn.functional.conv1d(padded_waveform, b_coeff_flipped.unsqueeze(1), groups=n_channel)
         ctx.save_for_backward(waveform, b_coeffs, output)
         return output
 
@@ -861,9 +806,7 @@ class DifferentiableFIR(paddle.autograd.PyLayer):
         n_order = b_coeffs.size(1)
         db = (
             paddle.nn.functional.conv1d(
-                paddle.nn.functional.pad(x, (n_order - 1, 0)).view(
-                    1, n_batch * n_channel, -1
-                ),
+                paddle.nn.functional.pad(x, (n_order - 1, 0)).view(1, n_batch * n_channel, -1),
                 dy.view(n_batch * n_channel, 1, -1),
                 groups=n_batch * n_channel,
             )
@@ -909,9 +852,7 @@ class DifferentiableIIR(paddle.autograd.PyLayer):
         x, a_coeffs_normalized, y = ctx.saved_tensor()
         n_channel = x.size(1)
         n_order = a_coeffs_normalized.size(1)
-        tmp = DifferentiableIIR.apply(
-            dy.flip(axis=2).contiguous(), a_coeffs_normalized
-        ).flip(axis=2)
+        tmp = DifferentiableIIR.apply(dy.flip(axis=2).contiguous(), a_coeffs_normalized).flip(axis=2)
         dx = tmp if x.requires_grad else None
         da = (
             -(
@@ -978,15 +919,11 @@ def lfilter(
             f"Expected coeffs to be the same size.Found: a_coeffs size: {a_coeffs.size()}, b_coeffs size: {b_coeffs.size()}"
         )
     if a_coeffs.ndim > 2:
-        raise ValueError(
-            f"Expected coeffs to have greater than 1 dimension. Found: {a_coeffs.ndim}"
-        )
+        raise ValueError(f"Expected coeffs to have greater than 1 dimension. Found: {a_coeffs.ndim}")
     if a_coeffs.ndim > 1:
         if batching:
             if waveform.ndim <= 0:
-                raise ValueError(
-                    f"Expected waveform to have a positive number of dimensions.Found: {waveform.ndim}"
-                )
+                raise ValueError(f"Expected waveform to have a positive number of dimensions.Found: {waveform.ndim}")
             if waveform.shape[-2] != a_coeffs.shape[0]:
                 raise ValueError(
                     f"Expected number of batches in waveform and coeffs to be the same.Found: coeffs batches: {a_coeffs.shape[0]}, waveform batches: {waveform.shape[-2]}"
@@ -1005,9 +942,7 @@ def lfilter(
     return output
 
 
-def lowpass_biquad(
-    waveform: paddle.Tensor, sample_rate: int, cutoff_freq: float, Q: float = 0.707
-) -> paddle.Tensor:
+def lowpass_biquad(waveform: paddle.Tensor, sample_rate: int, cutoff_freq: float, Q: float = 0.707) -> paddle.Tensor:
     """Design biquad lowpass filter and perform filtering.  Similar to SoX implementation.
 
     .. devices:: CPU CUDA
@@ -1051,9 +986,7 @@ def _overdrive_core_loop_cpu(
         output_waveform[:, i] = waveform[:, i] * 0.5 + last_out * 0.75
 
 
-def overdrive(
-    waveform: paddle.Tensor, gain: float = 20, colour: float = 20
-) -> paddle.Tensor:
+def overdrive(waveform: paddle.Tensor, gain: float = 20, colour: float = 20) -> paddle.Tensor:
     """Apply a overdrive effect to the audio. Similar to SoX implementation.
 
     .. devices:: CPU CUDA
@@ -1141,9 +1074,7 @@ def phaser(
     device, dtype = waveform.device, waveform.dtype
     waveform = waveform.view(-1, actual_shape[-1])
     delay_buf_len = int(delay_ms * 0.001 * sample_rate + 0.5)
-    delay_buf = paddle.zeros(
-        waveform.shape[0], delay_buf_len, dtype=dtype, device=device
-    )
+    delay_buf = paddle.zeros(waveform.shape[0], delay_buf_len, dtype=dtype, device=device)
     mod_buf_len = int(sample_rate / mod_speed + 0.5)
     if sinusoidal:
         wave_type = "SINE"
@@ -1173,9 +1104,7 @@ def phaser(
         temp = waveform_list[i] + delay_buf_list[idx]
         delay_buf_list[delay_pos] = temp * decay
         output_waveform_pre_gain_list.append(temp)
-    output_waveform = paddle.stack(output_waveform_pre_gain_list, axis=1).to(
-        dtype=dtype, device=device
-    )
+    output_waveform = paddle.stack(output_waveform_pre_gain_list, axis=1).to(dtype=dtype, device=device)
     output_waveform.mul_(gain_out)
     return output_waveform.clamp(min=-1, max=1).view(actual_shape)
 
@@ -1304,9 +1233,7 @@ def _measure(
     dftBuf = paddle.zeros(dft_len_ws, device=device)
     dftBuf[:measure_len_ws] = samples * spectrum_window[:measure_len_ws]
     _dftBuf = paddle.fft.rfft(dftBuf)
-    mult: float = (
-        boot_count / (1.0 + boot_count) if boot_count >= 0 else measure_smooth_time_mult
-    )
+    mult: float = boot_count / (1.0 + boot_count) if boot_count >= 0 else measure_smooth_time_mult
     _d = _dftBuf[spectrum_start:spectrum_end].abs()
     spectrum[spectrum_start:spectrum_end].mul_(mult).add_(_d * (1 - mult))
     _d = spectrum[spectrum_start:spectrum_end] ** 2
@@ -1331,12 +1258,8 @@ def _measure(
     _cepstrum_Buf[spectrum_start:spectrum_end] = _d * cepstrum_window
     _cepstrum_Buf[spectrum_end : dft_len_ws >> 1].zero_()
     _cepstrum_Buf = paddle.fft.rfft(_cepstrum_Buf)
-    result: float = float(
-        paddle.sum(_cepstrum_Buf[cepstrum_start:cepstrum_end].abs().pow(2))
-    )
-    result = (
-        math.log(result / (cepstrum_end - cepstrum_start)) if result > 0 else -math.inf
-    )
+    result: float = float(paddle.sum(_cepstrum_Buf[cepstrum_start:cepstrum_end].abs().pow(2)))
+    result = math.log(result / (cepstrum_end - cepstrum_start)) if result > 0 else -math.inf
     return max(0, 21 + result)
 
 
@@ -1427,9 +1350,7 @@ def vad(
         warnings.warn(
             f"Expected input tensor dimension of 1 for single channel or 2 for multi-channel. Got {waveform.ndim} instead. Batch semantics is not supported. Please refer to https://github.com/pytorch/audio/issues/1348 and https://github.com/pytorch/audio/issues/1468."
         )
-    measure_duration: float = (
-        2.0 / measure_freq if measure_duration is None else measure_duration
-    )
+    measure_duration: float = 2.0 / measure_freq if measure_duration is None else measure_duration
     measure_len_ws = int(sample_rate * measure_duration + 0.5)
     measure_len_ns = measure_len_ws
     dft_len_ws = 16
@@ -1440,9 +1361,7 @@ def vad(
     search_pre_trigger_len_ns = measures_len * measure_period_ns
     gap_len = int(allowed_gap * measure_freq + 0.5)
     fixed_pre_trigger_len_ns = int(pre_trigger_time * sample_rate + 0.5)
-    samplesLen_ns = (
-        fixed_pre_trigger_len_ns + search_pre_trigger_len_ns + measure_len_ns
-    )
+    samplesLen_ns = fixed_pre_trigger_len_ns + search_pre_trigger_len_ns + measure_len_ns
     spectrum_window = paddle.zeros(measure_len_ws, device=device)
     for i in range(measure_len_ws):
         spectrum_window[i] = 2.0 / math.sqrt(float(measure_len_ws))
@@ -1466,12 +1385,8 @@ def vad(
         raise ValueError(
             f"Expected cepstrum_start to be smaller than cepstrum_end.Found: cepstrum_start: {cepstrum_start}, cepstrum_end: {cepstrum_end}."
         )
-    noise_up_time_mult = paddle.tensor(
-        math.exp(-1.0 / (noise_up_time * measure_freq)), device=device
-    )
-    noise_down_time_mult = paddle.tensor(
-        math.exp(-1.0 / (noise_down_time * measure_freq)), device=device
-    )
+    noise_up_time_mult = paddle.tensor(math.exp(-1.0 / (noise_up_time * measure_freq)), device=device)
+    noise_down_time_mult = paddle.tensor(math.exp(-1.0 / (noise_down_time * measure_freq)), device=device)
     measure_smooth_time_mult = math.exp(-1.0 / (measure_smooth_time * measure_freq))
     trigger_meas_time_mult = math.exp(-1.0 / (trigger_time * measure_freq))
     boot_count_max = int(boot_time * measure_freq - 0.5)
@@ -1506,9 +1421,7 @@ def vad(
                 boot_count=boot_count,
             )
             measures[i, measures_index] = meas
-            mean_meas[i] = mean_meas[i] * trigger_meas_time_mult + meas * (
-                1.0 - trigger_meas_time_mult
-            )
+            mean_meas[i] = mean_meas[i] * trigger_meas_time_mult + meas * (1.0 - trigger_meas_time_mult)
             has_triggered = has_triggered or mean_meas[i] >= trigger_level
             if has_triggered:
                 n: int = measures_len
@@ -1532,8 +1445,6 @@ def vad(
             flushedLen_ns = (measures_len - num_measures_to_flush) * measure_period_ns
             break
     if not has_triggered and shape[-1] >= fixed_pre_trigger_len_ns:
-        return waveform[..., :fixed_pre_trigger_len_ns].view(
-            shape[:-1] + paddle.Size([fixed_pre_trigger_len_ns])
-        )
+        return waveform[..., :fixed_pre_trigger_len_ns].view(shape[:-1] + paddle.Size([fixed_pre_trigger_len_ns]))
     res = waveform[:, max(pos - samplesLen_ns + flushedLen_ns, 0) :]
     return res.view(shape[:-1] + res.shape[-1:])

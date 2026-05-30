@@ -65,9 +65,7 @@ def short_time_objective_intelligibility(
 
     _check_same_shape(preds, target)
     if len(preds.shape) == 1:
-        stoi_val_np = stoi_backend(
-            target.detach().cpu().numpy(), preds.detach().cpu().numpy(), fs, extended
-        )
+        stoi_val_np = stoi_backend(target.detach().cpu().numpy(), preds.detach().cpu().numpy(), fs, extended)
         stoi_val = paddle.to_tensor(stoi_val_np)
     else:
         preds_np = preds.reshape([-1, preds.shape[-1]]).detach().cpu().numpy()

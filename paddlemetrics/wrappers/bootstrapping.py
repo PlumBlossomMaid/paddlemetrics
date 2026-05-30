@@ -3,9 +3,9 @@ from copy import deepcopy
 from typing import Any, Optional, Union, cast
 
 import paddle
-from paddlemetrics.utils.data import apply_to_collection
 
 from paddlemetrics.metric import Metric
+from paddlemetrics.utils.data import apply_to_collection
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
 from paddlemetrics.wrappers.abstract import WrapperMetric
@@ -28,6 +28,7 @@ def _bootstrap_sampler(size: int, sampling_strategy: str = "poisson") -> paddle.
     if sampling_strategy == "poisson":
         # Poisson resampling not yet implemented for paddle
         raise NotImplementedError("Poisson sampling strategy not yet implemented")
+
 
 class BootStrapper(WrapperMetric):
     """Using `Turn a Metric into a Bootstrapped`_.
@@ -83,9 +84,7 @@ class BootStrapper(WrapperMetric):
             raise ValueError(
                 f"Expected base metric to be an instance of paddlemetrics.Metric but received {base_metric}"
             )
-        self.metrics = paddle.nn.LayerList(
-            [deepcopy(base_metric) for _ in range(num_bootstraps)]
-        )
+        self.metrics = paddle.nn.LayerList([deepcopy(base_metric) for _ in range(num_bootstraps)])
         self.num_bootstraps = num_bootstraps
         self.mean = mean
         self.std = std
@@ -111,21 +110,13 @@ class BootStrapper(WrapperMetric):
         elif len(kwargs_sizes) > 0:
             size = next(iter(kwargs_sizes.values()))
         else:
-            raise ValueError(
-                "None of the input contained tensors, so could not determine the sampling size"
-            )
+            raise ValueError("None of the input contained tensors, so could not determine the sampling size")
         for idx in range(self.num_bootstraps):
-            sample_idx = _bootstrap_sampler(
-                size, sampling_strategy=self.sampling_strategy
-            ).to(self.place)
+            sample_idx = _bootstrap_sampler(size, sampling_strategy=self.sampling_strategy).to(self.place)
             if sample_idx.size == 0:
                 continue
-            new_args = apply_to_collection(
-                args, paddle.Tensor, paddle.index_select, axis=0, index=sample_idx
-            )
-            new_kwargs = apply_to_collection(
-                kwargs, paddle.Tensor, paddle.index_select, axis=0, index=sample_idx
-            )
+            new_args = apply_to_collection(args, paddle.Tensor, paddle.index_select, axis=0, index=sample_idx)
+            new_kwargs = apply_to_collection(kwargs, paddle.Tensor, paddle.index_select, axis=0, index=sample_idx)
             self.metrics[idx].update(*new_args, **new_kwargs)
 
     def compute(self) -> dict[str, paddle.Tensor]:
@@ -135,9 +126,7 @@ class BootStrapper(WrapperMetric):
         ``raw`` depending on how the class was initialized.
 
         """
-        computed_vals = paddle.stack(
-            [cast(Metric, m).compute() for m in self.metrics], axis=0
-        )
+        computed_vals = paddle.stack([cast(Metric, m).compute() for m in self.metrics], axis=0)
         output_dict = {}
         if self.mean:
             output_dict["mean"] = computed_vals.mean(dim=0)

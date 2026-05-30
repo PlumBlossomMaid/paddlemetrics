@@ -3,8 +3,7 @@ from typing import Optional
 import paddle
 from typing_extensions import Literal
 
-from paddlemetrics.functional.segmentation.utils import \
-    _segmentation_inputs_format
+from paddlemetrics.functional.segmentation.utils import _segmentation_inputs_format
 from paddlemetrics.utils import rank_zero_warn
 from paddlemetrics.utils.compute import _safe_divide
 
@@ -18,18 +17,12 @@ def _dice_score_validate_args(
 ) -> None:
     """Validate the arguments of the metric."""
     if not isinstance(num_classes, int) or num_classes <= 0:
-        raise ValueError(
-            f"Expected argument `num_classes` must be a positive integer, but got {num_classes}."
-        )
+        raise ValueError(f"Expected argument `num_classes` must be a positive integer, but got {num_classes}.")
     if not isinstance(include_background, bool):
-        raise ValueError(
-            f"Expected argument `include_background` must be a boolean, but got {include_background}."
-        )
+        raise ValueError(f"Expected argument `include_background` must be a boolean, but got {include_background}.")
     allowed_average = ["micro", "macro", "weighted", "none"]
     if average is not None and average not in allowed_average:
-        raise ValueError(
-            f"Expected argument `average` to be one of {allowed_average} or None, but got {average}."
-        )
+        raise ValueError(f"Expected argument `average` to be one of {allowed_average} or None, but got {average}.")
     if input_format not in ["one-hot", "index", "mixed"]:
         raise ValueError(
             f"Expected argument `input_format` to be one of 'one-hot', 'index', 'mixed', but got {input_format}."
@@ -48,9 +41,7 @@ def _dice_score_update(
     input_format: Literal["one-hot", "index", "mixed"] = "one-hot",
 ) -> tuple[paddle.Tensor, paddle.Tensor, paddle.Tensor]:
     """Update the state with the current prediction and target."""
-    preds, target = _segmentation_inputs_format(
-        preds, target, include_background, num_classes, input_format
-    )
+    preds, target = _segmentation_inputs_format(preds, target, include_background, num_classes, input_format)
     reduce_axis = list(range(2, target.ndim))
     intersection = paddle.sum(preds * target, axis=reduce_axis)
     target_sum = paddle.sum(target, axis=reduce_axis)
@@ -82,12 +73,8 @@ def _dice_score_compute(
         return paddle.nanmean(x=dice, axis=-1)
     if average == "weighted":
         if not isinstance(support, paddle.Tensor):
-            raise ValueError(
-                f"Expected argument `support` to be a tensor, got: {type(support)}."
-            )
-        weights = _safe_divide(
-            support, paddle.sum(support, axis=-1, keepdim=True), zero_division="nan"
-        )
+            raise ValueError(f"Expected argument `support` to be a tensor, got: {type(support)}.")
+        weights = _safe_divide(support, paddle.sum(support, axis=-1, keepdim=True), zero_division="nan")
         nan_mask = dice.isnan().all(dim=-1)
         dice = paddle.nansum(x=dice * weights, axis=-1)
         dice[nan_mask] = paddle.nan
@@ -169,12 +156,8 @@ def dice_score(
             "dice_score metric currently defaults to `average=micro`, but will change to`average=macro` in the v1.9 release. If you've explicitly set this parameter, you can ignore this warning.",
             UserWarning,
         )
-    _dice_score_validate_args(
-        num_classes, include_background, average, input_format, aggregation_level
-    )
-    numerator, denominator, support = _dice_score_update(
-        preds, target, num_classes, include_background, input_format
-    )
+    _dice_score_validate_args(num_classes, include_background, average, input_format, aggregation_level)
+    numerator, denominator, support = _dice_score_update(preds, target, num_classes, include_background, input_format)
     return _dice_score_compute(
         numerator,
         denominator,

@@ -1,7 +1,6 @@
 from typing import Optional
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.utils.checks import _check_same_shape
@@ -31,9 +30,7 @@ def _confusion_matrix_reduce(
     """
     allowed_normalize = "true", "pred", "all", "none", None
     if normalize not in allowed_normalize:
-        raise ValueError(
-            f"Argument `normalize` needs to one of the following: {allowed_normalize}"
-        )
+        raise ValueError(f"Argument `normalize` needs to one of the following: {allowed_normalize}")
     if normalize is not None and normalize != "none":
         confmat = confmat.float() if not confmat.is_floating_point() else confmat
         if normalize == "true":
@@ -45,9 +42,7 @@ def _confusion_matrix_reduce(
         nan_elements = confmat[paddle.isnan(confmat)].size
         if nan_elements:
             confmat[paddle.isnan(confmat)] = 0
-            rank_zero_warn(
-                f"{nan_elements} NaN values found in confusion matrix have been replaced with zeros."
-            )
+            rank_zero_warn(f"{nan_elements} NaN values found in confusion matrix have been replaced with zeros.")
     return confmat
 
 
@@ -64,18 +59,12 @@ def _binary_confusion_matrix_arg_validation(
 
     """
     if not (isinstance(threshold, float) and 0 <= threshold <= 1):
-        raise ValueError(
-            f"Expected argument `threshold` to be a float in the [0,1] range, but got {threshold}."
-        )
+        raise ValueError(f"Expected argument `threshold` to be a float in the [0,1] range, but got {threshold}.")
     if ignore_index is not None and not isinstance(ignore_index, int):
-        raise ValueError(
-            f"Expected argument `ignore_index` to either be `None` or an integer, but got {ignore_index}"
-        )
+        raise ValueError(f"Expected argument `ignore_index` to either be `None` or an integer, but got {ignore_index}")
     allowed_normalize = "true", "pred", "all", "none", None
     if normalize not in allowed_normalize:
-        raise ValueError(
-            f"Expected argument `normalize` to be one of {allowed_normalize}, but got {normalize}."
-        )
+        raise ValueError(f"Expected argument `normalize` to be one of {allowed_normalize}, but got {normalize}.")
 
 
 def _binary_confusion_matrix_tensor_validation(
@@ -93,11 +82,7 @@ def _binary_confusion_matrix_tensor_validation(
     if ignore_index is None:
         check = paddle.any((unique_values != 0) & (unique_values != 1))
     else:
-        check = paddle.any(
-            (unique_values != 0)
-            & (unique_values != 1)
-            & (unique_values != ignore_index)
-        )
+        check = paddle.any((unique_values != 0) & (unique_values != 1) & (unique_values != ignore_index))
     if check:
         raise RuntimeError(
             f"Detected the following values in `target`: {unique_values} but expected only the following values {[0, 1] if ignore_index is None else [ignore_index]}."
@@ -137,9 +122,7 @@ def _binary_confusion_matrix_format(
     return preds, target
 
 
-def _binary_confusion_matrix_update(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> paddle.Tensor:
+def _binary_confusion_matrix_update(preds: paddle.Tensor, target: paddle.Tensor) -> paddle.Tensor:
     """Compute the bins to update the confusion matrix with."""
     unique_mapping = (target * 2 + preds).to(paddle.long)
     bins = _bincount(unique_mapping, minlength=4)
@@ -216,9 +199,7 @@ def binary_confusion_matrix(
     if validate_args:
         _binary_confusion_matrix_arg_validation(threshold, ignore_index, normalize)
         _binary_confusion_matrix_tensor_validation(preds, target, ignore_index)
-    preds, target = _binary_confusion_matrix_format(
-        preds, target, threshold, ignore_index
-    )
+    preds, target = _binary_confusion_matrix_format(preds, target, threshold, ignore_index)
     confmat = _binary_confusion_matrix_update(preds, target)
     return _binary_confusion_matrix_compute(confmat, normalize)
 
@@ -236,18 +217,12 @@ def _multiclass_confusion_matrix_arg_validation(
 
     """
     if not isinstance(num_classes, int) or num_classes < 2:
-        raise ValueError(
-            f"Expected argument `num_classes` to be an integer larger than 1, but got {num_classes}"
-        )
+        raise ValueError(f"Expected argument `num_classes` to be an integer larger than 1, but got {num_classes}")
     if ignore_index is not None and not isinstance(ignore_index, int):
-        raise ValueError(
-            f"Expected argument `ignore_index` to either be `None` or an integer, but got {ignore_index}"
-        )
+        raise ValueError(f"Expected argument `ignore_index` to either be `None` or an integer, but got {ignore_index}")
     allowed_normalize = "true", "pred", "all", "none", None
     if normalize not in allowed_normalize:
-        raise ValueError(
-            f"Expected argument `normalize` to be one of {allowed_normalize}, but got {normalize}."
-        )
+        raise ValueError(f"Expected argument `normalize` to be one of {allowed_normalize}, but got {normalize}.")
 
 
 def _multiclass_confusion_matrix_tensor_validation(
@@ -267,9 +242,7 @@ def _multiclass_confusion_matrix_tensor_validation(
     """
     if preds.ndim == target.ndim + 1:
         if not preds.is_floating_point():
-            raise ValueError(
-                "If `preds` have one dimension more than `target`, `preds` should be a float tensor."
-            )
+            raise ValueError("If `preds` have one dimension more than `target`, `preds` should be a float tensor.")
         if preds.shape[1] != num_classes:
             raise ValueError(
                 "If `preds` have one dimension more than `target`, `preds.shape[1]` should be equal to number of classes."
@@ -289,11 +262,7 @@ def _multiclass_confusion_matrix_tensor_validation(
             "Either `preds` and `target` both should have the (same) shape (N, ...), or `target` should be (N, ...) and `preds` should be (N, C, ...)."
         )
     check_value = num_classes if ignore_index is None else num_classes + 1
-    for t, name in (
-        ((target, "target"),) + ((preds, "preds"),)
-        if not preds.is_floating_point()
-        else ()
-    ):
+    for t, name in ((target, "target"),) + ((preds, "preds"),) if not preds.is_floating_point() else ():
         num_unique_values = len(paddle.unique(t, axis=None))
         if num_unique_values > check_value:
             raise RuntimeError(
@@ -318,9 +287,7 @@ def _multiclass_confusion_matrix_format(
     preds = (
         preds.flatten()
         if convert_to_labels
-        else paddle.moveaxis(x=preds, source=1, destination=-1).reshape(
-            -1, preds.shape[1]
-        )
+        else paddle.moveaxis(x=preds, source=1, destination=-1).reshape(-1, preds.shape[1])
     )
     target = target.flatten()
     if ignore_index is not None:
@@ -330,9 +297,7 @@ def _multiclass_confusion_matrix_format(
     return preds, target
 
 
-def _multiclass_confusion_matrix_update(
-    preds: paddle.Tensor, target: paddle.Tensor, num_classes: int
-) -> paddle.Tensor:
+def _multiclass_confusion_matrix_update(preds: paddle.Tensor, target: paddle.Tensor, num_classes: int) -> paddle.Tensor:
     """Compute the bins to update the confusion matrix with."""
     unique_mapping = target.to(paddle.long) * num_classes + preds.to(paddle.long)
     bins = _bincount(unique_mapping, minlength=num_classes**2)
@@ -412,12 +377,8 @@ def multiclass_confusion_matrix(
 
     """
     if validate_args:
-        _multiclass_confusion_matrix_arg_validation(
-            num_classes, ignore_index, normalize
-        )
-        _multiclass_confusion_matrix_tensor_validation(
-            preds, target, num_classes, ignore_index
-        )
+        _multiclass_confusion_matrix_arg_validation(num_classes, ignore_index, normalize)
+        _multiclass_confusion_matrix_tensor_validation(preds, target, num_classes, ignore_index)
     preds, target = _multiclass_confusion_matrix_format(preds, target, ignore_index)
     confmat = _multiclass_confusion_matrix_update(preds, target, num_classes)
     return _multiclass_confusion_matrix_compute(confmat, normalize)
@@ -438,22 +399,14 @@ def _multilabel_confusion_matrix_arg_validation(
 
     """
     if not isinstance(num_labels, int) or num_labels < 2:
-        raise ValueError(
-            f"Expected argument `num_labels` to be an integer larger than 1, but got {num_labels}"
-        )
+        raise ValueError(f"Expected argument `num_labels` to be an integer larger than 1, but got {num_labels}")
     if not (isinstance(threshold, float) and 0 <= threshold <= 1):
-        raise ValueError(
-            f"Expected argument `threshold` to be a float, but got {threshold}."
-        )
+        raise ValueError(f"Expected argument `threshold` to be a float, but got {threshold}.")
     if ignore_index is not None and not isinstance(ignore_index, int):
-        raise ValueError(
-            f"Expected argument `ignore_index` to either be `None` or an integer, but got {ignore_index}"
-        )
+        raise ValueError(f"Expected argument `ignore_index` to either be `None` or an integer, but got {ignore_index}")
     allowed_normalize = "true", "pred", "all", "none", None
     if normalize not in allowed_normalize:
-        raise ValueError(
-            f"Expected argument `normalize` to be one of {allowed_normalize}, but got {normalize}."
-        )
+        raise ValueError(f"Expected argument `normalize` to be one of {allowed_normalize}, but got {normalize}.")
 
 
 def _multilabel_confusion_matrix_tensor_validation(
@@ -479,11 +432,7 @@ def _multilabel_confusion_matrix_tensor_validation(
     if ignore_index is None:
         check = paddle.any((unique_values != 0) & (unique_values != 1))
     else:
-        check = paddle.any(
-            (unique_values != 0)
-            & (unique_values != 1)
-            & (unique_values != ignore_index)
-        )
+        check = paddle.any((unique_values != 0) & (unique_values != 1) & (unique_values != ignore_index))
     if check:
         raise RuntimeError(
             f"Detected the following values in `target`: {unique_values} but expected only the following values {[0, 1] if ignore_index is None else [ignore_index]}."
@@ -526,13 +475,9 @@ def _multilabel_confusion_matrix_format(
     return preds, target
 
 
-def _multilabel_confusion_matrix_update(
-    preds: paddle.Tensor, target: paddle.Tensor, num_labels: int
-) -> paddle.Tensor:
+def _multilabel_confusion_matrix_update(preds: paddle.Tensor, target: paddle.Tensor, num_labels: int) -> paddle.Tensor:
     """Compute the bins to update the confusion matrix with."""
-    unique_mapping = (
-        2 * target + preds + 4 * paddle.arange(num_labels, device=preds.place)
-    ).flatten()
+    unique_mapping = (2 * target + preds + 4 * paddle.arange(num_labels, device=preds.place)).flatten()
     unique_mapping = unique_mapping[unique_mapping >= 0]
     bins = _bincount(unique_mapping, minlength=4 * num_labels)
     return bins.reshape(num_labels, 2, 2)
@@ -610,15 +555,9 @@ def multilabel_confusion_matrix(
 
     """
     if validate_args:
-        _multilabel_confusion_matrix_arg_validation(
-            num_labels, threshold, ignore_index, normalize
-        )
-        _multilabel_confusion_matrix_tensor_validation(
-            preds, target, num_labels, ignore_index
-        )
-    preds, target = _multilabel_confusion_matrix_format(
-        preds, target, num_labels, threshold, ignore_index
-    )
+        _multilabel_confusion_matrix_arg_validation(num_labels, threshold, ignore_index, normalize)
+        _multilabel_confusion_matrix_tensor_validation(preds, target, num_labels, ignore_index)
+    preds, target = _multilabel_confusion_matrix_format(preds, target, num_labels, threshold, ignore_index)
     confmat = _multilabel_confusion_matrix_update(preds, target, num_labels)
     return _multilabel_confusion_matrix_compute(confmat, normalize)
 
@@ -672,23 +611,13 @@ def confusion_matrix(
     """
     task = ClassificationTask.from_str(task)
     if task == ClassificationTask.BINARY:
-        return binary_confusion_matrix(
-            preds, target, threshold, normalize, ignore_index, validate_args
-        )
+        return binary_confusion_matrix(preds, target, threshold, normalize, ignore_index, validate_args)
     if task == ClassificationTask.MULTICLASS:
         if not isinstance(num_classes, int):
-            raise ValueError(
-                f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-            )
-        return multiclass_confusion_matrix(
-            preds, target, num_classes, normalize, ignore_index, validate_args
-        )
+            raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
+        return multiclass_confusion_matrix(preds, target, num_classes, normalize, ignore_index, validate_args)
     if task == ClassificationTask.MULTILABEL:
         if not isinstance(num_labels, int):
-            raise ValueError(
-                f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-            )
-        return multilabel_confusion_matrix(
-            preds, target, num_labels, threshold, normalize, ignore_index, validate_args
-        )
+            raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
+        return multilabel_confusion_matrix(preds, target, num_labels, threshold, normalize, ignore_index, validate_args)
     raise ValueError(f"Task {task} not supported.")

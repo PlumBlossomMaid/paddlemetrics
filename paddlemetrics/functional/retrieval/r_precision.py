@@ -31,9 +31,5 @@ def retrieval_r_precision(preds: paddle.Tensor, target: paddle.Tensor) -> paddle
     relevant_number = target.sum()
     if not relevant_number:
         return paddle.tensor(0.0, device=preds.place)
-    relevant = (
-        target[paddle.argsort(preds, axis=-1, descending=True)][:relevant_number]
-        .sum()
-        .float()
-    )
+    relevant = target[paddle.argsort(preds, axis=-1, descending=True)][:relevant_number].sum().float()
     return relevant / relevant_number

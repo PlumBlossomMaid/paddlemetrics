@@ -92,13 +92,10 @@ class RetrievalPrecision(RetrievalMetric):
         top_k: Optional[int] = None,
         adaptive_k: bool = False,
         aggregation: Union[Literal["mean", "median", "min", "max"], Callable] = "mean",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__(
-            empty_target_action=empty_target_action,
-            ignore_index=ignore_index,
-            aggregation=aggregation,
-            **kwargs
+            empty_target_action=empty_target_action, ignore_index=ignore_index, aggregation=aggregation, **kwargs
         )
         if top_k is not None and not (isinstance(top_k, int) and top_k > 0):
             raise ValueError("`top_k` has to be a positive integer or None")
@@ -108,9 +105,7 @@ class RetrievalPrecision(RetrievalMetric):
         self.adaptive_k = adaptive_k
 
     def _metric(self, preds: paddle.Tensor, target: paddle.Tensor) -> paddle.Tensor:
-        return retrieval_precision(
-            preds, target, top_k=self.top_k, adaptive_k=self.adaptive_k
-        )
+        return retrieval_precision(preds, target, top_k=self.top_k, adaptive_k=self.adaptive_k)
 
     def plot(
         self,

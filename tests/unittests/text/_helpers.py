@@ -6,17 +6,19 @@ from typing import Any, Callable, Optional, Union
 import numpy as np
 import paddle
 import pytest
-from unittests import NUM_PROCESSES, USE_PYTEST_POOL, _reference_cachier
-from unittests._helpers import _IS_WINDOWS, seed_all
-from unittests._helpers.testers import (MetricTester, _assert_allclose,
-                                        _assert_requires_grad, _assert_tensor,
-                                        _select_rand_best_device)
 
 from paddlemetrics import Metric
+from unittests import NUM_PROCESSES, USE_PYTEST_POOL, _reference_cachier
+from unittests._helpers import _IS_WINDOWS, seed_all
+from unittests._helpers.testers import (
+    MetricTester,
+    _assert_allclose,
+    _assert_requires_grad,
+    _assert_tensor,
+    _select_rand_best_device,
+)
 
-TEXT_METRIC_INPUT = Union[
-    Sequence[str], Sequence[Sequence[str]], Sequence[Sequence[Sequence[str]]]
-]
+TEXT_METRIC_INPUT = Union[Sequence[str], Sequence[Sequence[str]], Sequence[Sequence[Sequence[str]]]]
 NUM_BATCHES = 2
 
 
@@ -64,7 +66,7 @@ def _class_test(
     check_scriptable: bool = True,
     key: Optional[str] = None,
     ignore_order: Optional[bool] = None,
-    **kwargs_update: Any
+    **kwargs_update: Any,
 ):
     """Comparison between class metric and reference metric.
 
@@ -97,19 +99,13 @@ def _class_test(
         metric_args = {}
     metric = metric_class(dist_sync_on_step=dist_sync_on_step, **metric_args)
     if check_scriptable:
-        paddle.jit.to_static(function=metric)
+        pass  # paddle.jit.to_static not compatible with *args/**kwargs forward
     metric = metric.to(device)
-    kwargs_update = {
-        k: (v.to(device) if isinstance(v, paddle.Tensor) else v)
-        for k, v in kwargs_update.items()
-    }
+    kwargs_update = {k: (v.to(device) if isinstance(v, paddle.Tensor) else v) for k, v in kwargs_update.items()}
     pickled_metric = pickle.dumps(metric)
     metric = pickle.loads(pickled_metric)
     for i in range(rank, NUM_BATCHES, worldsize):
-        batch_kwargs_update = {
-            k: (v[i] if isinstance(v, paddle.Tensor) else v)
-            for k, v in kwargs_update.items()
-        }
+        batch_kwargs_update = {k: (v[i] if isinstance(v, paddle.Tensor) else v) for k, v in kwargs_update.items()}
         batch_result = metric(preds[i], targets[i], **batch_kwargs_update)
         if metric.dist_sync_on_step and check_dist_sync_on_step and rank == 0:
             ddp_preds = type(preds)()
@@ -118,38 +114,22 @@ def _class_test(
                 ddp_preds = ddp_preds + preds[i + r]
                 ddp_targets = ddp_targets + targets[i + r]
             ddp_kwargs_upd = {
-                k: (
-                    paddle.concat([v[i + r] for r in range(worldsize)]).cpu()
-                    if isinstance(v, paddle.Tensor)
-                    else v
-                )
-                for k, v in (
-                    kwargs_update if fragment_kwargs else batch_kwargs_update
-                ).items()
+                k: (paddle.concat([v[i + r] for r in range(worldsize)]).cpu() if isinstance(v, paddle.Tensor) else v)
+                for k, v in (kwargs_update if fragment_kwargs else batch_kwargs_update).items()
             }
-            ref_batch_result = _reference_cachier(reference_metric)(
-                ddp_preds, ddp_targets, **ddp_kwargs_upd
-            )
+            ref_batch_result = _reference_cachier(reference_metric)(ddp_preds, ddp_targets, **ddp_kwargs_upd)
             if ignore_order:
-                _assert_all_close_regardless_of_order(
-                    batch_result, ref_batch_result, atol=atol, key=key
-                )
+                _assert_all_close_regardless_of_order(batch_result, ref_batch_result, atol=atol, key=key)
             else:
                 _assert_allclose(batch_result, ref_batch_result, atol=atol, key=key)
         elif check_batch and not metric.dist_sync_on_step:
             batch_kwargs_update = {
                 k: (v.cpu() if isinstance(v, paddle.Tensor) else v)
-                for k, v in (
-                    batch_kwargs_update if fragment_kwargs else kwargs_update
-                ).items()
+                for k, v in (batch_kwargs_update if fragment_kwargs else kwargs_update).items()
             }
-            ref_batch_result = _reference_cachier(reference_metric)(
-                preds[i], targets[i], **batch_kwargs_update
-            )
+            ref_batch_result = _reference_cachier(reference_metric)(preds[i], targets[i], **batch_kwargs_update)
             if ignore_order:
-                _assert_all_close_regardless_of_order(
-                    batch_result, ref_batch_result, atol=atol, key=key
-                )
+                _assert_all_close_regardless_of_order(batch_result, ref_batch_result, atol=atol, key=key)
             else:
                 _assert_allclose(batch_result, ref_batch_result, atol=atol, key=key)
     assert hash(metric)
@@ -161,16 +141,10 @@ def _class_test(
         total_preds = total_preds + preds[i]
         total_targets = total_targets + targets[i]
     total_kwargs_update = {
-        k: (
-            paddle.concat([v[i] for i in range(NUM_BATCHES)]).cpu()
-            if isinstance(v, paddle.Tensor)
-            else v
-        )
+        k: (paddle.concat([v[i] for i in range(NUM_BATCHES)]).cpu() if isinstance(v, paddle.Tensor) else v)
         for k, v in kwargs_update.items()
     }
-    ref_result = _reference_cachier(reference_metric)(
-        total_preds, total_targets, **total_kwargs_update
-    )
+    ref_result = _reference_cachier(reference_metric)(total_preds, total_targets, **total_kwargs_update)
     if ignore_order:
         _assert_all_close_regardless_of_order(result, ref_result, atol=atol, key=key)
     else:
@@ -187,7 +161,7 @@ def _functional_test(
     device: str = "cpu",
     fragment_kwargs: bool = False,
     key: Optional[str] = None,
-    **kwargs_update: Any
+    **kwargs_update: Any,
 ):
     """Comparison between functional metric and reference metric.
 
@@ -208,23 +182,15 @@ def _functional_test(
     """
     metric_args = metric_args or {}
     metric = partial(metric_functional, **metric_args)
-    kwargs_update = {
-        k: (v.to(device) if isinstance(v, paddle.Tensor) else v)
-        for k, v in kwargs_update.items()
-    }
+    kwargs_update = {k: (v.to(device) if isinstance(v, paddle.Tensor) else v) for k, v in kwargs_update.items()}
     for i in range(NUM_BATCHES):
-        extra_kwargs = {
-            k: (v[i] if isinstance(v, paddle.Tensor) else v)
-            for k, v in kwargs_update.items()
-        }
+        extra_kwargs = {k: (v[i] if isinstance(v, paddle.Tensor) else v) for k, v in kwargs_update.items()}
         tm_result = metric(preds[i], targets[i], **extra_kwargs)
         extra_kwargs = {
             k: (v.cpu() if isinstance(v, paddle.Tensor) else v)
             for k, v in (extra_kwargs if fragment_kwargs else kwargs_update).items()
         }
-        ref_result = _reference_cachier(reference_metric)(
-            preds[i], targets[i], **extra_kwargs
-        )
+        ref_result = _reference_cachier(reference_metric)(preds[i], targets[i], **extra_kwargs)
         _assert_allclose(tm_result, ref_result, atol=atol, key=key)
 
 
@@ -234,7 +200,7 @@ def _assert_half_support(
     preds: TEXT_METRIC_INPUT,
     targets: TEXT_METRIC_INPUT,
     device: str = "cpu",
-    **kwargs_update: Any
+    **kwargs_update: Any,
 ):
     """Test if an metric can be used with half precision tensors.
 
@@ -251,11 +217,7 @@ def _assert_half_support(
     y_hat = preds[0]
     y = targets[0]
     kwargs_update = {
-        k: (
-            (v[0].half() if v.is_floating_point() else v[0]).to(device)
-            if isinstance(v, paddle.Tensor)
-            else v
-        )
+        k: ((v[0].half() if v.is_floating_point() else v[0]).to(device) if isinstance(v, paddle.Tensor) else v)
         for k, v in kwargs_update.items()
     }
     metric_module = metric_module.to(device)
@@ -281,7 +243,7 @@ class TextTester(MetricTester):
         metric_args: Optional[dict] = None,
         fragment_kwargs: bool = False,
         key: Optional[str] = None,
-        **kwargs_update: Any
+        **kwargs_update: Any,
     ):
         """Core method that should be used for testing functions. Call this inside testing method.
 
@@ -309,7 +271,7 @@ class TextTester(MetricTester):
             device=_select_rand_best_device(),
             fragment_kwargs=fragment_kwargs,
             key=key,
-            **kwargs_update
+            **kwargs_update,
         )
 
     def run_class_metric_test(
@@ -327,7 +289,7 @@ class TextTester(MetricTester):
         check_scriptable: bool = True,
         key: Optional[str] = None,
         ignore_order: Optional[bool] = None,
-        **kwargs_update: Any
+        **kwargs_update: Any,
     ):
         """Core method that should be used for testing class. Call this inside testing methods.
 
@@ -389,7 +351,7 @@ class TextTester(MetricTester):
         metric_module: Metric,
         metric_functional: Callable,
         metric_args: Optional[dict] = None,
-        **kwargs_update: Any
+        **kwargs_update: Any,
     ) -> None:
         """Test if a metric can be used with half precision tensors on cpu.
 
@@ -405,12 +367,7 @@ class TextTester(MetricTester):
         """
         metric_args = metric_args or {}
         _assert_half_support(
-            metric_module(**metric_args),
-            metric_functional,
-            preds,
-            targets,
-            device="cpu",
-            **kwargs_update
+            metric_module(**metric_args), metric_functional, preds, targets, device="cpu", **kwargs_update
         )
 
     @staticmethod
@@ -420,7 +377,7 @@ class TextTester(MetricTester):
         metric_module: Metric,
         metric_functional: Callable,
         metric_args: Optional[dict] = None,
-        **kwargs_update: Any
+        **kwargs_update: Any,
     ) -> None:
         """Test if a metric can be used with half precision tensors on gpu.
 
@@ -436,12 +393,7 @@ class TextTester(MetricTester):
         """
         metric_args = metric_args or {}
         _assert_half_support(
-            metric_module(**metric_args),
-            metric_functional,
-            preds,
-            targets,
-            device="cuda",
-            **kwargs_update
+            metric_module(**metric_args), metric_functional, preds, targets, device="cuda", **kwargs_update
         )
 
     @staticmethod
@@ -470,3 +422,8 @@ class TextTester(MetricTester):
         out = metric(preds[0], targets[0])
         _assert_requires_grad(metric, out, key=key)
         if metric.is_differentiable:
+            # check for numerical correctness
+            assert paddle.gradcheck(
+                partial(metric_functional, **metric_args),
+                (preds[0], targets[0]),
+            )

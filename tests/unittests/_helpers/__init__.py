@@ -5,9 +5,8 @@ import sys
 import numpy
 import paddle
 from lightning_utilities.core.imports import RequirementCache
-from unittests._helpers.wrappers import (skip_on_connection_issues,
-                                         skip_on_cuda_oom,
-                                         skip_on_running_out_of_memory)
+
+from unittests._helpers.wrappers import skip_on_connection_issues, skip_on_cuda_oom, skip_on_running_out_of_memory
 
 
 def seed_all(seed):

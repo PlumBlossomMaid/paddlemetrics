@@ -55,9 +55,7 @@ def _word_info_lost_compute(
     return 1 - errors / target_total * (errors / preds_total)
 
 
-def word_information_lost(
-    preds: Union[str, list[str]], target: Union[str, list[str]]
-) -> paddle.Tensor:
+def word_information_lost(preds: Union[str, list[str]], target: Union[str, list[str]]) -> paddle.Tensor:
     """Word Information Lost rate is a metric of the performance of an automatic speech recognition system.
 
     This value indicates the percentage of characters that were incorrectly predicted. The lower the value, the better

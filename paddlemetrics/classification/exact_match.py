@@ -7,13 +7,18 @@ from typing_extensions import Literal
 
 from paddlemetrics.classification.base import _ClassificationTaskWrapper
 from paddlemetrics.functional.classification.exact_match import (
-    _exact_match_reduce, _multiclass_exact_match_update,
-    _multilabel_exact_match_update)
+    _exact_match_reduce,
+    _multiclass_exact_match_update,
+    _multilabel_exact_match_update,
+)
 from paddlemetrics.functional.classification.stat_scores import (
-    _multiclass_stat_scores_arg_validation, _multiclass_stat_scores_format,
+    _multiclass_stat_scores_arg_validation,
+    _multiclass_stat_scores_format,
     _multiclass_stat_scores_tensor_validation,
-    _multilabel_stat_scores_arg_validation, _multilabel_stat_scores_format,
-    _multilabel_stat_scores_tensor_validation)
+    _multilabel_stat_scores_arg_validation,
+    _multilabel_stat_scores_format,
+    _multilabel_stat_scores_tensor_validation,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.data import dim_zero_cat
 from paddlemetrics.utils.enums import ClassificationTaskNoBinary
@@ -99,18 +104,14 @@ class MulticlassExactMatch(Metric):
         super().__init__(**kwargs)
         top_k, average = 1, None
         if validate_args:
-            _multiclass_stat_scores_arg_validation(
-                num_classes, top_k, average, multidim_average, ignore_index
-            )
+            _multiclass_stat_scores_arg_validation(num_classes, top_k, average, multidim_average, ignore_index)
         self.num_classes = num_classes
         self.multidim_average = multidim_average
         self.ignore_index = ignore_index
         self.validate_args = validate_args
         self.add_state(
             "correct",
-            paddle.zeros(1, dtype=paddle.long)
-            if self.multidim_average == "global"
-            else [],
+            paddle.zeros(1, dtype=paddle.long) if self.multidim_average == "global" else [],
             dist_reduce_fx="sum" if self.multidim_average == "global" else "cat",
         )
         self.add_state(
@@ -130,45 +131,27 @@ class MulticlassExactMatch(Metric):
                 self.ignore_index,
             )
         preds, target = _multiclass_stat_scores_format(preds, target, 1)
-        correct, total = _multiclass_exact_match_update(
-            preds, target, self.multidim_average, self.ignore_index
-        )
+        correct, total = _multiclass_exact_match_update(preds, target, self.multidim_average, self.ignore_index)
         if self.multidim_average == "samplewise":
             if not isinstance(self.correct, list):
-                raise TypeError(
-                    "Expected `self.correct` to be a list in samplewise mode."
-                )
+                raise TypeError("Expected `self.correct` to be a list in samplewise mode.")
             self.correct.append(correct)
             if not isinstance(self.total, paddle.Tensor):
-                raise TypeError(
-                    "Expected `self.total` to be a Tensor in samplewise mode."
-                )
+                raise TypeError("Expected `self.total` to be a Tensor in samplewise mode.")
             self.total = total
         else:
             if not isinstance(self.correct, paddle.Tensor):
-                raise TypeError(
-                    "Expected `self.correct` to be a tensor in global mode."
-                )
+                raise TypeError("Expected `self.correct` to be a tensor in global mode.")
             self.correct += correct
             if not isinstance(self.total, paddle.Tensor):
-                raise TypeError(
-                    "Expected `self.total` to be a Tensor in samplewise mode."
-                )
+                raise TypeError("Expected `self.total` to be a Tensor in samplewise mode.")
             self.total += total
 
     def compute(self) -> paddle.Tensor:
         """Compute metric."""
-        correct = (
-            dim_zero_cat(self.correct)
-            if isinstance(self.correct, list)
-            else self.correct
-        )
-        if not isinstance(correct, paddle.Tensor) or not isinstance(
-            self.total, paddle.Tensor
-        ):
-            raise TypeError(
-                "Expected `correct` and `total` to be tensors after processing."
-            )
+        correct = dim_zero_cat(self.correct) if isinstance(self.correct, list) else self.correct
+        if not isinstance(correct, paddle.Tensor) or not isinstance(self.total, paddle.Tensor):
+            raise TypeError("Expected `correct` and `total` to be tensors after processing.")
         return _exact_match_reduce(correct, self.total)
 
     def plot(
@@ -315,9 +298,7 @@ class MultilabelExactMatch(Metric):
         self.validate_args = validate_args
         self.add_state(
             "correct",
-            paddle.zeros(1, dtype=paddle.long)
-            if self.multidim_average == "global"
-            else [],
+            paddle.zeros(1, dtype=paddle.long) if self.multidim_average == "global" else [],
             dist_reduce_fx="sum" if self.multidim_average == "global" else "cat",
         )
         self.add_state(
@@ -344,40 +325,24 @@ class MultilabelExactMatch(Metric):
         )
         if self.multidim_average == "samplewise":
             if not isinstance(self.correct, list):
-                raise TypeError(
-                    "Expected `self.correct` to be a list in samplewise mode."
-                )
+                raise TypeError("Expected `self.correct` to be a list in samplewise mode.")
             self.correct.append(correct)
             if not isinstance(self.total, paddle.Tensor):
-                raise TypeError(
-                    "Expected `self.total` to be a Tensor in samplewise mode."
-                )
+                raise TypeError("Expected `self.total` to be a Tensor in samplewise mode.")
             self.total = total
         else:
             if not isinstance(self.correct, paddle.Tensor):
-                raise TypeError(
-                    "Expected `self.correct` to be a tensor in global mode."
-                )
+                raise TypeError("Expected `self.correct` to be a tensor in global mode.")
             self.correct += correct
             if not isinstance(self.total, paddle.Tensor):
-                raise TypeError(
-                    "Expected `self.total` to be a Tensor in samplewise mode."
-                )
+                raise TypeError("Expected `self.total` to be a Tensor in samplewise mode.")
             self.total += total
 
     def compute(self) -> paddle.Tensor:
         """Compute metric."""
-        correct = (
-            dim_zero_cat(self.correct)
-            if isinstance(self.correct, list)
-            else self.correct
-        )
-        if not isinstance(correct, paddle.Tensor) or not isinstance(
-            self.total, paddle.Tensor
-        ):
-            raise TypeError(
-                "Expected `correct` and `total` to be tensors after processing."
-            )
+        correct = dim_zero_cat(self.correct) if isinstance(self.correct, list) else self.correct
+        if not isinstance(correct, paddle.Tensor) or not isinstance(self.total, paddle.Tensor):
+            raise TypeError("Expected `correct` and `total` to be tensors after processing.")
         return _exact_match_reduce(correct, self.total)
 
     def plot(
@@ -475,14 +440,10 @@ class ExactMatch(_ClassificationTaskWrapper):
         )
         if task == ClassificationTaskNoBinary.MULTICLASS:
             if not isinstance(num_classes, int):
-                raise ValueError(
-                    f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-                )
+                raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
             return MulticlassExactMatch(num_classes, **kwargs)
         if task == ClassificationTaskNoBinary.MULTILABEL:
             if not isinstance(num_labels, int):
-                raise ValueError(
-                    f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-                )
+                raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
             return MultilabelExactMatch(num_labels, threshold, **kwargs)
         raise ValueError(f"Task {task} not supported!")

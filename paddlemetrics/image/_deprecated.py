@@ -9,17 +9,13 @@ from paddlemetrics.image.psnr import PeakSignalNoiseRatio
 from paddlemetrics.image.rase import RelativeAverageSpectralError
 from paddlemetrics.image.rmse_sw import RootMeanSquaredErrorUsingSlidingWindow
 from paddlemetrics.image.sam import SpectralAngleMapper
-from paddlemetrics.image.ssim import (
-    MultiScaleStructuralSimilarityIndexMeasure,
-    StructuralSimilarityIndexMeasure)
+from paddlemetrics.image.ssim import MultiScaleStructuralSimilarityIndexMeasure, StructuralSimilarityIndexMeasure
 from paddlemetrics.image.tv import TotalVariation
 from paddlemetrics.image.uqi import UniversalImageQualityIndex
 from paddlemetrics.utils.prints import _deprecated_root_import_class
 
 
-class _ErrorRelativeGlobalDimensionlessSynthesis(
-    ErrorRelativeGlobalDimensionlessSynthesis
-):
+class _ErrorRelativeGlobalDimensionlessSynthesis(ErrorRelativeGlobalDimensionlessSynthesis):
     """Wrapper for deprecated import.
 
     >>> from paddle import rand
@@ -34,20 +30,14 @@ class _ErrorRelativeGlobalDimensionlessSynthesis(
     def __init__(
         self,
         ratio: float = 4,
-        reduction: Literal[
-            "elementwise_mean", "sum", "none", None
-        ] = "elementwise_mean",
-        **kwargs: Any
+        reduction: Literal["elementwise_mean", "sum", "none", None] = "elementwise_mean",
+        **kwargs: Any,
     ) -> None:
-        _deprecated_root_import_class(
-            "ErrorRelativeGlobalDimensionlessSynthesis", "image"
-        )
+        _deprecated_root_import_class("ErrorRelativeGlobalDimensionlessSynthesis", "image")
         super().__init__(ratio=ratio, reduction=reduction, **kwargs)
 
 
-class _MultiScaleStructuralSimilarityIndexMeasure(
-    MultiScaleStructuralSimilarityIndexMeasure
-):
+class _MultiScaleStructuralSimilarityIndexMeasure(MultiScaleStructuralSimilarityIndexMeasure):
     """Wrapper for deprecated import.
 
     >>> from paddle import rand
@@ -64,19 +54,15 @@ class _MultiScaleStructuralSimilarityIndexMeasure(
         gaussian_kernel: bool = True,
         kernel_size: Union[int, Sequence[int]] = 11,
         sigma: Union[float, Sequence[float]] = 1.5,
-        reduction: Literal[
-            "elementwise_mean", "sum", "none", None
-        ] = "elementwise_mean",
+        reduction: Literal["elementwise_mean", "sum", "none", None] = "elementwise_mean",
         data_range: Optional[Union[float, tuple[float, float]]] = None,
         k1: float = 0.01,
         k2: float = 0.03,
         betas: tuple[float, ...] = (0.0448, 0.2856, 0.3001, 0.2363, 0.1333),
         normalize: Literal["relu", "simple", None] = "relu",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
-        _deprecated_root_import_class(
-            "MultiScaleStructuralSimilarityIndexMeasure", "image"
-        )
+        _deprecated_root_import_class("MultiScaleStructuralSimilarityIndexMeasure", "image")
         super().__init__(
             gaussian_kernel=gaussian_kernel,
             kernel_size=kernel_size,
@@ -87,7 +73,7 @@ class _MultiScaleStructuralSimilarityIndexMeasure(
             k2=k2,
             betas=betas,
             normalize=normalize,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -107,16 +93,12 @@ class _PeakSignalNoiseRatio(PeakSignalNoiseRatio):
         self,
         data_range: Union[float, tuple[float, float]] = 3.0,
         base: float = 10.0,
-        reduction: Literal[
-            "elementwise_mean", "sum", "none", None
-        ] = "elementwise_mean",
+        reduction: Literal["elementwise_mean", "sum", "none", None] = "elementwise_mean",
         dim: Optional[Union[int, tuple[int, ...]]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         _deprecated_root_import_class("PeakSignalNoiseRatio", "image")
-        super().__init__(
-            data_range=data_range, base=base, reduction=reduction, axis=dim, **kwargs
-        )
+        super().__init__(data_range=data_range, base=base, reduction=reduction, axis=dim, **kwargs)
 
 
 class _RelativeAverageSpectralError(RelativeAverageSpectralError):
@@ -166,9 +148,7 @@ class _SpectralAngleMapper(SpectralAngleMapper):
     """
 
     def __init__(
-        self,
-        reduction: Literal["elementwise_mean", "sum", "none"] = "elementwise_mean",
-        **kwargs: Any
+        self, reduction: Literal["elementwise_mean", "sum", "none"] = "elementwise_mean", **kwargs: Any
     ) -> None:
         _deprecated_root_import_class("SpectralAngleMapper", "image")
         super().__init__(reduction=reduction, **kwargs)
@@ -187,10 +167,7 @@ class _SpectralDistortionIndex(SpectralDistortionIndex):
     """
 
     def __init__(
-        self,
-        p: int = 1,
-        reduction: Literal["elementwise_mean", "sum", "none"] = "elementwise_mean",
-        **kwargs: Any
+        self, p: int = 1, reduction: Literal["elementwise_mean", "sum", "none"] = "elementwise_mean", **kwargs: Any
     ) -> None:
         _deprecated_root_import_class("SpectralDistortionIndex", "image")
         super().__init__(p=p, reduction=reduction, **kwargs)
@@ -213,15 +190,13 @@ class _StructuralSimilarityIndexMeasure(StructuralSimilarityIndexMeasure):
         gaussian_kernel: bool = True,
         sigma: Union[float, Sequence[float]] = 1.5,
         kernel_size: Union[int, Sequence[int]] = 11,
-        reduction: Literal[
-            "elementwise_mean", "sum", "none", None
-        ] = "elementwise_mean",
+        reduction: Literal["elementwise_mean", "sum", "none", None] = "elementwise_mean",
         data_range: Optional[Union[float, tuple[float, float]]] = None,
         k1: float = 0.01,
         k2: float = 0.03,
         return_full_image: bool = False,
         return_contrast_sensitivity: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         _deprecated_root_import_class("StructuralSimilarityIndexMeasure", "image")
         super().__init__(
@@ -234,7 +209,7 @@ class _StructuralSimilarityIndexMeasure(StructuralSimilarityIndexMeasure):
             k2=k2,
             return_full_image=return_full_image,
             return_contrast_sensitivity=return_contrast_sensitivity,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -249,9 +224,7 @@ class _TotalVariation(TotalVariation):
 
     """
 
-    def __init__(
-        self, reduction: Literal["mean", "sum", "none", None] = "sum", **kwargs: Any
-    ) -> None:
+    def __init__(self, reduction: Literal["mean", "sum", "none", None] = "sum", **kwargs: Any) -> None:
         _deprecated_root_import_class("TotalVariation", "image")
         super().__init__(reduction=reduction, **kwargs)
 
@@ -272,12 +245,8 @@ class _UniversalImageQualityIndex(UniversalImageQualityIndex):
         self,
         kernel_size: Sequence[int] = (11, 11),
         sigma: Sequence[float] = (1.5, 1.5),
-        reduction: Literal[
-            "elementwise_mean", "sum", "none", None
-        ] = "elementwise_mean",
-        **kwargs: Any
+        reduction: Literal["elementwise_mean", "sum", "none", None] = "elementwise_mean",
+        **kwargs: Any,
     ) -> None:
         _deprecated_root_import_class("UniversalImageQualityIndex", "image")
-        super().__init__(
-            kernel_size=kernel_size, sigma=sigma, reduction=reduction, **kwargs
-        )
+        super().__init__(kernel_size=kernel_size, sigma=sigma, reduction=reduction, **kwargs)

@@ -3,13 +3,12 @@ from typing import Any
 import numpy as np
 import paddle
 import pytest
+
+from paddlemetrics.detection.panoptic_qualities import PanopticQuality
+from paddlemetrics.functional.detection.panoptic_qualities import panoptic_quality
 from unittests import _Input
 from unittests._helpers import seed_all
 from unittests._helpers.testers import MetricTester
-
-from paddlemetrics.detection.panoptic_qualities import PanopticQuality
-from paddlemetrics.functional.detection.panoptic_qualities import \
-    panoptic_quality
 
 seed_all(42)
 _INPUTS_0 = _Input(
@@ -37,31 +36,21 @@ _INPUTS_0 = _Input(
     .repeat(2, 1, 1, 1, 1),
 )
 _INPUTS_1 = _Input(
-    preds=paddle.tensor([[10, 0], [10, 123], [0, 1], [10, 0], [1, 2]])
-    .reshape((1, 1, 5, 2))
-    .repeat(2, 1, 1, 1),
-    target=paddle.tensor([[10, 0], [10, 0], [0, 0], [0, 1], [1, 0]])
-    .reshape((1, 1, 5, 2))
-    .repeat(2, 1, 1, 1),
+    preds=paddle.tensor([[10, 0], [10, 123], [0, 1], [10, 0], [1, 2]]).reshape((1, 1, 5, 2)).repeat(2, 1, 1, 1),
+    target=paddle.tensor([[10, 0], [10, 0], [0, 0], [0, 1], [1, 0]]).reshape((1, 1, 5, 2)).repeat(2, 1, 1, 1),
 )
 _ARGS_0 = {"things": {0, 1}, "stuffs": {6, 7}}
 _ARGS_1 = {"things": {2}, "stuffs": {3}, "allow_unknown_preds_category": True}
 _ARGS_2 = {"things": {0, 1}, "stuffs": {10, 11}}
 
 
-def _get_class_order_test_input_args(
-    class_type, class1, class2, class3
-) -> (np.ndarray, dict):
+def _get_class_order_test_input_args(class_type, class1, class2, class3) -> (np.ndarray, dict):
     a = [class1, 0]
     b = [class2, 0]
     c = [class3, 0]
     _input = _Input(
-        preds=paddle.tensor([a, a, b, b, b, c])
-        .reshape((1, 1, 6, 2))
-        .repeat(2, 1, 1, 1),
-        target=paddle.tensor([a, a, b, b, c, c])
-        .reshape((1, 1, 6, 2))
-        .repeat(2, 1, 1, 1),
+        preds=paddle.tensor([a, a, b, b, b, c]).reshape((1, 1, 6, 2)).repeat(2, 1, 1, 1),
+        target=paddle.tensor([a, a, b, b, c, c]).reshape((1, 1, 6, 2)).repeat(2, 1, 1, 1),
     )
     _args = {"things": [], "stuffs": [], "return_per_class": True}
     _args[class_type] = [class1, class2, class3]
@@ -149,9 +138,7 @@ class TestPanopticQuality(MetricTester):
 
 def test_empty_metric():
     """Test empty metric."""
-    with pytest.raises(
-        ValueError, match="At least one of `things` and `stuffs` must be non-empty"
-    ):
+    with pytest.raises(ValueError, match="At least one of `things` and `stuffs` must be non-empty"):
         metric = PanopticQuality(things=[], stuffs=[])
     metric = PanopticQuality(things=[0], stuffs=[])
     assert paddle.isnan(metric.compute())
@@ -159,29 +146,21 @@ def test_empty_metric():
 
 def test_error_on_wrong_input():
     """Test class input validation."""
-    with pytest.raises(
-        TypeError, match="Expected argument `stuffs` to contain `int` categories.*"
-    ):
+    with pytest.raises(TypeError, match="Expected argument `stuffs` to contain `int` categories.*"):
         PanopticQuality(things={0}, stuffs={"sky"})
     with pytest.raises(
         ValueError,
         match="Expected arguments `things` and `stuffs` to have distinct keys.*",
     ):
         PanopticQuality(things={0}, stuffs={0})
-    metric = PanopticQuality(
-        things={0, 1, 3}, stuffs={2, 8}, allow_unknown_preds_category=True
-    )
+    metric = PanopticQuality(things={0, 1, 3}, stuffs={2, 8}, allow_unknown_preds_category=True)
     valid_images = paddle.randint(low=0, high=9, shape=(8, 64, 64, 2))
     metric.update(valid_images, valid_images)
     valid_point_clouds = paddle.randint(low=0, high=9, shape=(1, 100, 2))
     metric.update(valid_point_clouds, valid_point_clouds)
-    with pytest.raises(
-        TypeError, match="Expected argument `preds` to be of type `paddle.Tensor`.*"
-    ):
+    with pytest.raises(TypeError, match="Expected argument `preds` to be of type `paddle.Tensor`.*"):
         metric.update([], valid_images)
-    with pytest.raises(
-        TypeError, match="Expected argument `target` to be of type `paddle.Tensor`.*"
-    ):
+    with pytest.raises(TypeError, match="Expected argument `target` to be of type `paddle.Tensor`.*"):
         metric.update(valid_images, [])
     preds = paddle.randint(low=0, high=9, shape=(2, 400, 300, 2))
     target = paddle.randint(low=0, high=9, shape=(2, 30, 40, 2))
@@ -212,9 +191,7 @@ def test_error_on_wrong_input():
 def test_extreme_values():
     """Test that the metric returns expected values in trivial cases."""
     assert panoptic_quality(_INPUTS_0.target[0], _INPUTS_0.target[0], **_ARGS_0) == 1.0
-    assert (
-        panoptic_quality(_INPUTS_0.target[0], _INPUTS_0.target[0] + 1, **_ARGS_0) == 0.0
-    )
+    assert panoptic_quality(_INPUTS_0.target[0], _INPUTS_0.target[0] + 1, **_ARGS_0) == 0.0
 
 
 @pytest.mark.parametrize(

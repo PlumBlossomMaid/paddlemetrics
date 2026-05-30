@@ -5,8 +5,7 @@ import paddle
 from paddle import Tensor
 from typing_extensions import Literal
 
-from paddlemetrics.functional.regression.kl_divergence import (_kld_compute,
-                                                              _kld_update)
+from paddlemetrics.functional.regression.kl_divergence import _kld_compute, _kld_update
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.data import dim_zero_cat
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
@@ -82,15 +81,11 @@ class KLDivergence(Metric):
     ) -> None:
         super().__init__(**kwargs)
         if not isinstance(log_prob, bool):
-            raise TypeError(
-                f"Expected argument `log_prob` to be bool but got {log_prob}"
-            )
+            raise TypeError(f"Expected argument `log_prob` to be bool but got {log_prob}")
         self.log_prob = log_prob
         allowed_reduction = ["mean", "sum", "none", None]
         if reduction not in allowed_reduction:
-            raise ValueError(
-                f"Expected argument `reduction` to be one of {allowed_reduction} but got {reduction}"
-            )
+            raise ValueError(f"Expected argument `reduction` to be one of {allowed_reduction} but got {reduction}")
         self.reduction = reduction
         if self.reduction in ["mean", "sum"]:
             self.add_state("measures", paddle.tensor(0.0), dist_reduce_fx="sum")

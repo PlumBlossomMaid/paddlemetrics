@@ -4,8 +4,7 @@ from typing import Any, List, Literal, Optional, Union
 import paddle
 from paddle import Tensor
 
-from paddlemetrics.functional.text.edit import (_edit_distance_compute,
-                                               _edit_distance_update)
+from paddlemetrics.functional.text.edit import _edit_distance_compute, _edit_distance_update
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.data import dim_zero_cat
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
@@ -95,23 +94,15 @@ class EditDistance(Metric):
         self.substitution_cost = substitution_cost
         allowed_reduction = None, "mean", "sum", "none"
         if reduction not in allowed_reduction:
-            raise ValueError(
-                f"Expected argument `reduction` to be one of {allowed_reduction}, but got {reduction}"
-            )
+            raise ValueError(f"Expected argument `reduction` to be one of {allowed_reduction}, but got {reduction}")
         self.reduction = reduction
         if self.reduction == "none" or self.reduction is None:
             self.add_state("edit_scores_list", default=[], dist_reduce_fx="cat")
         else:
-            self.add_state(
-                "edit_scores", default=paddle.tensor(0), dist_reduce_fx="sum"
-            )
-            self.add_state(
-                "num_elements", default=paddle.tensor(0), dist_reduce_fx="sum"
-            )
+            self.add_state("edit_scores", default=paddle.tensor(0), dist_reduce_fx="sum")
+            self.add_state("num_elements", default=paddle.tensor(0), dist_reduce_fx="sum")
 
-    def update(
-        self, preds: Union[str, Sequence[str]], target: Union[str, Sequence[str]]
-    ) -> None:
+    def update(self, preds: Union[str, Sequence[str]], target: Union[str, Sequence[str]]) -> None:
         """Update state with predictions and targets."""
         distance = _edit_distance_update(preds, target, self.substitution_cost)
         if self.reduction == "none" or self.reduction is None:
@@ -123,12 +114,8 @@ class EditDistance(Metric):
     def compute(self) -> paddle.Tensor:
         """Compute the edit distance over state."""
         if self.reduction == "none" or self.reduction is None:
-            return _edit_distance_compute(
-                dim_zero_cat(self.edit_scores_list), 1, self.reduction
-            )
-        return _edit_distance_compute(
-            self.edit_scores, self.num_elements, self.reduction
-        )
+            return _edit_distance_compute(dim_zero_cat(self.edit_scores_list), 1, self.reduction)
+        return _edit_distance_compute(self.edit_scores, self.num_elements, self.reduction)
 
     def plot(
         self,

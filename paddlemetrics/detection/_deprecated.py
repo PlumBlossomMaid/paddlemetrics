@@ -22,14 +22,11 @@ class _ModifiedPanopticQuality(ModifiedPanopticQuality):
         things: Collection[int],
         stuffs: Collection[int],
         allow_unknown_preds_category: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         _deprecated_root_import_class("ModifiedPanopticQuality", "detection")
         super().__init__(
-            things=things,
-            stuffs=stuffs,
-            allow_unknown_preds_category=allow_unknown_preds_category,
-            **kwargs
+            things=things, stuffs=stuffs, allow_unknown_preds_category=allow_unknown_preds_category, **kwargs
         )
 
 
@@ -58,12 +55,9 @@ class _PanopticQuality(PanopticQuality):
         things: Collection[int],
         stuffs: Collection[int],
         allow_unknown_preds_category: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         _deprecated_root_import_class("PanopticQuality", "detection")
         super().__init__(
-            things=things,
-            stuffs=stuffs,
-            allow_unknown_preds_category=allow_unknown_preds_category,
-            **kwargs
+            things=things, stuffs=stuffs, allow_unknown_preds_category=allow_unknown_preds_category, **kwargs
         )

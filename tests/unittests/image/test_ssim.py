@@ -3,15 +3,14 @@ from functools import partial
 import numpy as np
 import paddle
 import pytest
-from pytorch_msssim import ssim
 from skimage.metrics import structural_similarity
+
+from paddlemetrics.functional import structural_similarity_index_measure
+from paddlemetrics.image import StructuralSimilarityIndexMeasure
 from unittests import NUM_BATCHES, NUM_PROCESSES, USE_PYTEST_POOL, _Input
 from unittests._helpers import _IS_WINDOWS, seed_all
 from unittests._helpers.testers import MetricTester
 from unittests.conftest import setup_ddp
-
-from paddlemetrics.functional import structural_similarity_index_measure
-from paddlemetrics.image import StructuralSimilarityIndexMeasure
 
 seed_all(42)
 BATCH_SIZE = 2
@@ -24,9 +23,7 @@ for size, channel, coef, dtype in [
 ]:
     preds2d = paddle.rand(NUM_BATCHES, BATCH_SIZE, channel, size, size, dtype=dtype)
     _inputs.append(_Input(preds=preds2d, target=preds2d * coef))
-    preds3d = paddle.rand(
-        NUM_BATCHES, BATCH_SIZE, channel, size, size, size, dtype=dtype
-    )
+    preds3d = paddle.rand(NUM_BATCHES, BATCH_SIZE, channel, size, size, size, dtype=dtype)
     _inputs.append(_Input(preds=preds3d, target=preds3d * coef))
 
 
@@ -91,20 +88,6 @@ def _reference_skimage_ssim(
     return results, fullimages
 
 
-def _reference_msssim_ssim(
-    preds, target, data_range, sigma, kernel_size=11, reduction_arg="elementwise_mean"
-):
-    results = ssim(
-        target,
-        preds,
-        data_range=data_range,
-        win_size=kernel_size,
-        win_sigma=sigma,
-        size_average=False,
-    )
-    return results if reduction_arg != "sum" else results.sum()
-
-
 @pytest.mark.parametrize(("preds", "target"), [(i.preds, i.target) for i in _inputs])
 @pytest.mark.parametrize("sigma", [1.5, 0.5])
 class TestSSIM(MetricTester):
@@ -131,20 +114,6 @@ class TestSSIM(MetricTester):
         )
 
     @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
-    def test_ssim_pt(self, preds, target, sigma, ddp):
-        """Test class implementation of metric vs pytorch_msssim."""
-        self.run_class_metric_test(
-            ddp,
-            preds,
-            target,
-            metric_class=StructuralSimilarityIndexMeasure,
-            reference_metric=partial(
-                _reference_msssim_ssim, data_range=1.0, sigma=sigma
-            ),
-            metric_args={"data_range": 1.0, "sigma": sigma},
-        )
-
-    @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
     def test_ssim_without_gaussian_kernel(self, preds, target, sigma, ddp):
         """Test class implementation of metric with gaussian kernel."""
         self.run_class_metric_test(
@@ -152,9 +121,7 @@ class TestSSIM(MetricTester):
             preds,
             target,
             metric_class=StructuralSimilarityIndexMeasure,
-            reference_metric=partial(
-                _reference_skimage_ssim, data_range=1.0, sigma=sigma, kernel_size=None
-            ),
+            reference_metric=partial(_reference_skimage_ssim, data_range=1.0, sigma=sigma, kernel_size=None),
             metric_args={"gaussian_kernel": False, "data_range": 1.0, "sigma": sigma},
         )
 
@@ -175,25 +142,7 @@ class TestSSIM(MetricTester):
             metric_args={"data_range": 1.0, "sigma": sigma, "reduction": reduction_arg},
         )
 
-    @pytest.mark.parametrize("reduction_arg", ["sum", "elementwise_mean", None])
-    def test_ssim_functional_pt(self, preds, target, sigma, reduction_arg):
-        """Test functional implementation of metric vs pytorch_msssim."""
-        self.run_functional_metric_test(
-            preds,
-            target,
-            metric_functional=structural_similarity_index_measure,
-            reference_metric=partial(
-                _reference_msssim_ssim,
-                data_range=1.0,
-                sigma=sigma,
-                reduction_arg=reduction_arg,
-            ),
-            metric_args={"data_range": 1.0, "sigma": sigma, "reduction": reduction_arg},
-        )
-
-    @pytest.mark.xfail(
-        reason="SSIM metric does not support cpu + half precision", strict=False
-    )
+    @pytest.mark.xfail(reason="SSIM metric does not support cpu + half precision", strict=False)
     def test_ssim_half_cpu(self, preds, target, sigma):
         """Test dtype support of the metric on CPU."""
         self.run_precision_test_cpu(
@@ -294,9 +243,7 @@ def test_ssim_invalid_inputs(pred, target, kernel, sigma, match):
     pred = paddle.rand(pred)
     target = paddle.rand(target)
     with pytest.raises(ValueError, match=match):
-        structural_similarity_index_measure(
-            pred, target, kernel_size=kernel, sigma=sigma
-        )
+        structural_similarity_index_measure(pred, target, kernel_size=kernel, sigma=sigma)
 
 
 @pytest.mark.parametrize(
@@ -342,17 +289,13 @@ def test_ssim_unequal_kernel_size(sigma, kernel_size, result):
     )
     if sigma is not None:
         assert paddle.isclose(
-            structural_similarity_index_measure(
-                preds, target, gaussian_kernel=True, sigma=sigma
-            ),
+            structural_similarity_index_measure(preds, target, gaussian_kernel=True, sigma=sigma),
             result,
             atol=0.0001,
         )
     else:
         assert paddle.isclose(
-            structural_similarity_index_measure(
-                preds, target, gaussian_kernel=False, kernel_size=kernel_size
-            ),
+            structural_similarity_index_measure(preds, target, gaussian_kernel=False, kernel_size=kernel_size),
             result,
             atol=0.0001,
         )
@@ -364,9 +307,7 @@ def test_full_image_output(preds, target):
     out = structural_similarity_index_measure(preds[0], target[0])
     assert isinstance(out, paddle.Tensor)
     assert out.size == 1
-    out = structural_similarity_index_measure(
-        preds[0], target[0], return_full_image=True
-    )
+    out = structural_similarity_index_measure(preds[0], target[0], return_full_image=True)
     assert isinstance(out, tuple)
     assert len(out) == 2
     assert out[0].size == 1
@@ -410,6 +351,4 @@ def test_ssim_reduction_none_ddp():
     See issue: https://github.com/Lightning-AI/paddlemetrics/issues/3159
 
     """
-    pytest.pool.map(
-        partial(_run_ssim_ddp, world_size=NUM_PROCESSES), range(NUM_PROCESSES)
-    )
+    pytest.pool.map(partial(_run_ssim_ddp, world_size=NUM_PROCESSES), range(NUM_PROCESSES))

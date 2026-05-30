@@ -5,7 +5,10 @@ import paddle
 from typing_extensions import Literal
 
 from paddlemetrics.functional.segmentation.dice import (
-    _dice_score_compute, _dice_score_update, _dice_score_validate_args)
+    _dice_score_compute,
+    _dice_score_update,
+    _dice_score_validate_args,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils import rank_zero_warn
 from paddlemetrics.utils.data import dim_zero_cat
@@ -99,7 +102,7 @@ class DiceScore(Metric):
         average: Optional[Literal["micro", "macro", "weighted", "none"]] = "macro",
         aggregation_level: Optional[Literal["samplewise", "global"]] = "samplewise",
         input_format: Literal["one-hot", "index", "mixed"] = "one-hot",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
         if average == "micro":
@@ -107,9 +110,7 @@ class DiceScore(Metric):
                 "DiceScore metric currently defaults to `average=micro`, but will change to`average=macro` in the v1.9 release. If you've explicitly set this parameter, you can ignore this warning.",
                 UserWarning,
             )
-        _dice_score_validate_args(
-            num_classes, include_background, average, input_format, aggregation_level
-        )
+        _dice_score_validate_args(num_classes, include_background, average, input_format, aggregation_level)
         self.num_classes = num_classes
         self.include_background = include_background
         self.average = average
@@ -137,7 +138,7 @@ class DiceScore(Metric):
             self.average,
             self.aggregation_level,
             support=dim_zero_cat(self.support) if self.average == "weighted" else None,
-        ).nanmean(dim=0)
+        ).nanmean(axis=0)
 
     def plot(
         self,

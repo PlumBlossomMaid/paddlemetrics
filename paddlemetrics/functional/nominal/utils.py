@@ -6,9 +6,7 @@ from typing_extensions import Literal
 from paddlemetrics.utils.prints import rank_zero_warn
 
 
-def _nominal_input_validation(
-    nan_strategy: str, nan_replace_value: Optional[float]
-) -> None:
+def _nominal_input_validation(nan_strategy: str, nan_replace_value: Optional[float]) -> None:
     if nan_strategy not in ["replace", "drop"]:
         raise ValueError(
             f"Argument `nan_strategy` is expected to be one of `['replace', 'drop']`, but got {nan_strategy}"
@@ -25,9 +23,7 @@ def _compute_expected_freqs(confmat: paddle.Tensor) -> paddle.Tensor:
     return paddle.einsum("r, c -> rc", margin_sum_rows, margin_sum_cols) / confmat.sum()
 
 
-def _compute_chi_squared(
-    confmat: paddle.Tensor, bias_correction: bool
-) -> paddle.Tensor:
+def _compute_chi_squared(confmat: paddle.Tensor, bias_correction: bool) -> paddle.Tensor:
     """Chi-square test of independenc of variables in a confusion matrix table.
 
     Adapted from: https://github.com/scipy/scipy/blob/v1.9.2/scipy/stats/contingency.py.
@@ -40,9 +36,7 @@ def _compute_chi_squared(
     if df == 1 and bias_correction:
         diff = expected_freqs - confmat
         direction = diff.sign()
-        confmat += direction * paddle.minimum(
-            0.5 * paddle.ones_like(direction), direction.abs()
-        )
+        confmat += direction * paddle.minimum(0.5 * paddle.ones_like(direction), direction.abs())
     return paddle.sum((confmat - expected_freqs) ** 2 / expected_freqs)
 
 
@@ -91,12 +85,8 @@ def _compute_bias_corrected_values(
     phi_squared: paddle.Tensor, num_rows: int, num_cols: int, confmat_sum: paddle.Tensor
 ) -> tuple[paddle.Tensor, paddle.Tensor, paddle.Tensor]:
     """Compute bias-corrected Phi Squared and number of rows and columns."""
-    phi_squared_corrected = _compute_phi_squared_corrected(
-        phi_squared, num_rows, num_cols, confmat_sum
-    )
-    rows_corrected, cols_corrected = _compute_rows_and_cols_corrected(
-        num_rows, num_cols, confmat_sum
-    )
+    phi_squared_corrected = _compute_phi_squared_corrected(phi_squared, num_rows, num_cols, confmat_sum)
+    rows_corrected, cols_corrected = _compute_rows_and_cols_corrected(num_rows, num_cols, confmat_sum)
     return phi_squared_corrected, rows_corrected, cols_corrected
 
 
@@ -126,6 +116,8 @@ def _handle_nan_in_data(
 
     """
     if nan_strategy == "replace":
+        preds = preds.cast(paddle.float32) if not preds.is_floating_point() else preds
+        target = target.cast(paddle.float32) if not target.is_floating_point() else target
         return preds.nan_to_num(nan_replace_value), target.nan_to_num(nan_replace_value)
     rows_contain_nan = paddle.logical_or(preds.isnan(), target.isnan())
     return preds[~rows_contain_nan], target[~rows_contain_nan]

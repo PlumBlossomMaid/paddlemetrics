@@ -5,15 +5,18 @@ from typing_extensions import Literal
 
 from paddlemetrics.classification.base import _ClassificationTaskWrapper
 from paddlemetrics.classification.precision_recall_curve import (
-    BinaryPrecisionRecallCurve, MulticlassPrecisionRecallCurve,
-    MultilabelPrecisionRecallCurve)
+    BinaryPrecisionRecallCurve,
+    MulticlassPrecisionRecallCurve,
+    MultilabelPrecisionRecallCurve,
+)
 from paddlemetrics.functional.classification.specificity_sensitivity import (
     _binary_specificity_at_sensitivity_arg_validation,
     _binary_specificity_at_sensitivity_compute,
     _multiclass_specificity_at_sensitivity_arg_validation,
     _multiclass_specificity_at_sensitivity_compute,
     _multilabel_specificity_at_sensitivity_arg_validation,
-    _multilabel_specificity_at_sensitivity_compute)
+    _multilabel_specificity_at_sensitivity_compute,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.data import dim_zero_cat as _cat
 from paddlemetrics.utils.enums import ClassificationTask
@@ -102,22 +105,14 @@ class BinarySpecificityAtSensitivity(BinaryPrecisionRecallCurve):
     ) -> None:
         super().__init__(thresholds, ignore_index, validate_args=False, **kwargs)
         if validate_args:
-            _binary_specificity_at_sensitivity_arg_validation(
-                min_sensitivity, thresholds, ignore_index
-            )
+            _binary_specificity_at_sensitivity_arg_validation(min_sensitivity, thresholds, ignore_index)
         self.validate_args = validate_args
         self.min_sensitivity = min_sensitivity
 
     def compute(self) -> tuple[paddle.Tensor, paddle.Tensor]:
         """Compute metric."""
-        state = (
-            (_cat(self.preds), _cat(self.target))
-            if self.thresholds is None
-            else self.confmat
-        )
-        return _binary_specificity_at_sensitivity_compute(
-            state, self.thresholds, self.min_sensitivity
-        )
+        state = (_cat(self.preds), _cat(self.target)) if self.thresholds is None else self.confmat
+        return _binary_specificity_at_sensitivity_compute(state, self.thresholds, self.min_sensitivity)
 
 
 class MulticlassSpecificityAtSensitivity(MulticlassPrecisionRecallCurve):
@@ -221,11 +216,7 @@ class MulticlassSpecificityAtSensitivity(MulticlassPrecisionRecallCurve):
 
     def compute(self) -> tuple[paddle.Tensor, paddle.Tensor]:
         """Compute metric."""
-        state = (
-            (_cat(self.preds), _cat(self.target))
-            if self.thresholds is None
-            else self.confmat
-        )
+        state = (_cat(self.preds), _cat(self.target)) if self.thresholds is None else self.confmat
         return _multiclass_specificity_at_sensitivity_compute(
             state, self.num_classes, self.thresholds, self.min_sensitivity
         )
@@ -322,19 +313,13 @@ class MultilabelSpecificityAtSensitivity(MultilabelPrecisionRecallCurve):
             **kwargs,
         )
         if validate_args:
-            _multilabel_specificity_at_sensitivity_arg_validation(
-                num_labels, min_sensitivity, thresholds, ignore_index
-            )
+            _multilabel_specificity_at_sensitivity_arg_validation(num_labels, min_sensitivity, thresholds, ignore_index)
         self.validate_args = validate_args
         self.min_sensitivity = min_sensitivity
 
     def compute(self) -> tuple[paddle.Tensor, paddle.Tensor]:
         """Compute metric."""
-        state = (
-            (_cat(self.preds), _cat(self.target))
-            if self.thresholds is None
-            else self.confmat
-        )
+        state = (_cat(self.preds), _cat(self.target)) if self.thresholds is None else self.confmat
         return _multilabel_specificity_at_sensitivity_compute(
             state,
             self.num_labels,
@@ -373,14 +358,10 @@ class SpecificityAtSensitivity(_ClassificationTaskWrapper):
         """Initialize task metric."""
         task = ClassificationTask.from_str(task)
         if task == ClassificationTask.BINARY:
-            return BinarySpecificityAtSensitivity(
-                min_sensitivity, thresholds, ignore_index, validate_args, **kwargs
-            )
+            return BinarySpecificityAtSensitivity(min_sensitivity, thresholds, ignore_index, validate_args, **kwargs)
         if task == ClassificationTask.MULTICLASS:
             if not isinstance(num_classes, int):
-                raise ValueError(
-                    f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-                )
+                raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
             return MulticlassSpecificityAtSensitivity(
                 num_classes,
                 min_sensitivity,
@@ -391,9 +372,7 @@ class SpecificityAtSensitivity(_ClassificationTaskWrapper):
             )
         if task == ClassificationTask.MULTILABEL:
             if not isinstance(num_labels, int):
-                raise ValueError(
-                    f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-                )
+                raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
             return MultilabelSpecificityAtSensitivity(
                 num_labels,
                 min_sensitivity,

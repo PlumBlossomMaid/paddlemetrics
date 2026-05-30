@@ -1,12 +1,9 @@
 import paddle
 
-from paddlemetrics.functional.clustering.utils import (
-    calculate_contingency_matrix, check_cluster_labels)
+from paddlemetrics.functional.clustering.utils import calculate_contingency_matrix, check_cluster_labels
 
 
-def _mutual_info_score_update(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> paddle.Tensor:
+def _mutual_info_score_update(preds: paddle.Tensor, target: paddle.Tensor) -> paddle.Tensor:
     """Update and return variables required to compute the mutual information score.
 
     Args:
@@ -39,9 +36,7 @@ def _mutual_info_score_compute(contingency: paddle.Tensor) -> paddle.Tensor:
     nzu, nzv = paddle.nonzero(contingency, as_tuple=True)
     contingency = contingency[nzu, nzv]
     log_outer = paddle.log(u[nzu]) + paddle.log(v[nzv])
-    mutual_info = (
-        contingency / n * (paddle.log(n) + paddle.log(contingency) - log_outer)
-    )
+    mutual_info = contingency / n * (paddle.log(n) + paddle.log(contingency) - log_outer)
     return mutual_info.sum()
 
 

@@ -1,12 +1,9 @@
 import paddle
 
-from paddlemetrics.functional.clustering.utils import (
-    calculate_contingency_matrix, check_cluster_labels)
+from paddlemetrics.functional.clustering.utils import calculate_contingency_matrix, check_cluster_labels
 
 
-def _fowlkes_mallows_index_update(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> tuple[paddle.Tensor, int]:
+def _fowlkes_mallows_index_update(preds: paddle.Tensor, target: paddle.Tensor) -> tuple[paddle.Tensor, int]:
     """Return contingency matrix required to compute the Fowlkes-Mallows index.
 
     Args:

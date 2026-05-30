@@ -5,7 +5,9 @@ import paddle
 from paddle import Tensor
 
 from paddlemetrics.functional.segmentation.hausdorff_distance import (
-    _hausdorff_distance_validate_args, hausdorff_distance)
+    _hausdorff_distance_validate_args,
+    hausdorff_distance,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -78,7 +80,7 @@ class HausdorffDistance(Metric):
         spacing: Optional[Union[paddle.Tensor, list[float]]] = None,
         directed: bool = False,
         input_format: Literal["one-hot", "index", "mixed"] = "one-hot",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
         _hausdorff_distance_validate_args(

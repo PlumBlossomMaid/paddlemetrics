@@ -1,7 +1,6 @@
 import paddle
 
-from paddlemetrics.functional.regression.utils import \
-    _check_data_shape_to_num_outputs
+from paddlemetrics.functional.regression.utils import _check_data_shape_to_num_outputs
 from paddlemetrics.utils.checks import _check_same_shape
 
 
@@ -18,9 +17,7 @@ def _rank_data(data: paddle.Tensor) -> paddle.Tensor:
     rank = paddle.empty_like(data, dtype=paddle.int32)
     idx = data.argsort()
     rank[idx[:n]] = paddle.arange(1, n + 1, dtype=paddle.int32, device=data.place)
-    uniq, inv, counts = paddle.unique(
-        data, sorted=True, return_inverse=True, return_counts=True
-    )
+    uniq, inv, counts = paddle.unique(data, sorted=True, return_inverse=True, return_counts=True)
     sum_ranks = paddle.zeros_like(uniq, dtype=paddle.int32)
     sum_ranks.scatter_add_(0, inv, rank.to(paddle.int32))
     mean_ranks = sum_ranks / counts
@@ -49,9 +46,7 @@ def _spearman_corrcoef_update(
     return preds, target
 
 
-def _spearman_corrcoef_compute(
-    preds: paddle.Tensor, target: paddle.Tensor, eps: float = 1e-06
-) -> paddle.Tensor:
+def _spearman_corrcoef_compute(preds: paddle.Tensor, target: paddle.Tensor, eps: float = 1e-06) -> paddle.Tensor:
     """Compute Spearman Correlation Coefficient.
 
     Args:
@@ -110,7 +105,5 @@ def spearman_corrcoef(preds: paddle.Tensor, target: paddle.Tensor) -> paddle.Ten
         tensor([1.0000, 1.0000])
 
     """
-    preds, target = _spearman_corrcoef_update(
-        preds, target, num_outputs=1 if preds.ndim == 1 else preds.shape[-1]
-    )
+    preds, target = _spearman_corrcoef_update(preds, target, num_outputs=1 if preds.ndim == 1 else preds.shape[-1])
     return _spearman_corrcoef_compute(preds, target)

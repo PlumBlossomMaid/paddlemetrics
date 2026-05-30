@@ -5,12 +5,13 @@ import paddle
 from typing_extensions import Literal
 
 from paddlemetrics import Metric
-from paddlemetrics.functional.text.rouge import (ALLOWED_ACCUMULATE_VALUES,
-                                                ALLOWED_ROUGE_KEYS,
-                                                _rouge_score_compute,
-                                                _rouge_score_update)
-from paddlemetrics.utils.imports import (_MATPLOTLIB_AVAILABLE,
-                                            _NLTK_AVAILABLE)
+from paddlemetrics.functional.text.rouge import (
+    ALLOWED_ACCUMULATE_VALUES,
+    ALLOWED_ROUGE_KEYS,
+    _rouge_score_compute,
+    _rouge_score_update,
+)
+from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE, _NLTK_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
 
 if not _MATPLOTLIB_AVAILABLE:
@@ -112,9 +113,7 @@ class ROUGEScore(Metric):
             rouge_keys = (rouge_keys,)
         for key in rouge_keys:
             if key not in ALLOWED_ROUGE_KEYS:
-                raise ValueError(
-                    f"Got unknown rouge key {key}. Expected to be one of {ALLOWED_ROUGE_KEYS}"
-                )
+                raise ValueError(f"Got unknown rouge key {key}. Expected to be one of {ALLOWED_ROUGE_KEYS}")
         if accumulate not in ALLOWED_ACCUMULATE_VALUES:
             raise ValueError(
                 f"Got unknown accumulate value {accumulate}. Expected to be one of {ALLOWED_ACCUMULATE_VALUES}"
@@ -141,9 +140,7 @@ class ROUGEScore(Metric):
             preds = [preds]
         if isinstance(target, str):
             target = [[target]]
-        output: dict[
-            Union[int, str], list[dict[str, paddle.Tensor]]
-        ] = _rouge_score_update(
+        output: dict[Union[int, str], list[dict[str, paddle.Tensor]]] = _rouge_score_update(
             preds,
             target,
             self.rouge_keys_values,
@@ -155,18 +152,14 @@ class ROUGEScore(Metric):
         for rouge_key, metrics in output.items():
             for metric in metrics:
                 for tp, value in metric.items():
-                    getattr(self, f"rouge{rouge_key}_{tp}").append(
-                        value.to(self.place)
-                    )
+                    getattr(self, f"rouge{rouge_key}_{tp}").append(value.to(self.place))
 
     def compute(self) -> dict[str, paddle.Tensor]:
         """Calculate (Aggregate and provide confidence intervals) ROUGE score."""
         update_output = {}
         for rouge_key in self.rouge_keys_values:
             for tp in ["fmeasure", "precision", "recall"]:
-                update_output[f"rouge{rouge_key}_{tp}"] = getattr(
-                    self, f"rouge{rouge_key}_{tp}"
-                )
+                update_output[f"rouge{rouge_key}_{tp}"] = getattr(self, f"rouge{rouge_key}_{tp}")
         return _rouge_score_compute(update_output)
 
     def __hash__(self) -> int:

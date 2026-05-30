@@ -5,11 +5,8 @@ import paddle
 from typing_extensions import Literal
 
 from paddlemetrics.classification.base import _ClassificationTaskWrapper
-from paddlemetrics.classification.stat_scores import (BinaryStatScores,
-                                                     MulticlassStatScores,
-                                                     MultilabelStatScores)
-from paddlemetrics.functional.classification.precision_recall import \
-    _precision_recall_reduce
+from paddlemetrics.classification.stat_scores import BinaryStatScores, MulticlassStatScores, MultilabelStatScores
+from paddlemetrics.functional.classification.precision_recall import _precision_recall_reduce
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.enums import ClassificationTask
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
@@ -1012,19 +1009,13 @@ class Precision(_ClassificationTaskWrapper):
             return BinaryPrecision(threshold, **kwargs)
         if task == ClassificationTask.MULTICLASS:
             if not isinstance(num_classes, int):
-                raise ValueError(
-                    f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-                )
+                raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
             if not isinstance(top_k, int):
-                raise ValueError(
-                    f"`top_k` is expected to be `int` but `{type(top_k)} was passed.`"
-                )
+                raise ValueError(f"`top_k` is expected to be `int` but `{type(top_k)} was passed.`")
             return MulticlassPrecision(num_classes, top_k, average, **kwargs)
         if task == ClassificationTask.MULTILABEL:
             if not isinstance(num_labels, int):
-                raise ValueError(
-                    f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-                )
+                raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
             return MultilabelPrecision(num_labels, threshold, average, **kwargs)
         raise ValueError(f"Task {task} not supported!")
 
@@ -1085,18 +1076,12 @@ class Recall(_ClassificationTaskWrapper):
             return BinaryRecall(threshold, **kwargs)
         if task == ClassificationTask.MULTICLASS:
             if not isinstance(num_classes, int):
-                raise ValueError(
-                    f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-                )
+                raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
             if not isinstance(top_k, int):
-                raise ValueError(
-                    f"`top_k` is expected to be `int` but `{type(top_k)} was passed.`"
-                )
+                raise ValueError(f"`top_k` is expected to be `int` but `{type(top_k)} was passed.`")
             return MulticlassRecall(num_classes, top_k, average, **kwargs)
         if task == ClassificationTask.MULTILABEL:
             if not isinstance(num_labels, int):
-                raise ValueError(
-                    f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-                )
+                raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
             return MultilabelRecall(num_labels, threshold, average, **kwargs)
         return None

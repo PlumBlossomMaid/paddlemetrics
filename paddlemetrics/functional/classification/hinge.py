@@ -1,14 +1,14 @@
 from typing import Optional
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.functional.classification.confusion_matrix import (
     _binary_confusion_matrix_format,
     _binary_confusion_matrix_tensor_validation,
     _multiclass_confusion_matrix_format,
-    _multiclass_confusion_matrix_tensor_validation)
+    _multiclass_confusion_matrix_tensor_validation,
+)
 from paddlemetrics.utils.compute import normalize_logits_if_needed
 from paddlemetrics.utils.data import to_onehot
 from paddlemetrics.utils.enums import ClassificationTaskNoMultilabel
@@ -18,15 +18,11 @@ def _hinge_loss_compute(measure: paddle.Tensor, total: paddle.Tensor) -> paddle.
     return measure / total
 
 
-def _binary_hinge_loss_arg_validation(
-    squared: bool, ignore_index: Optional[int] = None
-) -> None:
+def _binary_hinge_loss_arg_validation(squared: bool, ignore_index: Optional[int] = None) -> None:
     if not isinstance(squared, bool):
         raise ValueError(f"Expected argument `squared` to be an bool but got {squared}")
     if ignore_index is not None and not isinstance(ignore_index, int):
-        raise ValueError(
-            f"Expected argument `ignore_index` to either be `None` or an integer, but got {ignore_index}"
-        )
+        raise ValueError(f"Expected argument `ignore_index` to either be `None` or an integer, but got {ignore_index}")
 
 
 def _binary_hinge_loss_tensor_validation(
@@ -117,14 +113,10 @@ def _multiclass_hinge_loss_arg_validation(
 ) -> None:
     _binary_hinge_loss_arg_validation(squared, ignore_index)
     if not isinstance(num_classes, int) or num_classes < 2:
-        raise ValueError(
-            f"Expected argument `num_classes` to be an integer larger than 1, but got {num_classes}"
-        )
+        raise ValueError(f"Expected argument `num_classes` to be an integer larger than 1, but got {num_classes}")
     allowed_mm = "crammer-singer", "one-vs-all"
     if multiclass_mode not in allowed_mm:
-        raise ValueError(
-            f"Expected argument `multiclass_mode` to be one of {allowed_mm}, but got {multiclass_mode}."
-        )
+        raise ValueError(f"Expected argument `multiclass_mode` to be one of {allowed_mm}, but got {multiclass_mode}.")
 
 
 def _multiclass_hinge_loss_tensor_validation(
@@ -133,9 +125,7 @@ def _multiclass_hinge_loss_tensor_validation(
     num_classes: int,
     ignore_index: Optional[int] = None,
 ) -> None:
-    _multiclass_confusion_matrix_tensor_validation(
-        preds, target, num_classes, ignore_index
-    )
+    _multiclass_confusion_matrix_tensor_validation(preds, target, num_classes, ignore_index)
     if not preds.is_floating_point():
         raise ValueError(
             f"Expected argument `preds` to be floating tensor with probabilities/logits but got tensor with dtype {preds.dtype}"
@@ -226,18 +216,10 @@ def multiclass_hinge_loss(
 
     """
     if validate_args:
-        _multiclass_hinge_loss_arg_validation(
-            num_classes, squared, multiclass_mode, ignore_index
-        )
-        _multiclass_hinge_loss_tensor_validation(
-            preds, target, num_classes, ignore_index
-        )
-    preds, target = _multiclass_confusion_matrix_format(
-        preds, target, ignore_index, convert_to_labels=False
-    )
-    measures, total = _multiclass_hinge_loss_update(
-        preds, target, squared, multiclass_mode
-    )
+        _multiclass_hinge_loss_arg_validation(num_classes, squared, multiclass_mode, ignore_index)
+        _multiclass_hinge_loss_tensor_validation(preds, target, num_classes, ignore_index)
+    preds, target = _multiclass_confusion_matrix_format(preds, target, ignore_index, convert_to_labels=False)
+    measures, total = _multiclass_hinge_loss_update(preds, target, squared, multiclass_mode)
     return _hinge_loss_compute(measures, total)
 
 
@@ -282,9 +264,7 @@ def hinge_loss(
         return binary_hinge_loss(preds, target, squared, ignore_index, validate_args)
     if task == ClassificationTaskNoMultilabel.MULTICLASS:
         if not isinstance(num_classes, int):
-            raise ValueError(
-                f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-            )
+            raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
         return multiclass_hinge_loss(
             preds,
             target,

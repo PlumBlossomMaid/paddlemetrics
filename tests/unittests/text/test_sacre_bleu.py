@@ -4,14 +4,12 @@ from functools import partial
 import paddle
 import pytest
 from lightning_utilities.core.imports import RequirementCache
+
+from paddlemetrics.functional.text.sacre_bleu import AVAILABLE_TOKENIZERS, _TokenizersLiteral, sacre_bleu_score
+from paddlemetrics.text.sacre_bleu import SacreBLEUScore
 from unittests._helpers import skip_on_connection_issues
 from unittests.text._helpers import TextTester
 from unittests.text._inputs import _inputs_multiple_references
-
-from paddlemetrics.functional.text.sacre_bleu import (AVAILABLE_TOKENIZERS,
-                                                     _TokenizersLiteral,
-                                                     sacre_bleu_score)
-from paddlemetrics.text.sacre_bleu import SacreBLEUScore
 
 
 def _reference_sacre_bleu(
@@ -43,15 +41,11 @@ class TestSacreBLEUScore(TextTester):
     def test_bleu_score_class(self, ddp, preds, targets, tokenize, lowercase):
         """Test class implementation of metric."""
         if _should_skip_tokenizer(tokenize):
-            pytest.skip(
-                reason="`ko-mecab` tokenizer requires  `mecab-ko` package to be installed"
-            )
+            pytest.skip(reason="`ko-mecab` tokenizer requires  `mecab-ko` package to be installed")
         if tokenize == "flores200" or tokenize == "flores101":
             pytest.skip("flores101 and flores200 tests are flaky")
         metric_args = {"tokenize": tokenize, "lowercase": lowercase}
-        original_sacrebleu = partial(
-            _reference_sacre_bleu, tokenize=tokenize, lowercase=lowercase
-        )
+        original_sacrebleu = partial(_reference_sacre_bleu, tokenize=tokenize, lowercase=lowercase)
         self.run_class_metric_test(
             ddp=ddp,
             preds=preds,
@@ -65,15 +59,11 @@ class TestSacreBLEUScore(TextTester):
     def test_bleu_score_functional(self, preds, targets, tokenize, lowercase):
         """Test functional implementation of metric."""
         if _should_skip_tokenizer(tokenize):
-            pytest.skip(
-                reason="`ko-mecab` tokenizer requires  `mecab-ko` package to be installed"
-            )
+            pytest.skip(reason="`ko-mecab` tokenizer requires  `mecab-ko` package to be installed")
         if tokenize == "flores200" or tokenize == "flores101":
             pytest.skip("flores101 and flores200 tests are flaky")
         metric_args = {"tokenize": tokenize, "lowercase": lowercase}
-        original_sacrebleu = partial(
-            _reference_sacre_bleu, tokenize=tokenize, lowercase=lowercase
-        )
+        original_sacrebleu = partial(_reference_sacre_bleu, tokenize=tokenize, lowercase=lowercase)
         self.run_functional_metric_test(
             preds,
             targets,
@@ -85,9 +75,7 @@ class TestSacreBLEUScore(TextTester):
     def test_bleu_score_differentiability(self, preds, targets, tokenize, lowercase):
         """Test the differentiability of the metric, according to its `is_differentiable` attribute."""
         if _should_skip_tokenizer(tokenize):
-            pytest.skip(
-                reason="`ko-mecab` tokenizer requires  `mecab-ko` package to be installed"
-            )
+            pytest.skip(reason="`ko-mecab` tokenizer requires  `mecab-ko` package to be installed")
         metric_args = {"tokenize": tokenize, "lowercase": lowercase}
         self.run_differentiability_test(
             preds=preds,
@@ -103,9 +91,7 @@ def test_no_and_uniform_weights_functional():
     preds = ["My full pytorch-lightning"]
     targets = [["My full pytorch-lightning test", "Completely Different"]]
     no_weights_score = sacre_bleu_score(preds, targets, n_gram=2)
-    uniform_weights_score = sacre_bleu_score(
-        preds, targets, n_gram=2, weights=[0.5, 0.5]
-    )
+    uniform_weights_score = sacre_bleu_score(preds, targets, n_gram=2, weights=[0.5, 0.5])
     assert no_weights_score == uniform_weights_score
 
 
@@ -125,9 +111,7 @@ def test_tokenize_ja_mecab():
     sacrebleu = SacreBLEUScore(tokenize="ja-mecab")
     preds = ["これは美しい花です。"]
     targets = [["これは美しい花です。", "おいしい寿司を食べたい。"]]
-    assert sacrebleu(preds, targets) == _reference_sacre_bleu(
-        preds, targets, tokenize="ja-mecab", lowercase=False
-    )
+    assert sacrebleu(preds, targets) == _reference_sacre_bleu(preds, targets, tokenize="ja-mecab", lowercase=False)
 
 
 @pytest.mark.skipif(
@@ -139,9 +123,7 @@ def test_tokenize_ko_mecab():
     sacrebleu = SacreBLEUScore(tokenize="ko-mecab")
     preds = ["이 책은 정말 재미있어요."]
     targets = [["이 책은 정말 재미있어요.", "고마워요, 너무 도와줘서."]]
-    assert sacrebleu(preds, targets) == _reference_sacre_bleu(
-        preds, targets, tokenize="ko-mecab", lowercase=False
-    )
+    assert sacrebleu(preds, targets) == _reference_sacre_bleu(preds, targets, tokenize="ko-mecab", lowercase=False)
 
 
 def test_equivalence_of_available_tokenizers_and_annotation():

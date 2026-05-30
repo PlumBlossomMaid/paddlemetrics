@@ -1,19 +1,19 @@
 import numpy as np
 import paddle
 import pytest
-from sklearn.metrics.cluster import \
-    contingency_matrix as sklearn_contingency_matrix
+from sklearn.metrics.cluster import contingency_matrix as sklearn_contingency_matrix
 from sklearn.metrics.cluster import entropy as sklearn_entropy
-from sklearn.metrics.cluster import \
-    pair_confusion_matrix as sklearn_pair_confusion_matrix
-from sklearn.metrics.cluster._supervised import \
-    _generalized_average as sklearn_generalized_average
-from unittests import BATCH_SIZE, NUM_BATCHES, _Input
-from unittests._helpers import seed_all
+from sklearn.metrics.cluster import pair_confusion_matrix as sklearn_pair_confusion_matrix
+from sklearn.metrics.cluster._supervised import _generalized_average as sklearn_generalized_average
 
 from paddlemetrics.functional.clustering.utils import (
-    calculate_contingency_matrix, calculate_entropy,
-    calculate_generalized_mean, calculate_pair_cluster_confusion_matrix)
+    calculate_contingency_matrix,
+    calculate_entropy,
+    calculate_generalized_mean,
+    calculate_pair_cluster_confusion_matrix,
+)
+from unittests import BATCH_SIZE, NUM_BATCHES, _Input
+from unittests._helpers import seed_all
 
 seed_all(42)
 NUM_CLASSES = 10
@@ -52,9 +52,7 @@ class TestContingencyMatrix:
 
     def test_contingency_matrix_sparse(self, preds, target):
         """Check that sparse contingency matrices are calculated correctly."""
-        tm_c = (
-            calculate_contingency_matrix(preds, target, sparse=True).to_dense().numpy()
-        )
+        tm_c = calculate_contingency_matrix(preds, target, sparse=True).to_dense().numpy()
         sklearn_c = sklearn_contingency_matrix(target, preds, sparse=True).toarray()
         assert np.allclose(tm_c, sklearn_c, atol=self.atol)
 
@@ -62,9 +60,7 @@ class TestContingencyMatrix:
 def test_eps_and_sparse_error():
     """Check that contingency matrix is not calculated if `eps` is nonzero and `sparse` is True."""
     with pytest.raises(ValueError, match="Cannot specify*"):
-        calculate_contingency_matrix(
-            _single_dim_inputs.preds, _single_dim_inputs.target, eps=1e-16, sparse=True
-        )
+        calculate_contingency_matrix(_single_dim_inputs.preds, _single_dim_inputs.target, eps=1e-16, sparse=True)
 
 
 def test_multidimensional_contingency_error():
@@ -73,9 +69,7 @@ def test_multidimensional_contingency_error():
         calculate_contingency_matrix(_multi_dim_inputs.preds, _multi_dim_inputs.target)
 
 
-@pytest.mark.parametrize(
-    "labels", [paddle.randint(low=0, high=NUM_CLASSES, shape=(NUM_BATCHES, BATCH_SIZE))]
-)
+@pytest.mark.parametrize("labels", [paddle.randint(low=0, high=NUM_CLASSES, shape=(NUM_BATCHES, BATCH_SIZE))])
 def test_entropy(labels):
     """Check calculation of entropy."""
     for x in labels:

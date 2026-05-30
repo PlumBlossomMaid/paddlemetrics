@@ -4,26 +4,20 @@ from typing import Any
 import paddle
 import pytest
 from nltk.translate.bleu_score import SmoothingFunction, corpus_bleu
-from unittests.text._helpers import TextTester
-from unittests.text._inputs import _inputs_multiple_references
 
 from paddlemetrics.functional.text.bleu import bleu_score
 from paddlemetrics.text.bleu import BLEUScore
+from unittests.text._helpers import TextTester
+from unittests.text._inputs import _inputs_multiple_references
 
 smooth_func = SmoothingFunction().method2
 
 
-def _reference_bleu_metric_nltk(
-    preds, targets, weights, smoothing_function, **kwargs: Any
-):
+def _reference_bleu_metric_nltk(preds, targets, weights, smoothing_function, **kwargs: Any):
     preds_ = [pred.split() for pred in preds]
     targets_ = [[line.split() for line in target] for target in targets]
     return corpus_bleu(
-        list_of_references=targets_,
-        hypotheses=preds_,
-        weights=weights,
-        smoothing_function=smoothing_function,
-        **kwargs
+        list_of_references=targets_, hypotheses=preds_, weights=weights, smoothing_function=smoothing_function, **kwargs
     )
 
 
@@ -31,9 +25,9 @@ def _reference_bleu_metric_nltk(
     ("weights", "n_gram", "smooth_func", "smooth"),
     [
         ([1], 1, None, False),
-        ([0.5, 0.5], 2, smooth_func),
+        ([0.5, 0.5], 2, smooth_func, True),
         ([0.333333, 0.333333, 0.333333], 3, None, False),
-        ([0.25, 0.25, 0.25, 0.25], 4, smooth_func),
+        ([0.25, 0.25, 0.25, 0.25], 4, smooth_func, True),
     ],
 )
 @pytest.mark.parametrize(
@@ -44,14 +38,10 @@ class TestBLEUScore(TextTester):
     """Test class for `BLEUScore` metric."""
 
     @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
-    def test_bleu_score_class(
-        self, ddp, preds, targets, weights, n_gram, smooth_func, smooth
-    ):
+    def test_bleu_score_class(self, ddp, preds, targets, weights, n_gram, smooth_func, smooth):
         """Test class implementation of metric."""
         metric_args = {"n_gram": n_gram, "smooth": smooth}
-        compute_bleu_metric_nltk = partial(
-            _reference_bleu_metric_nltk, weights=weights, smoothing_function=smooth_func
-        )
+        compute_bleu_metric_nltk = partial(_reference_bleu_metric_nltk, weights=weights, smoothing_function=smooth_func)
         self.run_class_metric_test(
             ddp=ddp,
             preds=preds,
@@ -61,14 +51,10 @@ class TestBLEUScore(TextTester):
             metric_args=metric_args,
         )
 
-    def test_bleu_score_functional(
-        self, preds, targets, weights, n_gram, smooth_func, smooth
-    ):
+    def test_bleu_score_functional(self, preds, targets, weights, n_gram, smooth_func, smooth):
         """Test functional implementation of metric."""
         metric_args = {"n_gram": n_gram, "smooth": smooth}
-        compute_bleu_metric_nltk = partial(
-            _reference_bleu_metric_nltk, weights=weights, smoothing_function=smooth_func
-        )
+        compute_bleu_metric_nltk = partial(_reference_bleu_metric_nltk, weights=weights, smoothing_function=smooth_func)
         self.run_functional_metric_test(
             preds,
             targets,
@@ -77,9 +63,7 @@ class TestBLEUScore(TextTester):
             metric_args=metric_args,
         )
 
-    def test_bleu_score_differentiability(
-        self, preds, targets, weights, n_gram, smooth_func, smooth
-    ):
+    def test_bleu_score_differentiability(self, preds, targets, weights, n_gram, smooth_func, smooth):
         """Test the differentiability of the metric, according to its `is_differentiable` attribute."""
         metric_args = {"n_gram": n_gram, "smooth": smooth}
         self.run_differentiability_test(

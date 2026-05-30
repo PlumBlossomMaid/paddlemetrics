@@ -1,13 +1,12 @@
 import paddle
 import pytest
 from properscoring import crps_ensemble
+
+from paddlemetrics.functional.regression.crps import continuous_ranked_probability_score
+from paddlemetrics.regression.crps import ContinuousRankedProbabilityScore
 from unittests import BATCH_SIZE, NUM_BATCHES, _Input
 from unittests._helpers import seed_all
 from unittests._helpers.testers import MetricTester
-
-from paddlemetrics.functional.regression.crps import \
-    continuous_ranked_probability_score
-from paddlemetrics.regression.crps import ContinuousRankedProbabilityScore
 
 seed_all(42)
 _input_10ensemble = _Input(
@@ -70,7 +69,5 @@ def test_error_on_different_shape(metric_class=ContinuousRankedProbabilityScore)
 def test_error_on_single_ensemble_member():
     """Test that error is raised on single ensemble member."""
     metric = ContinuousRankedProbabilityScore()
-    with pytest.raises(
-        ValueError, match="CRPS requires at least 2 ensemble members, but.*"
-    ):
+    with pytest.raises(ValueError, match="CRPS requires at least 2 ensemble members, but.*"):
         metric(paddle.randn(100, 1), paddle.randn(100))

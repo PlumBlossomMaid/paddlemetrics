@@ -2,7 +2,6 @@ import math
 from typing import Union
 
 import paddle
-from paddle import Tensor
 
 
 def _compute_bef(x: paddle.Tensor, block_size: int = 8) -> paddle.Tensor:
@@ -22,9 +21,7 @@ def _compute_bef(x: paddle.Tensor, block_size: int = 8) -> paddle.Tensor:
     """
     _, channels, height, width = x.shape
     if channels > 1:
-        raise ValueError(
-            f"`psnrb` metric expects grayscale images, but got images with {channels} channels."
-        )
+        raise ValueError(f"`psnrb` metric expects grayscale images, but got images with {channels} channels.")
     h = paddle.arange(width - 1)
     h_b = paddle.tensor(range(block_size - 1, width - 1, block_size))
     h_bc = paddle.tensor(list(set(h.tolist()).symmetric_difference(h_b.tolist())))
@@ -119,7 +116,5 @@ def peak_signal_noise_ratio_with_blocked_effect(
         data_range_val = paddle.tensor(data_range[1] - data_range[0])
     else:
         data_range_val = paddle.tensor(float(data_range))
-    sum_squared_error, bef, num_obs = _psnrb_update(
-        preds, target, block_size=block_size
-    )
+    sum_squared_error, bef, num_obs = _psnrb_update(preds, target, block_size=block_size)
     return _psnrb_compute(sum_squared_error, bef, num_obs, data_range_val)

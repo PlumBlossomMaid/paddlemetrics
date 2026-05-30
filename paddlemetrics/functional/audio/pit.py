@@ -3,7 +3,6 @@ from typing import Any, Callable
 
 import numpy as np
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.utils import rank_zero_warn
@@ -12,7 +11,7 @@ from paddlemetrics.utils.imports import _SCIPY_AVAILABLE
 _ps_dict: dict = {}
 
 
-def _gen_permutations(spk_num: int, device: paddle.place) -> paddle.Tensor:
+def _gen_permutations(spk_num: int, device: Any) -> paddle.Tensor:
     key = str(spk_num) + str(device)
     if key not in _ps_dict:
         ps = paddle.to_tensor(list(permutations(range(spk_num))))
@@ -41,14 +40,7 @@ def _find_best_perm_by_linear_sum_assignment(
     from scipy.optimize import linear_sum_assignment
 
     mmtx = metric_mtx.detach().cpu()
-    best_perm = paddle.to_tensor(
-        np.array(
-            [
-                linear_sum_assignment(pwm, eval_func == paddle.max)[1]
-                for pwm in mmtx
-            ]
-        )
-    )
+    best_perm = paddle.to_tensor(np.array([linear_sum_assignment(pwm, eval_func == paddle.max)[1] for pwm in mmtx]))
     best_perm = best_perm
     best_metric = paddle.gather(metric_mtx, 2, best_perm[:, :, None]).mean(axis=[-1, -2])
     return best_metric, best_perm
@@ -140,13 +132,9 @@ def permutation_invariant_training(
     if eval_func not in ["max", "min"]:
         raise ValueError(f'eval_func can only be "max" or "min" but got {eval_func}')
     if mode not in ["speaker-wise", "permutation-wise"]:
-        raise ValueError(
-            f'mode can only be "speaker-wise" or "permutation-wise" but got {mode}'
-        )
+        raise ValueError(f'mode can only be "speaker-wise" or "permutation-wise" but got {mode}')
     if target.ndim < 2:
-        raise ValueError(
-            f"Inputs must be of shape [batch, spk, ...], got {target.shape} and {preds.shape} instead"
-        )
+        raise ValueError(f"Inputs must be of shape [batch, spk, ...], got {target.shape} and {preds.shape} instead")
     eval_op = paddle.max if eval_func == "max" else paddle.min
     batch_size, spk_num = target.shape[0:2]
     if mode == "permutation-wise":
@@ -157,17 +145,13 @@ def permutation_invariant_training(
         )
         ptarget = target.repeat_interleave(repeats=perm_num, axis=0)
         metric_of_ps = metric_func(ppreds, ptarget, **kwargs)
-        metric_of_ps = paddle.mean(
-            metric_of_ps.reshape([batch_size, len(perms), -1]), axis=-1
-        )
+        metric_of_ps = paddle.mean(metric_of_ps.reshape([batch_size, len(perms), -1]), axis=-1)
         best_metric, best_indexes = eval_op(metric_of_ps, axis=1)
         best_indexes = best_indexes.detach()
         best_perm = perms[best_indexes, :]
         return best_metric, best_perm
     first_ele = metric_func(preds[:, 0, ...], target[:, 0, ...], **kwargs)
-    metric_mtx = paddle.empty(
-        [batch_size, spk_num, spk_num], dtype=first_ele.dtype
-    )
+    metric_mtx = paddle.empty([batch_size, spk_num, spk_num], dtype=first_ele.dtype)
     metric_mtx[:, 0, 0] = first_ele
     for target_idx in range(spk_num):
         for preds_idx in range(spk_num):
@@ -181,13 +165,9 @@ def permutation_invariant_training(
             rank_zero_warn(
                 f"In pit metric for speaker-num {spk_num}>3, we recommend installing scipy for better performance"
             )
-        best_metric, best_perm = _find_best_perm_by_exhaustive_method(
-            metric_mtx, eval_op
-        )
+        best_metric, best_perm = _find_best_perm_by_exhaustive_method(metric_mtx, eval_op)
     else:
-        best_metric, best_perm = _find_best_perm_by_linear_sum_assignment(
-            metric_mtx, eval_op
-        )
+        best_metric, best_perm = _find_best_perm_by_linear_sum_assignment(metric_mtx, eval_op)
     return best_metric, best_perm
 
 
@@ -202,6 +182,4 @@ def pit_permutate(preds: paddle.Tensor, perm: paddle.Tensor) -> paddle.Tensor:
         Tensor: the permutated version of estimate
 
     """
-    return paddle.stack(
-        [paddle.index_select(pred, 0, p) for pred, p in zip(preds, perm)]
-    )
+    return paddle.stack([paddle.index_select(pred, 0, p) for pred, p in zip(preds, perm)])

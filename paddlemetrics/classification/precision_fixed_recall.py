@@ -6,17 +6,19 @@ from typing_extensions import Literal
 
 from paddlemetrics.classification.base import _ClassificationTaskWrapper
 from paddlemetrics.classification.precision_recall_curve import (
-    BinaryPrecisionRecallCurve, MulticlassPrecisionRecallCurve,
-    MultilabelPrecisionRecallCurve)
-from paddlemetrics.functional.classification.precision_fixed_recall import \
-    _precision_at_recall
+    BinaryPrecisionRecallCurve,
+    MulticlassPrecisionRecallCurve,
+    MultilabelPrecisionRecallCurve,
+)
+from paddlemetrics.functional.classification.precision_fixed_recall import _precision_at_recall
 from paddlemetrics.functional.classification.recall_fixed_precision import (
     _binary_recall_at_fixed_precision_arg_validation,
     _binary_recall_at_fixed_precision_compute,
     _multiclass_recall_at_fixed_precision_arg_compute,
     _multiclass_recall_at_fixed_precision_arg_validation,
     _multilabel_recall_at_fixed_precision_arg_compute,
-    _multilabel_recall_at_fixed_precision_arg_validation)
+    _multilabel_recall_at_fixed_precision_arg_validation,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.data import dim_zero_cat
 from paddlemetrics.utils.enums import ClassificationTask
@@ -108,19 +110,13 @@ class BinaryPrecisionAtFixedRecall(BinaryPrecisionRecallCurve):
     ) -> None:
         super().__init__(thresholds, ignore_index, validate_args=False, **kwargs)
         if validate_args:
-            _binary_recall_at_fixed_precision_arg_validation(
-                min_recall, thresholds, ignore_index
-            )
+            _binary_recall_at_fixed_precision_arg_validation(min_recall, thresholds, ignore_index)
         self.validate_args = validate_args
         self.min_recall = min_recall
 
     def compute(self) -> tuple[paddle.Tensor, paddle.Tensor]:
         """Compute metric."""
-        state = (
-            (dim_zero_cat(self.preds), dim_zero_cat(self.target))
-            if self.thresholds is None
-            else self.confmat
-        )
+        state = (dim_zero_cat(self.preds), dim_zero_cat(self.target)) if self.thresholds is None else self.confmat
         return _binary_recall_at_fixed_precision_compute(
             state, self.thresholds, self.min_recall, reduce_fn=_precision_at_recall
         )
@@ -265,19 +261,13 @@ class MulticlassPrecisionAtFixedRecall(MulticlassPrecisionRecallCurve):
             **kwargs,
         )
         if validate_args:
-            _multiclass_recall_at_fixed_precision_arg_validation(
-                num_classes, min_recall, thresholds, ignore_index
-            )
+            _multiclass_recall_at_fixed_precision_arg_validation(num_classes, min_recall, thresholds, ignore_index)
         self.validate_args = validate_args
         self.min_recall = min_recall
 
     def compute(self) -> tuple[paddle.Tensor, paddle.Tensor]:
         """Compute metric."""
-        state = (
-            (dim_zero_cat(self.preds), dim_zero_cat(self.target))
-            if self.thresholds is None
-            else self.confmat
-        )
+        state = (dim_zero_cat(self.preds), dim_zero_cat(self.target)) if self.thresholds is None else self.confmat
         return _multiclass_recall_at_fixed_precision_arg_compute(
             state,
             self.num_classes,
@@ -427,19 +417,13 @@ class MultilabelPrecisionAtFixedRecall(MultilabelPrecisionRecallCurve):
             **kwargs,
         )
         if validate_args:
-            _multilabel_recall_at_fixed_precision_arg_validation(
-                num_labels, min_recall, thresholds, ignore_index
-            )
+            _multilabel_recall_at_fixed_precision_arg_validation(num_labels, min_recall, thresholds, ignore_index)
         self.validate_args = validate_args
         self.min_recall = min_recall
 
     def compute(self) -> tuple[paddle.Tensor, paddle.Tensor]:
         """Compute metric."""
-        state = (
-            (dim_zero_cat(self.preds), dim_zero_cat(self.target))
-            if self.thresholds is None
-            else self.confmat
-        )
+        state = (dim_zero_cat(self.preds), dim_zero_cat(self.target)) if self.thresholds is None else self.confmat
         return _multilabel_recall_at_fixed_precision_arg_compute(
             state,
             self.num_labels,
@@ -525,14 +509,10 @@ class PrecisionAtFixedRecall(_ClassificationTaskWrapper):
         """Initialize task metric."""
         task = ClassificationTask.from_str(task)
         if task == ClassificationTask.BINARY:
-            return BinaryPrecisionAtFixedRecall(
-                min_recall, thresholds, ignore_index, validate_args, **kwargs
-            )
+            return BinaryPrecisionAtFixedRecall(min_recall, thresholds, ignore_index, validate_args, **kwargs)
         if task == ClassificationTask.MULTICLASS:
             if not isinstance(num_classes, int):
-                raise ValueError(
-                    f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-                )
+                raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
             return MulticlassPrecisionAtFixedRecall(
                 num_classes,
                 min_recall,
@@ -543,9 +523,7 @@ class PrecisionAtFixedRecall(_ClassificationTaskWrapper):
             )
         if task == ClassificationTask.MULTILABEL:
             if not isinstance(num_labels, int):
-                raise ValueError(
-                    f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-                )
+                raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
             return MultilabelPrecisionAtFixedRecall(
                 num_labels,
                 min_recall,

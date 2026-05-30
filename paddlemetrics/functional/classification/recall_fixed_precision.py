@@ -1,4 +1,3 @@
-import sys
 
 from typing import Callable, Optional, Union
 
@@ -21,7 +20,8 @@ from paddlemetrics.functional.classification.precision_recall_curve import (
     _multilabel_precision_recall_curve_compute,
     _multilabel_precision_recall_curve_format,
     _multilabel_precision_recall_curve_tensor_validation,
-    _multilabel_precision_recall_curve_update)
+    _multilabel_precision_recall_curve_update,
+)
 from paddlemetrics.utils.enums import ClassificationTask
 
 
@@ -34,7 +34,7 @@ def _lexargmax(x: paddle.Tensor) -> paddle.Tensor:
     idx: Optional[paddle.Tensor] = None
     for k in range(x.shape[1]):
         col: Tensor = x[idx, k] if idx is not None else x[:, k]
-        z = paddle.where(col == col._max())[0]
+        z = paddle.where(col == col.amax())[0]
         idx = z if idx is None else idx[z]
         if len(idx) < 2:
             break
@@ -52,17 +52,13 @@ def _recall_at_precision(
     max_recall = paddle.tensor(0.0, device=recall.device, dtype=recall.dtype)
     best_threshold = paddle.tensor(0)
     zipped_len = min(t.shape[0] for t in (recall, precision, thresholds))
-    zipped = paddle.vstack(
-        x=(recall[:zipped_len], precision[:zipped_len], thresholds[:zipped_len])
-    ).T
+    zipped = paddle.vstack(x=(recall[:zipped_len], precision[:zipped_len], thresholds[:zipped_len])).T
     zipped_masked = zipped[zipped[:, 1] >= min_precision]
     if zipped_masked.shape[0] > 0:
         idx = _lexargmax(zipped_masked)[0]
         max_recall, _, best_threshold = zipped_masked[idx]
     if max_recall == 0.0:
-        best_threshold = paddle.tensor(
-            float("nan"), device=thresholds.device, dtype=thresholds.dtype
-        )
+        best_threshold = paddle.tensor(float("nan"), device=thresholds.device, dtype=thresholds.dtype)
     return max_recall, best_threshold
 
 
@@ -85,9 +81,7 @@ def _binary_recall_at_fixed_precision_compute(
     pos_label: int = 1,
     reduce_fn: Callable = _recall_at_precision,
 ) -> tuple[paddle.Tensor, paddle.Tensor]:
-    precision, recall, thresholds = _binary_precision_recall_curve_compute(
-        state, thresholds, pos_label
-    )
+    precision, recall, thresholds = _binary_precision_recall_curve_compute(state, thresholds, pos_label)
     return reduce_fn(precision, recall, thresholds, min_precision)
 
 
@@ -157,13 +151,9 @@ def binary_recall_at_fixed_precision(
 
     """
     if validate_args:
-        _binary_recall_at_fixed_precision_arg_validation(
-            min_precision, thresholds, ignore_index
-        )
+        _binary_recall_at_fixed_precision_arg_validation(min_precision, thresholds, ignore_index)
         _binary_precision_recall_curve_tensor_validation(preds, target, ignore_index)
-    preds, target, thresholds = _binary_precision_recall_curve_format(
-        preds, target, thresholds, ignore_index
-    )
+    preds, target, thresholds = _binary_precision_recall_curve_format(preds, target, thresholds, ignore_index)
     state = _binary_precision_recall_curve_update(preds, target, thresholds)
     return _binary_recall_at_fixed_precision_compute(state, thresholds, min_precision)
 
@@ -174,9 +164,7 @@ def _multiclass_recall_at_fixed_precision_arg_validation(
     thresholds: Optional[Union[int, list[float], paddle.Tensor]] = None,
     ignore_index: Optional[int] = None,
 ) -> None:
-    _multiclass_precision_recall_curve_arg_validation(
-        num_classes, thresholds, ignore_index
-    )
+    _multiclass_precision_recall_curve_arg_validation(num_classes, thresholds, ignore_index)
     if not isinstance(min_precision, float) and not 0 <= min_precision <= 1:
         raise ValueError(
             f"Expected argument `min_precision` to be an float in the [0,1] range, but got {min_precision}"
@@ -190,19 +178,11 @@ def _multiclass_recall_at_fixed_precision_arg_compute(
     min_precision: float,
     reduce_fn: Callable = _recall_at_precision,
 ) -> tuple[paddle.Tensor, paddle.Tensor]:
-    precision, recall, thresholds = _multiclass_precision_recall_curve_compute(
-        state, num_classes, thresholds
-    )
+    precision, recall, thresholds = _multiclass_precision_recall_curve_compute(state, num_classes, thresholds)
     if isinstance(state, paddle.Tensor):
-        res = [
-            reduce_fn(p, r, thresholds, min_precision)
-            for p, r in zip(precision, recall)
-        ]
+        res = [reduce_fn(p, r, thresholds, min_precision) for p, r in zip(precision, recall)]
     else:
-        res = [
-            reduce_fn(p, r, t, min_precision)
-            for p, r, t in zip(precision, recall, thresholds)
-        ]
+        res = [reduce_fn(p, r, t, min_precision) for p, r, t in zip(precision, recall, thresholds)]
     recall = paddle.stack([r[0] for r in res])
     thresholds = paddle.stack([r[1] for r in res])
     return recall, thresholds
@@ -279,21 +259,13 @@ def multiclass_recall_at_fixed_precision(
 
     """
     if validate_args:
-        _multiclass_recall_at_fixed_precision_arg_validation(
-            num_classes, min_precision, thresholds, ignore_index
-        )
-        _multiclass_precision_recall_curve_tensor_validation(
-            preds, target, num_classes, ignore_index
-        )
+        _multiclass_recall_at_fixed_precision_arg_validation(num_classes, min_precision, thresholds, ignore_index)
+        _multiclass_precision_recall_curve_tensor_validation(preds, target, num_classes, ignore_index)
     preds, target, thresholds = _multiclass_precision_recall_curve_format(
         preds, target, num_classes, thresholds, ignore_index
     )
-    state = _multiclass_precision_recall_curve_update(
-        preds, target, num_classes, thresholds
-    )
-    return _multiclass_recall_at_fixed_precision_arg_compute(
-        state, num_classes, thresholds, min_precision
-    )
+    state = _multiclass_precision_recall_curve_update(preds, target, num_classes, thresholds)
+    return _multiclass_recall_at_fixed_precision_arg_compute(state, num_classes, thresholds, min_precision)
 
 
 def _multilabel_recall_at_fixed_precision_arg_validation(
@@ -302,9 +274,7 @@ def _multilabel_recall_at_fixed_precision_arg_validation(
     thresholds: Optional[Union[int, list[float], paddle.Tensor]] = None,
     ignore_index: Optional[int] = None,
 ) -> None:
-    _multilabel_precision_recall_curve_arg_validation(
-        num_labels, thresholds, ignore_index
-    )
+    _multilabel_precision_recall_curve_arg_validation(num_labels, thresholds, ignore_index)
     if not isinstance(min_precision, float) and not 0 <= min_precision <= 1:
         raise ValueError(
             f"Expected argument `min_precision` to be an float in the [0,1] range, but got {min_precision}"
@@ -323,15 +293,9 @@ def _multilabel_recall_at_fixed_precision_arg_compute(
         state, num_labels, thresholds, ignore_index
     )
     if isinstance(state, paddle.Tensor):
-        res = [
-            reduce_fn(p, r, thresholds, min_precision)
-            for p, r in zip(precision, recall)
-        ]
+        res = [reduce_fn(p, r, thresholds, min_precision) for p, r in zip(precision, recall)]
     else:
-        res = [
-            reduce_fn(p, r, t, min_precision)
-            for p, r, t in zip(precision, recall, thresholds)
-        ]
+        res = [reduce_fn(p, r, t, min_precision) for p, r, t in zip(precision, recall, thresholds)]
     recall = paddle.stack([r[0] for r in res])
     thresholds = paddle.stack([r[1] for r in res])
     return recall, thresholds
@@ -411,21 +375,13 @@ def multilabel_recall_at_fixed_precision(
 
     """
     if validate_args:
-        _multilabel_recall_at_fixed_precision_arg_validation(
-            num_labels, min_precision, thresholds, ignore_index
-        )
-        _multilabel_precision_recall_curve_tensor_validation(
-            preds, target, num_labels, ignore_index
-        )
+        _multilabel_recall_at_fixed_precision_arg_validation(num_labels, min_precision, thresholds, ignore_index)
+        _multilabel_precision_recall_curve_tensor_validation(preds, target, num_labels, ignore_index)
     preds, target, thresholds = _multilabel_precision_recall_curve_format(
         preds, target, num_labels, thresholds, ignore_index
     )
-    state = _multilabel_precision_recall_curve_update(
-        preds, target, num_labels, thresholds
-    )
-    return _multilabel_recall_at_fixed_precision_arg_compute(
-        state, num_labels, thresholds, ignore_index, min_precision
-    )
+    state = _multilabel_precision_recall_curve_update(preds, target, num_labels, thresholds)
+    return _multilabel_recall_at_fixed_precision_arg_compute(state, num_labels, thresholds, ignore_index, min_precision)
 
 
 def recall_at_fixed_precision(
@@ -454,14 +410,10 @@ def recall_at_fixed_precision(
     """
     task = ClassificationTask.from_str(task)
     if task == ClassificationTask.BINARY:
-        return binary_recall_at_fixed_precision(
-            preds, target, min_precision, thresholds, ignore_index, validate_args
-        )
+        return binary_recall_at_fixed_precision(preds, target, min_precision, thresholds, ignore_index, validate_args)
     if task == ClassificationTask.MULTICLASS:
         if not isinstance(num_classes, int):
-            raise ValueError(
-                f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-            )
+            raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
         return multiclass_recall_at_fixed_precision(
             preds,
             target,
@@ -473,9 +425,7 @@ def recall_at_fixed_precision(
         )
     if task == ClassificationTask.MULTILABEL:
         if not isinstance(num_labels, int):
-            raise ValueError(
-                f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-            )
+            raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
         return multilabel_recall_at_fixed_precision(
             preds,
             target,

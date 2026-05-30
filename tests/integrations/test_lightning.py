@@ -6,16 +6,12 @@ from lightning_utilities import module_available
 if module_available("lightning"):
     pass
 from integrations.lightning.boring_model import BoringModel
-
 from paddlemetrics import MetricCollection
 from paddlemetrics.aggregation import SumMetric
-from paddlemetrics.classification import (BinaryAccuracy,
-                                         BinaryAveragePrecision,
-                                         MulticlassAccuracy)
+from paddlemetrics.classification import BinaryAccuracy, BinaryAveragePrecision, MulticlassAccuracy
 from paddlemetrics.regression import MeanAbsoluteError, MeanSquaredError
-from paddlemetrics.utils.prints import rank_zero_only
-from paddlemetrics.wrappers import (ClasswiseWrapper, MinMaxMetric,
-                                   MultitaskWrapper)
+from paddlemetrics.wrappers import ClasswiseWrapper, MinMaxMetric, MultitaskWrapper
+
 
 class DiffMetric(SumMetric):
     """DiffMetric inherited from `SumMetric` by overriding its `update` method."""
@@ -48,6 +44,8 @@ def test_metric_lightning(tmpdir):
 
     model = TestModel()
     model.val_dataloader = None
+
+
 def test_metrics_reset(tmpdir):
     """Tests that metrics are reset correctly after the end of the train/val/test epoch.
 
@@ -73,9 +71,7 @@ def test_metrics_reset(tmpdir):
         def _step(self, stage, batch):
             labels = (batch.detach().sum(1) > 0).float()
             logits = self.forward(batch)
-            loss = paddle.nn.functional.binary_cross_entropy_with_logits(
-                logit=logits, label=labels.unsqueeze(1)
-            )
+            loss = paddle.nn.functional.binary_cross_entropy_with_logits(logit=logits, label=labels.unsqueeze(1))
             probs = paddle.sigmoid(logits.detach())
             self.log(f"loss/{stage}", loss)
             acc = self._modules[f"acc_{stage}"]
@@ -122,6 +118,8 @@ def test_metrics_reset(tmpdir):
         ap.reset.reset_mock()
 
     model = TestModel()
+
+
 def test_metric_lightning_log(tmpdir):
     """Test logging a metric object and that the metric state gets reset after each epoch."""
 
@@ -226,6 +224,7 @@ def test_metric_lightning_log(tmpdir):
 
     model = TestModel()
 
+
 def test_metric_collection_lightning_log(tmpdir):
     """Test that MetricCollection works with Lightning modules."""
 
@@ -249,23 +248,19 @@ def test_metric_collection_lightning_log(tmpdir):
             self.log_dict({f"{k}_epoch": v for k, v in metric_vals.items()})
 
     model = TestModel()
+
+
 def test_task_wrapper_lightning_logging(tmpdir):
     """Test that MultiTaskWrapper works with Lightning modules."""
 
     class TestModel(BoringModel):
         def __init__(self) -> None:
             super().__init__()
-            self.multitask = MultitaskWrapper(
-                {"classification": BinaryAccuracy(), "regression": MeanSquaredError()}
-            )
+            self.multitask = MultitaskWrapper({"classification": BinaryAccuracy(), "regression": MeanSquaredError()})
             self.multitask_collection = MultitaskWrapper(
                 {
-                    "classification": MetricCollection(
-                        [BinaryAccuracy(), BinaryAveragePrecision()]
-                    ),
-                    "regression": MetricCollection(
-                        [MeanSquaredError(), MeanAbsoluteError()]
-                    ),
+                    "classification": MetricCollection([BinaryAccuracy(), BinaryAveragePrecision()]),
+                    "regression": MetricCollection([MeanSquaredError(), MeanAbsoluteError()]),
                 }
             )
             self.accuracy = BinaryAccuracy()
@@ -291,6 +286,8 @@ def test_task_wrapper_lightning_logging(tmpdir):
             return self.step(batch)
 
     model = TestModel()
+
+
 def test_scriptable(tmpdir):
     """Test that lightning modules can still be scripted even if metrics cannot."""
 
@@ -308,8 +305,11 @@ def test_scriptable(tmpdir):
             return self.step(x)
 
     model = TestModel()
+
+
 def test_dtype_in_pl_module_transfer(tmpdir):
     """Test that metric states don't change dtype when .half() or .float() is called on the LightningModule."""
+
 
 def test_collection_classwise_lightning_integration(tmpdir):
     """Check the integration of ClasswiseWrapper, MetricCollection and LightningModule.
@@ -323,12 +323,8 @@ def test_collection_classwise_lightning_integration(tmpdir):
             super().__init__()
             self.train_metrics = MetricCollection(
                 {
-                    "macro_accuracy": MulticlassAccuracy(
-                        num_classes=5, average="macro"
-                    ),
-                    "classwise_accuracy": ClasswiseWrapper(
-                        MulticlassAccuracy(num_classes=5, average=None)
-                    ),
+                    "macro_accuracy": MulticlassAccuracy(num_classes=5, average="macro"),
+                    "classwise_accuracy": ClasswiseWrapper(MulticlassAccuracy(num_classes=5, average=None)),
                 },
                 prefix="train_",
             )
@@ -352,6 +348,8 @@ def test_collection_classwise_lightning_integration(tmpdir):
             self.val_metrics.reset()
 
     model = TestModel()
+
+
 def test_collection_minmax_lightning_integration(tmpdir):
     """Check the integration of MinMaxWrapper, MetricCollection and LightningModule.
 
@@ -364,12 +362,8 @@ def test_collection_minmax_lightning_integration(tmpdir):
             super().__init__()
             self.train_metrics = MetricCollection(
                 {
-                    "macro_accuracy": MinMaxMetric(
-                        MulticlassAccuracy(num_classes=5, average="macro")
-                    ),
-                    "weighted_accuracy": MinMaxMetric(
-                        MulticlassAccuracy(num_classes=5, average="weighted")
-                    ),
+                    "macro_accuracy": MinMaxMetric(MulticlassAccuracy(num_classes=5, average="macro")),
+                    "weighted_accuracy": MinMaxMetric(MulticlassAccuracy(num_classes=5, average="weighted")),
                 },
                 prefix="train_",
             )

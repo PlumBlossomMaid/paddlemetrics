@@ -6,7 +6,8 @@ from paddle import Tensor
 
 from paddlemetrics.functional.regression.symmetric_mape import (
     _symmetric_mean_absolute_percentage_error_compute,
-    _symmetric_mean_absolute_percentage_error_update)
+    _symmetric_mean_absolute_percentage_error_update,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -54,24 +55,18 @@ class SymmetricMeanAbsolutePercentageError(Metric):
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
-        self.add_state(
-            "sum_abs_per_error", default=paddle.tensor(0.0), dist_reduce_fx="sum"
-        )
+        self.add_state("sum_abs_per_error", default=paddle.tensor(0.0), dist_reduce_fx="sum")
         self.add_state("total", default=paddle.tensor(0.0), dist_reduce_fx="sum")
 
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update state with predictions and targets."""
-        sum_abs_per_error, num_obs = _symmetric_mean_absolute_percentage_error_update(
-            preds, target
-        )
+        sum_abs_per_error, num_obs = _symmetric_mean_absolute_percentage_error_update(preds, target)
         self.sum_abs_per_error += sum_abs_per_error
         self.total += num_obs
 
     def compute(self) -> paddle.Tensor:
         """Compute mean absolute percentage error over state."""
-        return _symmetric_mean_absolute_percentage_error_compute(
-            self.sum_abs_per_error, self.total
-        )
+        return _symmetric_mean_absolute_percentage_error_compute(self.sum_abs_per_error, self.total)
 
     def plot(
         self,

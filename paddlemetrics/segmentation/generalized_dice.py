@@ -6,8 +6,10 @@ from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.functional.segmentation.generalized_dice import (
-    _generalized_dice_compute, _generalized_dice_update,
-    _generalized_dice_validate_args)
+    _generalized_dice_compute,
+    _generalized_dice_update,
+    _generalized_dice_validate_args,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -107,12 +109,10 @@ class GeneralizedDiceScore(Metric):
         per_class: bool = False,
         weight_type: Literal["square", "simple", "linear"] = "square",
         input_format: Literal["one-hot", "index", "mixed"] = "one-hot",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
-        _generalized_dice_validate_args(
-            num_classes, include_background, per_class, weight_type, input_format
-        )
+        _generalized_dice_validate_args(num_classes, include_background, per_class, weight_type, input_format)
         self.num_classes = num_classes
         self.include_background = include_background
         self.per_class = per_class
@@ -136,9 +136,7 @@ class GeneralizedDiceScore(Metric):
             self.weight_type,
             self.input_format,
         )
-        self.score += _generalized_dice_compute(
-            numerator, denominator, self.per_class
-        ).sum(dim=0)
+        self.score += _generalized_dice_compute(numerator, denominator, self.per_class).sum(dim=0)
         self.samples += preds.shape[0]
 
     def compute(self) -> paddle.Tensor:

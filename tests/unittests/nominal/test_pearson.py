@@ -3,12 +3,14 @@ import itertools
 import paddle
 import pandas as pd
 import pytest
-from unittests import BATCH_SIZE, NUM_BATCHES, _Input
-from unittests._helpers.testers import MetricTester
 
 from paddlemetrics.functional.nominal.pearson import (
-    pearsons_contingency_coefficient, pearsons_contingency_coefficient_matrix)
+    pearsons_contingency_coefficient,
+    pearsons_contingency_coefficient_matrix,
+)
 from paddlemetrics.nominal.pearson import PearsonsContingencyCoefficient
+from unittests import BATCH_SIZE, NUM_BATCHES, _Input
+from unittests._helpers.testers import MetricTester
 
 NUM_CLASSES = 4
 _input_default = _Input(
@@ -30,18 +32,15 @@ def pearson_matrix_input():
                 low=0,
                 high=NUM_CLASSES,
                 shape=(NUM_BATCHES * BATCH_SIZE, 1),
-                dtype=paddle.float32,
-            ),
+            ).cast(paddle.float32),
             paddle.randint(
                 low=0,
                 high=NUM_CLASSES + 2,
                 shape=(NUM_BATCHES * BATCH_SIZE, 1),
-                dtype=paddle.float32,
-            ),
-            paddle.randint(
-                low=0, high=2, shape=(NUM_BATCHES * BATCH_SIZE, 1), dtype=paddle.float32
-            ),
-        ], axis=-1,
+            ).cast(paddle.float32),
+            paddle.randint(low=0, high=2, shape=(NUM_BATCHES * BATCH_SIZE, 1)).cast(paddle.float32),
+        ],
+        axis=-1,
     )
 
 
@@ -63,9 +62,7 @@ def _reference_pd_pearsons_t_matrix(matrix):
     pearsons_t_matrix_value = paddle.ones(num_variables, num_variables)
     for i, j in itertools.combinations(range(num_variables), 2):
         x, y = matrix[:, i], matrix[:, j]
-        pearsons_t_matrix_value[i, j] = pearsons_t_matrix_value[
-            j, i
-        ] = _reference_pd_pearsons_t(x, y)
+        pearsons_t_matrix_value[i, j] = pearsons_t_matrix_value[j, i] = _reference_pd_pearsons_t(x, y)
     return pearsons_t_matrix_value
 
 

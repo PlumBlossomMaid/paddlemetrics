@@ -5,9 +5,7 @@ import paddle
 from paddlemetrics.utils.checks import _check_retrieval_functional_inputs
 
 
-def retrieval_recall(
-    preds: paddle.Tensor, target: paddle.Tensor, top_k: Optional[int] = None
-) -> paddle.Tensor:
+def retrieval_recall(preds: paddle.Tensor, target: paddle.Tensor, top_k: Optional[int] = None) -> paddle.Tensor:
     """Compute the recall metric for information retrieval.
 
     Recall is the fraction of relevant documents retrieved among all the relevant documents.
@@ -44,9 +42,5 @@ def retrieval_recall(
     if not target.sum():
         return paddle.tensor(0.0, device=preds.place)
     target_filtered = paddle.where(preds > 0, target, paddle.zeros_like(target))
-    relevant = (
-        target_filtered[paddle.argsort(preds, axis=-1, descending=True)][:top_k]
-        .sum()
-        .float()
-    )
+    relevant = target_filtered[paddle.argsort(preds, axis=-1, descending=True)][:top_k].sum().float()
     return relevant / target.sum()

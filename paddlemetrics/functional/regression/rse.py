@@ -1,7 +1,6 @@
 from typing import Union
 
 import paddle
-from paddle import Tensor
 
 from paddlemetrics.functional.regression.r2 import _r2_score_update
 
@@ -32,17 +31,13 @@ def _relative_squared_error_compute(
 
     """
     epsilon = paddle.finfo(sum_squared_error.dtype).eps
-    rse = sum_squared_error / paddle.clamp(
-        sum_squared_obs - sum_obs * sum_obs / num_obs, min=epsilon
-    )
+    rse = sum_squared_error / paddle.clamp(sum_squared_obs - sum_obs * sum_obs / num_obs, min=epsilon)
     if not squared:
         rse = paddle.sqrt(rse)
     return paddle.mean(rse)
 
 
-def relative_squared_error(
-    preds: paddle.Tensor, target: paddle.Tensor, squared: bool = True
-) -> paddle.Tensor:
+def relative_squared_error(preds: paddle.Tensor, target: paddle.Tensor, squared: bool = True) -> paddle.Tensor:
     """Computes the relative squared error (RSE).
 
     .. math:: \\text{RSE} = \\frac{\\sum_i^N(y_i - \\hat{y_i})^2}{\\sum_i^N(y_i - \\overline{y})^2}
@@ -68,6 +63,4 @@ def relative_squared_error(
 
     """
     sum_squared_obs, sum_obs, rss, num_obs = _r2_score_update(preds, target)
-    return _relative_squared_error_compute(
-        sum_squared_obs, sum_obs, rss, num_obs, squared=squared
-    )
+    return _relative_squared_error_compute(sum_squared_obs, sum_obs, rss, num_obs, squared=squared)

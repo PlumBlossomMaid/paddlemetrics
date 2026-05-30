@@ -4,8 +4,7 @@ from typing import Any, List, Optional, Union
 import paddle
 from paddle import Tensor
 
-from paddlemetrics.functional.regression.pearson import (
-    _pearson_corrcoef_compute, _pearson_corrcoef_update)
+from paddlemetrics.functional.regression.pearson import _pearson_corrcoef_compute, _pearson_corrcoef_update
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -153,34 +152,16 @@ class PearsonCorrCoef(Metric):
     def __init__(self, num_outputs: int = 1, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         if not isinstance(num_outputs, int) and num_outputs < 1:
-            raise ValueError(
-                "Expected argument `num_outputs` to be an int larger than 0, but got {num_outputs}"
-            )
+            raise ValueError("Expected argument `num_outputs` to be an int larger than 0, but got {num_outputs}")
         self.num_outputs = num_outputs
-        self.add_state(
-            "mean_x", default=paddle.zeros(self.num_outputs), dist_reduce_fx=None
-        )
-        self.add_state(
-            "mean_y", default=paddle.zeros(self.num_outputs), dist_reduce_fx=None
-        )
-        self.add_state(
-            "max_abs_dev_x", default=paddle.zeros(self.num_outputs), dist_reduce_fx=None
-        )
-        self.add_state(
-            "max_abs_dev_y", default=paddle.zeros(self.num_outputs), dist_reduce_fx=None
-        )
-        self.add_state(
-            "var_x", default=paddle.zeros(self.num_outputs), dist_reduce_fx=None
-        )
-        self.add_state(
-            "var_y", default=paddle.zeros(self.num_outputs), dist_reduce_fx=None
-        )
-        self.add_state(
-            "corr_xy", default=paddle.zeros(self.num_outputs), dist_reduce_fx=None
-        )
-        self.add_state(
-            "n_total", default=paddle.zeros(self.num_outputs), dist_reduce_fx=None
-        )
+        self.add_state("mean_x", default=paddle.zeros(self.num_outputs), dist_reduce_fx=None)
+        self.add_state("mean_y", default=paddle.zeros(self.num_outputs), dist_reduce_fx=None)
+        self.add_state("max_abs_dev_x", default=paddle.zeros(self.num_outputs), dist_reduce_fx=None)
+        self.add_state("max_abs_dev_y", default=paddle.zeros(self.num_outputs), dist_reduce_fx=None)
+        self.add_state("var_x", default=paddle.zeros(self.num_outputs), dist_reduce_fx=None)
+        self.add_state("var_y", default=paddle.zeros(self.num_outputs), dist_reduce_fx=None)
+        self.add_state("corr_xy", default=paddle.zeros(self.num_outputs), dist_reduce_fx=None)
+        self.add_state("n_total", default=paddle.zeros(self.num_outputs), dist_reduce_fx=None)
 
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update state with predictions and targets."""
@@ -209,12 +190,7 @@ class PearsonCorrCoef(Metric):
 
     def compute(self) -> paddle.Tensor:
         """Compute pearson correlation coefficient over state."""
-        if (
-            self.num_outputs == 1
-            and self.mean_x.size > 1
-            or self.num_outputs > 1
-            and self.mean_x.ndim > 1
-        ):
+        if self.num_outputs == 1 and self.mean_x.size > 1 or self.num_outputs > 1 and self.mean_x.ndim > 1:
             (
                 _,
                 _,
@@ -241,9 +217,7 @@ class PearsonCorrCoef(Metric):
             var_y = self.var_y
             corr_xy = self.corr_xy
             n_total = self.n_total
-        return _pearson_corrcoef_compute(
-            max_abs_dev_x, max_abs_dev_y, var_x, var_y, corr_xy, n_total
-        )
+        return _pearson_corrcoef_compute(max_abs_dev_x, max_abs_dev_y, var_x, var_y, corr_xy, n_total)
 
     def plot(
         self,

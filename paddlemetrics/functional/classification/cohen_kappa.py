@@ -1,17 +1,18 @@
 from typing import Optional
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.functional.classification.confusion_matrix import (
-    _binary_confusion_matrix_arg_validation, _binary_confusion_matrix_format,
+    _binary_confusion_matrix_arg_validation,
+    _binary_confusion_matrix_format,
     _binary_confusion_matrix_tensor_validation,
     _binary_confusion_matrix_update,
     _multiclass_confusion_matrix_arg_validation,
     _multiclass_confusion_matrix_format,
     _multiclass_confusion_matrix_tensor_validation,
-    _multiclass_confusion_matrix_update)
+    _multiclass_confusion_matrix_update,
+)
 from paddlemetrics.utils.enums import ClassificationTaskNoMultilabel
 
 
@@ -32,11 +33,7 @@ def _cohen_kappa_reduce(
     elif weights in ("linear", "quadratic"):
         w_mat = paddle.zeros_like(confmat)
         w_mat += paddle.arange(num_classes, dtype=w_mat.dtype, device=w_mat.place)
-        w_mat = (
-            paddle.abs(w_mat - w_mat.T)
-            if weights == "linear"
-            else paddle.pow(w_mat - w_mat.T, 2.0)
-        )
+        w_mat = paddle.abs(w_mat - w_mat.T) if weights == "linear" else paddle.pow(w_mat - w_mat.T, 2.0)
     else:
         raise ValueError(
             f"Received {weights} for argument ``weights`` but should be either None, 'linear' or 'quadratic'"
@@ -60,9 +57,7 @@ def _binary_cohen_kappa_arg_validation(
     _binary_confusion_matrix_arg_validation(threshold, ignore_index, normalize=None)
     allowed_weights = "linear", "quadratic", "none", None
     if weights not in allowed_weights:
-        raise ValueError(
-            f"Expected argument `weight` to be one of {allowed_weights}, but got {weights}."
-        )
+        raise ValueError(f"Expected argument `weight` to be one of {allowed_weights}, but got {weights}.")
 
 
 def binary_cohen_kappa(
@@ -126,9 +121,7 @@ def binary_cohen_kappa(
     if validate_args:
         _binary_cohen_kappa_arg_validation(threshold, ignore_index, weights)
         _binary_confusion_matrix_tensor_validation(preds, target, ignore_index)
-    preds, target = _binary_confusion_matrix_format(
-        preds, target, threshold, ignore_index
-    )
+    preds, target = _binary_confusion_matrix_format(preds, target, threshold, ignore_index)
     confmat = _binary_confusion_matrix_update(preds, target)
     return _cohen_kappa_reduce(confmat, weights)
 
@@ -145,14 +138,10 @@ def _multiclass_cohen_kappa_arg_validation(
     - ``weights`` has to be "linear" | "quadratic" | "none" | None
 
     """
-    _multiclass_confusion_matrix_arg_validation(
-        num_classes, ignore_index, normalize=None
-    )
+    _multiclass_confusion_matrix_arg_validation(num_classes, ignore_index, normalize=None)
     allowed_weights = "linear", "quadratic", "none", None
     if weights not in allowed_weights:
-        raise ValueError(
-            f"Expected argument `weight` to be one of {allowed_weights}, but got {weights}."
-        )
+        raise ValueError(f"Expected argument `weight` to be one of {allowed_weights}, but got {weights}.")
 
 
 def multiclass_cohen_kappa(
@@ -220,9 +209,7 @@ def multiclass_cohen_kappa(
     """
     if validate_args:
         _multiclass_cohen_kappa_arg_validation(num_classes, ignore_index, weights)
-        _multiclass_confusion_matrix_tensor_validation(
-            preds, target, num_classes, ignore_index
-        )
+        _multiclass_confusion_matrix_tensor_validation(preds, target, num_classes, ignore_index)
     preds, target = _multiclass_confusion_matrix_format(preds, target, ignore_index)
     confmat = _multiclass_confusion_matrix_update(preds, target, num_classes)
     return _cohen_kappa_reduce(confmat, weights)
@@ -264,15 +251,9 @@ def cohen_kappa(
     """
     task = ClassificationTaskNoMultilabel.from_str(task)
     if task == ClassificationTaskNoMultilabel.BINARY:
-        return binary_cohen_kappa(
-            preds, target, threshold, weights, ignore_index, validate_args
-        )
+        return binary_cohen_kappa(preds, target, threshold, weights, ignore_index, validate_args)
     if task == ClassificationTaskNoMultilabel.MULTICLASS:
         if not isinstance(num_classes, int):
-            raise ValueError(
-                f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-            )
-        return multiclass_cohen_kappa(
-            preds, target, num_classes, weights, ignore_index, validate_args
-        )
+            raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
+        return multiclass_cohen_kappa(preds, target, num_classes, weights, ignore_index, validate_args)
     raise ValueError(f"Not handled value: {task}")

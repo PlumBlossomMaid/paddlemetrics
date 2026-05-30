@@ -11,21 +11,14 @@ from paddlemetrics.utils.imports import _PYTDC_AVAILABLE
 if _PYTDC_AVAILABLE:
     from tdc.evaluator import range_logAUC
 
-from unittests import NUM_CLASSES
-from unittests._helpers import seed_all
-from unittests._helpers.testers import (MetricTester, inject_ignore_index,
-                                        remove_ignore_index)
-from unittests.classification._inputs import (_binary_cases, _multiclass_cases,
-                                              _multilabel_cases)
-
-from paddlemetrics.classification.logauc import (BinaryLogAUC, LogAUC,
-                                                MulticlassLogAUC,
-                                                MultilabelLogAUC)
-from paddlemetrics.functional.classification.logauc import (binary_logauc,
-                                                           multiclass_logauc,
-                                                           multilabel_logauc)
+from paddlemetrics.classification.logauc import BinaryLogAUC, LogAUC, MulticlassLogAUC, MultilabelLogAUC
+from paddlemetrics.functional.classification.logauc import binary_logauc, multiclass_logauc, multilabel_logauc
 from paddlemetrics.functional.classification.roc import binary_roc
 from paddlemetrics.metric import Metric
+from unittests import NUM_CLASSES
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester, inject_ignore_index, remove_ignore_index
+from unittests.classification._inputs import _binary_cases, _multiclass_cases, _multilabel_cases
 
 seed_all(42)
 
@@ -41,9 +34,7 @@ def _binary_compare_implementation(preds, target, fpr_range, ignore_index=None):
 
 
 @pytest.mark.skipif(not _PYTDC_AVAILABLE, reason="test requires pytdc installed.")
-@pytest.mark.parametrize(
-    "inputs", [_binary_cases[1], _binary_cases[2], _binary_cases[4], _binary_cases[5]]
-)
+@pytest.mark.parametrize("inputs", [_binary_cases[1], _binary_cases[2], _binary_cases[4], _binary_cases[5]])
 class TestBinaryLogAUC(MetricTester):
     """Test class for `BinaryLogAUC` metric."""
 
@@ -59,9 +50,7 @@ class TestBinaryLogAUC(MetricTester):
             preds=preds,
             target=target,
             metric_class=BinaryLogAUC,
-            reference_metric=partial(
-                _binary_compare_implementation, fpr_range=fpr_range
-            ),
+            reference_metric=partial(_binary_compare_implementation, fpr_range=fpr_range),
             metric_args={"fpr_range": fpr_range, "thresholds": None},
         )
 
@@ -103,14 +92,8 @@ class TestBinaryLogAUC(MetricTester):
     def test_binary_logauc_dtype_cpu(self, inputs, dtype):
         """Test dtype support of the metric on CPU."""
         preds, target = inputs
-        if (
-            not True
-            and (preds < 0).any()
-            and dtype == paddle.float16
-        ):
-            pytest.xfail(
-                reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1"
-            )
+        if not True and (preds < 0).any() and dtype == paddle.float16:
+            pytest.xfail(reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1")
         self.run_precision_test_cpu(
             preds=preds,
             target=target,
@@ -151,11 +134,7 @@ class TestBinaryLogAUC(MetricTester):
 
 def _multiclass_compare_implementation(preds, target, fpr_range, average):
     """Multiclass comparison function for logauc."""
-    preds = (
-        preds.permute(0, 2, 1).reshape(-1, NUM_CLASSES).numpy()
-        if preds.ndim == 3
-        else preds.numpy()
-    )
+    preds = preds.permute(0, 2, 1).reshape(-1, NUM_CLASSES).numpy() if preds.ndim == 3 else preds.numpy()
     target = target.flatten().numpy()
     if not ((preds > 0) & (preds < 1)).all():
         preds = softmax(preds, 1)
@@ -194,9 +173,7 @@ class TestMulticlassLogAUC(MetricTester):
             preds=preds,
             target=target,
             metric_class=MulticlassLogAUC,
-            reference_metric=partial(
-                _multiclass_compare_implementation, fpr_range=fpr_range, average=average
-            ),
+            reference_metric=partial(_multiclass_compare_implementation, fpr_range=fpr_range, average=average),
             metric_args={
                 "thresholds": None,
                 "num_classes": NUM_CLASSES,
@@ -214,9 +191,7 @@ class TestMulticlassLogAUC(MetricTester):
             preds=preds,
             target=target,
             metric_functional=multiclass_logauc,
-            reference_metric=partial(
-                _multiclass_compare_implementation, fpr_range=fpr_range, average=average
-            ),
+            reference_metric=partial(_multiclass_compare_implementation, fpr_range=fpr_range, average=average),
             metric_args={
                 "thresholds": None,
                 "num_classes": NUM_CLASSES,
@@ -272,9 +247,7 @@ class TestMulticlassLogAUC(MetricTester):
             preds = preds.softmax(dim=-1)
         for pred, true in zip(preds, target):
             pred = paddle.tensor(np.round(pred.numpy(), 2)) + 1e-06
-            ap1 = multiclass_logauc(
-                pred, true, num_classes=NUM_CLASSES, average="macro", thresholds=None
-            )
+            ap1 = multiclass_logauc(pred, true, num_classes=NUM_CLASSES, average="macro", thresholds=None)
             ap2 = multiclass_logauc(
                 pred,
                 true,
@@ -328,9 +301,7 @@ class TestMultilabelLogAUC(MetricTester):
             preds=preds,
             target=target,
             metric_class=MultilabelLogAUC,
-            reference_metric=partial(
-                _multilabel_compare_implementation, fpr_range=fpr_range, average=average
-            ),
+            reference_metric=partial(_multilabel_compare_implementation, fpr_range=fpr_range, average=average),
             metric_args={
                 "thresholds": None,
                 "num_labels": NUM_CLASSES,
@@ -348,9 +319,7 @@ class TestMultilabelLogAUC(MetricTester):
             preds=preds,
             target=target,
             metric_functional=multilabel_logauc,
-            reference_metric=partial(
-                _multilabel_compare_implementation, fpr_range=fpr_range, average=average
-            ),
+            reference_metric=partial(_multilabel_compare_implementation, fpr_range=fpr_range, average=average),
             metric_args={
                 "thresholds": None,
                 "num_labels": NUM_CLASSES,
@@ -406,9 +375,7 @@ class TestMultilabelLogAUC(MetricTester):
             preds = sigmoid(preds)
         for pred, true in zip(preds, target):
             pred = paddle.tensor(np.round(pred.numpy(), 1)) + 1e-06
-            ap1 = multilabel_logauc(
-                pred, true, num_labels=NUM_CLASSES, average="macro", thresholds=None
-            )
+            ap1 = multilabel_logauc(pred, true, num_labels=NUM_CLASSES, average="macro", thresholds=None)
             ap2 = multilabel_logauc(
                 pred,
                 true,
@@ -427,9 +394,7 @@ class TestMultilabelLogAUC(MetricTester):
         partial(MultilabelLogAUC, num_labels=NUM_CLASSES),
     ],
 )
-@pytest.mark.parametrize(
-    "thresholds", [None, 100, [0.3, 0.5, 0.7, 0.9], paddle.linspace(0, 1, 10)]
-)
+@pytest.mark.parametrize("thresholds", [None, 100, [0.3, 0.5, 0.7, 0.9], paddle.linspace(0, 1, 10)])
 def test_valid_input_thresholds(recwarn, metric, thresholds):
     """Test valid formats of the threshold argument."""
     metric(thresholds=thresholds)

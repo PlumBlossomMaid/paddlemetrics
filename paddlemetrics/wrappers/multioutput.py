@@ -1,14 +1,13 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from copy import deepcopy
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 import paddle
 from paddle import Tensor
-from paddlemetrics.utils.data import apply_to_collection
 
 from paddlemetrics.metric import Metric
+from paddlemetrics.utils.data import apply_to_collection
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
-from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
 from paddlemetrics.wrappers.abstract import WrapperMetric
 
 if not _MATPLOTLIB_AVAILABLE:
@@ -85,9 +84,7 @@ class MultioutputWrapper(WrapperMetric):
         squeeze_outputs: bool = True,
     ) -> None:
         super().__init__()
-        self.metrics = paddle.nn.LayerList(
-            [deepcopy(base_metric) for _ in range(num_outputs)]
-        )
+        self.metrics = paddle.nn.LayerList([deepcopy(base_metric) for _ in range(num_outputs)])
         self.output_dim = output_dim
         self.remove_nans = remove_nans
         self.squeeze_outputs = squeeze_outputs
@@ -101,13 +98,15 @@ class MultioutputWrapper(WrapperMetric):
             selected_args = apply_to_collection(
                 args,
                 Tensor,
-                paddle.index_select, axis=self.output_dim,
+                paddle.index_select,
+                axis=self.output_dim,
                 index=paddle.tensor(i, device=self.place),
             )
             selected_kwargs = apply_to_collection(
                 kwargs,
                 Tensor,
-                paddle.index_select, axis=self.output_dim,
+                paddle.index_select,
+                axis=self.output_dim,
                 index=paddle.tensor(i, device=self.place),
             )
             if self.remove_nans:
@@ -117,21 +116,15 @@ class MultioutputWrapper(WrapperMetric):
                 selected_kwargs = {k: v[~nan_idxs] for k, v in selected_kwargs.items()}
             if self.squeeze_outputs:
                 selected_args = [arg.squeeze(self.output_dim) for arg in selected_args]
-                selected_kwargs = {
-                    k: v.squeeze(self.output_dim) for k, v in selected_kwargs.items()
-                }
+                selected_kwargs = {k: v.squeeze(self.output_dim) for k, v in selected_kwargs.items()}
             args_kwargs_by_output.append((selected_args, selected_kwargs))
         return args_kwargs_by_output
 
     def update(self, *args: Any, **kwargs: Any) -> None:
         """Update each underlying metric with the corresponding output."""
         reshaped_args_kwargs = self._get_args_kwargs_by_output(*args, **kwargs)
-        for metric, (selected_args, selected_kwargs) in zip(
-            self.metrics, reshaped_args_kwargs
-        ):
-            cast(Metric, metric).update(
-                *selected_args, **cast(Mapping, selected_kwargs)
-            )
+        for metric, (selected_args, selected_kwargs) in zip(self.metrics, reshaped_args_kwargs):
+            cast(Metric, metric).update(*selected_args, **cast(Mapping, selected_kwargs))
 
     def compute(self) -> paddle.Tensor:
         """Compute metrics."""

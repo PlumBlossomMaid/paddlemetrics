@@ -1,9 +1,8 @@
 """Import utilities for checking package availability."""
+
 import importlib
 import shutil
 import sys
-from functools import lru_cache
-from typing import Optional
 
 
 def module_available(module_name: str) -> bool:

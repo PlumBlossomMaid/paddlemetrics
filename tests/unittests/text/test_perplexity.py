@@ -2,14 +2,17 @@ from functools import partial
 
 import paddle
 import pytest
-from unittests._helpers.testers import MetricTester
-from unittests.text._inputs import (MASK_INDEX, _logits_inputs_fp32,
-                                    _logits_inputs_fp32_with_mask,
-                                    _logits_inputs_fp64,
-                                    _logits_inputs_fp64_with_mask)
 
 from paddlemetrics.functional.text.perplexity import perplexity
 from paddlemetrics.text.perplexity import Perplexity
+from unittests._helpers.testers import MetricTester
+from unittests.text._inputs import (
+    MASK_INDEX,
+    _logits_inputs_fp32,
+    _logits_inputs_fp32_with_mask,
+    _logits_inputs_fp64,
+    _logits_inputs_fp64_with_mask,
+)
 
 
 def _reference_local_perplexity(preds, target, ignore_index):
@@ -48,9 +51,7 @@ class TestPerplexity(MetricTester):
             preds=preds,
             target=target,
             metric_class=Perplexity,
-            reference_metric=partial(
-                _reference_local_perplexity, ignore_index=ignore_index
-            ),
+            reference_metric=partial(_reference_local_perplexity, ignore_index=ignore_index),
             metric_args={"ignore_index": ignore_index},
         )
 
@@ -60,9 +61,7 @@ class TestPerplexity(MetricTester):
             preds,
             target,
             metric_functional=perplexity,
-            reference_metric=partial(
-                _reference_local_perplexity, ignore_index=ignore_index
-            ),
+            reference_metric=partial(_reference_local_perplexity, ignore_index=ignore_index),
             metric_args={"ignore_index": ignore_index},
         )
 

@@ -1,16 +1,13 @@
 from typing import Union
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.utils.checks import _check_same_shape
 from paddlemetrics.utils.compute import _safe_xlogy
 
 
-def _kld_update(
-    p: paddle.Tensor, q: paddle.Tensor, log_prob: bool
-) -> tuple[paddle.Tensor, int]:
+def _kld_update(p: paddle.Tensor, q: paddle.Tensor, log_prob: bool) -> tuple[paddle.Tensor, int]:
     """Update and returns KL divergence scores for each observation and the total number of observations.
 
     Args:
@@ -22,9 +19,7 @@ def _kld_update(
     """
     _check_same_shape(p, q)
     if p.ndim != 2 or q.ndim != 2:
-        raise ValueError(
-            f"Expected both p and q distribution to be 2D but got {p.ndim} and {q.ndim} respectively"
-        )
+        raise ValueError(f"Expected both p and q distribution to be 2D but got {p.ndim} and {q.ndim} respectively")
     total = p.shape[0]
     if log_prob:
         measures = paddle.sum(p.exp() * (p - q), axis=-1)

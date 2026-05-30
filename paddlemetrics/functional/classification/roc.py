@@ -1,11 +1,11 @@
 from typing import List, Optional, Union
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.functional.classification.precision_recall_curve import (
-    _binary_clf_curve, _binary_precision_recall_curve_arg_validation,
+    _binary_clf_curve,
+    _binary_precision_recall_curve_arg_validation,
     _binary_precision_recall_curve_format,
     _binary_precision_recall_curve_tensor_validation,
     _binary_precision_recall_curve_update,
@@ -16,7 +16,8 @@ from paddlemetrics.functional.classification.precision_recall_curve import (
     _multilabel_precision_recall_curve_arg_validation,
     _multilabel_precision_recall_curve_format,
     _multilabel_precision_recall_curve_tensor_validation,
-    _multilabel_precision_recall_curve_update)
+    _multilabel_precision_recall_curve_update,
+)
 from paddlemetrics.utils import rank_zero_warn
 from paddlemetrics.utils.compute import _safe_divide, interp
 from paddlemetrics.utils.enums import ClassificationTask
@@ -36,14 +37,10 @@ def _binary_roc_compute(
         fpr = _safe_divide(fps, fps + tns).flip(0)
         thres = thresholds.flip(axis=0)
     else:
-        fps, tps, thres = _binary_clf_curve(
-            preds=state[0], target=state[1], pos_label=pos_label
-        )
+        fps, tps, thres = _binary_clf_curve(preds=state[0], target=state[1], pos_label=pos_label)
         tps = paddle.concat([paddle.zeros(1, dtype=tps.dtype, device=tps.place), tps])
         fps = paddle.concat([paddle.zeros(1, dtype=fps.dtype, device=fps.place), fps])
-        thres = paddle.concat(
-            [paddle.ones(1, dtype=thres.dtype, device=thres.place), thres]
-        )
+        thres = paddle.concat([paddle.ones(1, dtype=thres.dtype, device=thres.place), thres])
         if fps[-1] <= 0:
             rank_zero_warn(
                 "No negative samples in targets, false positive value should be meaningless. Returning zero tensor in false positive score",
@@ -137,9 +134,7 @@ def binary_roc(
     if validate_args:
         _binary_precision_recall_curve_arg_validation(thresholds, ignore_index)
         _binary_precision_recall_curve_tensor_validation(preds, target, ignore_index)
-    preds, target, thresholds = _binary_precision_recall_curve_format(
-        preds, target, thresholds, ignore_index
-    )
+    preds, target, thresholds = _binary_precision_recall_curve_format(preds, target, thresholds, ignore_index)
     state = _binary_precision_recall_curve_update(preds, target, thresholds)
     return _binary_roc_compute(state, thresholds)
 
@@ -167,23 +162,16 @@ def _multiclass_roc_compute(
     else:
         fpr_list, tpr_list, thres_list = [], [], []
         for i in range(num_classes):
-            res = _binary_roc_compute(
-                (state[0][:, i], state[1]), thresholds=None, pos_label=i
-            )
+            res = _binary_roc_compute((state[0][:, i], state[1]), thresholds=None, pos_label=i)
             fpr_list.append(res[0])
             tpr_list.append(res[1])
             thres_list.append(res[2])
         tensor_state = False
     if average == "macro":
-        thres = (
-            thres.repeat(num_classes) if tensor_state else paddle.concat(thres_list, axis=0)
-        )
-        thres = (
-            paddle.sort(descending=True, x=thres),
-            paddle.argsort(descending=True, x=thres),
-        ).values
+        thres = thres.repeat(num_classes) if tensor_state else paddle.concat(thres_list, axis=0)
+        thres = paddle.sort(descending=True, x=thres)[0]
         mean_fpr = fpr.flatten() if tensor_state else paddle.concat(fpr_list, axis=0)
-        mean_fpr = (paddle.sort(x=mean_fpr), paddle.argsort(x=mean_fpr)).values
+        mean_fpr = paddle.sort(x=mean_fpr)[0]
         mean_tpr = paddle.zeros_like(mean_fpr)
         for i in range(num_classes):
             mean_tpr += interp(
@@ -309,18 +297,12 @@ def multiclass_roc(
 
     """
     if validate_args:
-        _multiclass_precision_recall_curve_arg_validation(
-            num_classes, thresholds, ignore_index, average
-        )
-        _multiclass_precision_recall_curve_tensor_validation(
-            preds, target, num_classes, ignore_index
-        )
+        _multiclass_precision_recall_curve_arg_validation(num_classes, thresholds, ignore_index, average)
+        _multiclass_precision_recall_curve_tensor_validation(preds, target, num_classes, ignore_index)
     preds, target, thresholds = _multiclass_precision_recall_curve_format(
         preds, target, num_classes, thresholds, ignore_index, average
     )
-    state = _multiclass_precision_recall_curve_update(
-        preds, target, num_classes, thresholds, average
-    )
+    state = _multiclass_precision_recall_curve_update(preds, target, num_classes, thresholds, average)
     return _multiclass_roc_compute(state, num_classes, thresholds, average)
 
 
@@ -463,18 +445,12 @@ def multilabel_roc(
 
     """
     if validate_args:
-        _multilabel_precision_recall_curve_arg_validation(
-            num_labels, thresholds, ignore_index
-        )
-        _multilabel_precision_recall_curve_tensor_validation(
-            preds, target, num_labels, ignore_index
-        )
+        _multilabel_precision_recall_curve_arg_validation(num_labels, thresholds, ignore_index)
+        _multilabel_precision_recall_curve_tensor_validation(preds, target, num_labels, ignore_index)
     preds, target, thresholds = _multilabel_precision_recall_curve_format(
         preds, target, num_labels, thresholds, ignore_index
     )
-    state = _multilabel_precision_recall_curve_update(
-        preds, target, num_labels, thresholds
-    )
+    state = _multilabel_precision_recall_curve_update(preds, target, num_labels, thresholds)
     return _multilabel_roc_compute(state, num_labels, thresholds, ignore_index)
 
 
@@ -554,20 +530,10 @@ def roc(
         return binary_roc(preds, target, thresholds, ignore_index, validate_args)
     if task == ClassificationTask.MULTICLASS:
         if not isinstance(num_classes, int):
-            raise ValueError(
-                f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-            )
-        return multiclass_roc(
-            preds, target, num_classes, thresholds, average, ignore_index, validate_args
-        )
+            raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
+        return multiclass_roc(preds, target, num_classes, thresholds, average, ignore_index, validate_args)
     if task == ClassificationTask.MULTILABEL:
         if not isinstance(num_labels, int):
-            raise ValueError(
-                f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-            )
-        return multilabel_roc(
-            preds, target, num_labels, thresholds, ignore_index, validate_args
-        )
-    raise ValueError(
-        f"Task {task} not supported, expected one of {ClassificationTask}."
-    )
+            raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
+        return multilabel_roc(preds, target, num_labels, thresholds, ignore_index, validate_args)
+    raise ValueError(f"Task {task} not supported, expected one of {ClassificationTask}.")

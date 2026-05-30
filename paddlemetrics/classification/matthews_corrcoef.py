@@ -6,10 +6,11 @@ from typing_extensions import Literal
 
 from paddlemetrics.classification.base import _ClassificationTaskWrapper
 from paddlemetrics.classification.confusion_matrix import (
-    BinaryConfusionMatrix, MulticlassConfusionMatrix,
-    MultilabelConfusionMatrix)
-from paddlemetrics.functional.classification.matthews_corrcoef import \
-    _matthews_corrcoef_reduce
+    BinaryConfusionMatrix,
+    MulticlassConfusionMatrix,
+    MultilabelConfusionMatrix,
+)
+from paddlemetrics.functional.classification.matthews_corrcoef import _matthews_corrcoef_reduce
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.enums import ClassificationTask
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
@@ -418,14 +419,10 @@ class MatthewsCorrCoef(_ClassificationTaskWrapper):
             return BinaryMatthewsCorrCoef(threshold, **kwargs)
         if task == ClassificationTask.MULTICLASS:
             if not isinstance(num_classes, int):
-                raise ValueError(
-                    f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-                )
+                raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
             return MulticlassMatthewsCorrCoef(num_classes, **kwargs)
         if task == ClassificationTask.MULTILABEL:
             if not isinstance(num_labels, int):
-                raise ValueError(
-                    f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-                )
+                raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
             return MultilabelMatthewsCorrCoef(num_labels, threshold, **kwargs)
         raise ValueError(f"Not handled value: {task}")

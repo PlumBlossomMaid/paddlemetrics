@@ -4,12 +4,9 @@ from typing import Any, Optional, Union
 import paddle
 from paddle import Tensor
 
-from paddlemetrics.functional.audio.srmr import (
-    _srmr_arg_validate, speech_reverberation_modulation_energy_ratio)
+from paddlemetrics.functional.audio.srmr import _srmr_arg_validate, speech_reverberation_modulation_energy_ratio
 from paddlemetrics.metric import Metric
-from paddlemetrics.utils.imports import (_GAMMATONE_AVAILABLE,
-                                            _MATPLOTLIB_AVAILABLE,
-                                            _TORCHAUDIO_AVAILABLE)
+from paddlemetrics.utils.imports import _GAMMATONE_AVAILABLE, _MATPLOTLIB_AVAILABLE, _TORCHAUDIO_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
 
 if not all([_GAMMATONE_AVAILABLE, _TORCHAUDIO_AVAILABLE]):
@@ -90,7 +87,7 @@ class SpeechReverberationModulationEnergyRatio(Metric):
         max_cf: Optional[float] = None,
         norm: bool = False,
         fast: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
         if not _TORCHAUDIO_AVAILABLE or not _GAMMATONE_AVAILABLE:

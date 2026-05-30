@@ -75,9 +75,7 @@ class Running(WrapperMetric):
                 f"Expected argument `metric` to be an instance of `paddlemetrics.Metric` but got {base_metric}"
             )
         if not (isinstance(window, int) and window > 0):
-            raise ValueError(
-                f"Expected argument `window` to be a positive integer but got {window}"
-            )
+            raise ValueError(f"Expected argument `window` to be a positive integer but got {window}")
         self.base_metric = base_metric
         self.window = window
         if base_metric.full_state_update is not False:
@@ -116,12 +114,7 @@ class Running(WrapperMetric):
     def compute(self) -> Any:
         """Compute the metric over the running window."""
         for i in range(self.window):
-            self.base_metric._reduce_states(
-                {
-                    key: getattr(self, key + f"_{i}")
-                    for key in self.base_metric._defaults
-                }
-            )
+            self.base_metric._reduce_states({key: getattr(self, key + f"_{i}") for key in self.base_metric._defaults})
         self.base_metric._update_count = self._num_vals_seen
         val = self.base_metric.compute()
         self.base_metric.reset()

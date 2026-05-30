@@ -4,8 +4,7 @@ from typing import Any, Optional, Union
 import paddle
 from paddle import Tensor
 
-from paddlemetrics.functional.text.wil import (_word_info_lost_compute,
-                                              _word_info_lost_update)
+from paddlemetrics.functional.text.wil import _word_info_lost_compute, _word_info_lost_update
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -67,9 +66,7 @@ class WordInfoLost(Metric):
         self.add_state("target_total", paddle.tensor(0.0), dist_reduce_fx="sum")
         self.add_state("preds_total", paddle.tensor(0.0), dist_reduce_fx="sum")
 
-    def update(
-        self, preds: Union[str, list[str]], target: Union[str, list[str]]
-    ) -> None:
+    def update(self, preds: Union[str, list[str]], target: Union[str, list[str]]) -> None:
         """Update state with predictions and targets."""
         errors, target_total, preds_total = _word_info_lost_update(preds, target)
         self.errors += errors

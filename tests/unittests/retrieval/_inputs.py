@@ -2,6 +2,7 @@ from typing import NamedTuple
 
 import paddle
 from paddle import Tensor
+
 from unittests import BATCH_SIZE, EXTRA_DIM, NUM_BATCHES
 
 
@@ -17,9 +18,7 @@ _input_retrieval_scores = _Input(
     target=paddle.randint(low=0, high=2, shape=(NUM_BATCHES, BATCH_SIZE)),
 )
 _input_retrieval_scores_for_adaptive_k = _Input(
-    indexes=paddle.randint(
-        low=0, high=NUM_BATCHES * BATCH_SIZE // 2, shape=(NUM_BATCHES, BATCH_SIZE)
-    ),
+    indexes=paddle.randint(low=0, high=NUM_BATCHES * BATCH_SIZE // 2, shape=(NUM_BATCHES, BATCH_SIZE)),
     preds=paddle.rand(NUM_BATCHES, BATCH_SIZE),
     target=paddle.randint(low=0, high=2, shape=(NUM_BATCHES, BATCH_SIZE)),
 )
@@ -73,7 +72,5 @@ _input_retrieval_scores_mismatching_sizes_func = _Input(
 _input_retrieval_scores_wrong_targets = _Input(
     indexes=paddle.randint(low=0, high=10, shape=(NUM_BATCHES, BATCH_SIZE)),
     preds=paddle.rand(NUM_BATCHES, BATCH_SIZE),
-    target=paddle.randint(
-        low=-(2**31), high=2**31, shape=(NUM_BATCHES, BATCH_SIZE)
-    ),
+    target=paddle.randint(low=-100, high=100, shape=(NUM_BATCHES, BATCH_SIZE)),
 )

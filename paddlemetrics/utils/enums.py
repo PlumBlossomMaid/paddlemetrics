@@ -1,4 +1,5 @@
 """Enum utilities for paddlemetrics."""
+
 import sys
 from enum import Enum
 from typing import Any, Optional
@@ -8,6 +9,7 @@ from typing_extensions import Literal
 if sys.version_info >= (3, 11):
     from enum import StrEnum
 else:
+
     class StrEnum(str, Enum):
         """Backport of StrEnum for Python < 3.11."""
 
@@ -33,9 +35,7 @@ class EnumStr(StrEnum):
         return "Task"
 
     @classmethod
-    def from_str(
-        cls: type["EnumStr"], value: str, source: Literal["key", "value", "any"] = "key"
-    ) -> "EnumStr":
+    def from_str(cls: type["EnumStr"], value: str, source: Literal["key", "value", "any"] = "key") -> "EnumStr":
         """Load from string."""
         try:
             # Try to find by name (key)
@@ -51,9 +51,7 @@ class EnumStr(StrEnum):
             raise ValueError(f"Invalid value: {value}")
         except (KeyError, ValueError):
             allowed = [m.name.lower() for m in cls]
-            raise ValueError(
-                f"Invalid {cls._name()}: expected one of {allowed}, but got {value}."
-            )
+            raise ValueError(f"Invalid {cls._name()}: expected one of {allowed}, but got {value}.")
 
 
 class DataType(EnumStr):

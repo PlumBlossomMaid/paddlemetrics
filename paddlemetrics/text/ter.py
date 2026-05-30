@@ -4,8 +4,7 @@ from typing import Any, List, Optional, Union
 import paddle
 from paddle import Tensor
 
-from paddlemetrics.functional.text.ter import (_ter_compute, _ter_update,
-                                              _TercomTokenizer)
+from paddlemetrics.functional.text.ter import _ter_compute, _ter_update, _TercomTokenizer
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -68,24 +67,14 @@ class TranslationEditRate(Metric):
     ) -> None:
         super().__init__(**kwargs)
         if not isinstance(normalize, bool):
-            raise ValueError(
-                f"Expected argument `normalize` to be of type boolean but got {normalize}."
-            )
+            raise ValueError(f"Expected argument `normalize` to be of type boolean but got {normalize}.")
         if not isinstance(no_punctuation, bool):
-            raise ValueError(
-                f"Expected argument `no_punctuation` to be of type boolean but got {no_punctuation}."
-            )
+            raise ValueError(f"Expected argument `no_punctuation` to be of type boolean but got {no_punctuation}.")
         if not isinstance(lowercase, bool):
-            raise ValueError(
-                f"Expected argument `lowercase` to be of type boolean but got {lowercase}."
-            )
+            raise ValueError(f"Expected argument `lowercase` to be of type boolean but got {lowercase}.")
         if not isinstance(asian_support, bool):
-            raise ValueError(
-                f"Expected argument `asian_support` to be of type boolean but got {asian_support}."
-            )
-        self.tokenizer = _TercomTokenizer(
-            normalize, no_punctuation, lowercase, asian_support
-        )
+            raise ValueError(f"Expected argument `asian_support` to be of type boolean but got {asian_support}.")
+        self.tokenizer = _TercomTokenizer(normalize, no_punctuation, lowercase, asian_support)
         self.return_sentence_level_score = return_sentence_level_score
         self.add_state("total_num_edits", paddle.tensor(0.0), dist_reduce_fx="sum")
         self.add_state("total_tgt_len", paddle.tensor(0.0), dist_reduce_fx="sum")

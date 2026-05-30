@@ -5,9 +5,14 @@ import paddle
 from paddle import Tensor
 
 from paddlemetrics.functional.detection._panoptic_quality_common import (
-    _get_category_id_to_continuous_id, _get_void_color,
-    _panoptic_quality_compute, _panoptic_quality_update, _parse_categories,
-    _prepocess_inputs, _validate_inputs)
+    _get_category_id_to_continuous_id,
+    _get_void_color,
+    _panoptic_quality_compute,
+    _panoptic_quality_update,
+    _parse_categories,
+    _prepocess_inputs,
+    _validate_inputs,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -141,7 +146,7 @@ class PanopticQuality(Metric):
         allow_unknown_preds_category: bool = False,
         return_sq_and_rq: bool = False,
         return_per_class: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
         things, stuffs = _parse_categories(things, stuffs)
@@ -205,17 +210,13 @@ class PanopticQuality(Metric):
             self.void_color,
             self.allow_unknown_preds_category,
         )
-        flatten_target = _prepocess_inputs(
-            self.things, self.stuffs, target, self.void_color
-        )
+        flatten_target = _prepocess_inputs(self.things, self.stuffs, target, self.void_color)
         (
             iou_sum,
             true_positives,
             false_positives,
             false_negatives,
-        ) = _panoptic_quality_update(
-            flatten_preds, flatten_target, self.cat_id_to_continuous_id, self.void_color
-        )
+        ) = _panoptic_quality_update(flatten_preds, flatten_target, self.cat_id_to_continuous_id, self.void_color)
         self.iou_sum += iou_sum
         self.true_positives += true_positives
         self.false_positives += false_positives
@@ -359,7 +360,7 @@ class ModifiedPanopticQuality(Metric):
         things: Collection[int],
         stuffs: Collection[int],
         allow_unknown_preds_category: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
         things, stuffs = _parse_categories(things, stuffs)
@@ -421,9 +422,7 @@ class ModifiedPanopticQuality(Metric):
             self.void_color,
             self.allow_unknown_preds_category,
         )
-        flatten_target = _prepocess_inputs(
-            self.things, self.stuffs, target, self.void_color
-        )
+        flatten_target = _prepocess_inputs(self.things, self.stuffs, target, self.void_color)
         (
             iou_sum,
             true_positives,

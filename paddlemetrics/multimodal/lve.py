@@ -69,9 +69,7 @@ class LipVertexError(Metric):
     vertices_pred_list: List[paddle.Tensor]
     vertices_gt_list: List[paddle.Tensor]
 
-    def __init__(
-        self, mouth_map: List[int], validate_args: bool = True, **kwargs: Any
-    ) -> None:
+    def __init__(self, mouth_map: List[int], validate_args: bool = True, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.mouth_map = mouth_map
         self.validate_args = validate_args
@@ -117,9 +115,7 @@ class LipVertexError(Metric):
         """
         vertices_pred = dim_zero_cat(self.vertices_pred_list)
         vertices_gt = dim_zero_cat(self.vertices_gt_list)
-        return lip_vertex_error(
-            vertices_pred, vertices_gt, self.mouth_map, self.validate_args
-        )
+        return lip_vertex_error(vertices_pred, vertices_gt, self.mouth_map, self.validate_args)
 
     def plot(
         self,

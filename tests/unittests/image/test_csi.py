@@ -3,12 +3,12 @@ from functools import partial
 import paddle
 import pytest
 from sklearn.metrics import jaccard_score
-from unittests import BATCH_SIZE, NUM_BATCHES, _Input
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
 
 from paddlemetrics.functional.regression.csi import critical_success_index
 from paddlemetrics.regression.csi import CriticalSuccessIndex
+from unittests import BATCH_SIZE, NUM_BATCHES, _Input
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
 
 seed_all(42)
 _inputs_1 = _Input(
@@ -21,9 +21,7 @@ _inputs_2 = _Input(
 )
 
 
-def _reference_sklearn_jaccard(
-    preds: paddle.Tensor, target: paddle.Tensor, threshold: float
-):
+def _reference_sklearn_jaccard(preds: paddle.Tensor, target: paddle.Tensor, threshold: float):
     """Calculate reference metric for `CriticalSuccessIndex`."""
     preds, target = preds.numpy(), target.numpy()
     preds = preds >= threshold

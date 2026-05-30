@@ -5,28 +5,26 @@ from unittest import mock
 
 import numpy as np
 import paddle
-from paddle import Tensor
 import pandas as pd
 import pytest
 from fairlearn.metrics import MetricFrame, selection_rate, true_positive_rate
 from scipy.special import expit as sigmoid
-from unittests import THRESHOLD
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
-from unittests._helpers.testers import \
-    _assert_allclose as _core_assert_allclose
-from unittests._helpers.testers import _assert_dtype_support
-from unittests._helpers.testers import \
-    _assert_requires_grad as _core_assert_requires_grad
-from unittests._helpers.testers import _assert_tensor as _core_assert_tensor
-from unittests._helpers.testers import (inject_ignore_index,
-                                        remove_ignore_index_groups)
-from unittests.classification._inputs import _group_cases
 
 from paddlemetrics import Metric
 from paddlemetrics.classification.group_fairness import BinaryFairness
-from paddlemetrics.functional.classification.group_fairness import \
-    binary_fairness
+from paddlemetrics.functional.classification.group_fairness import binary_fairness
+from unittests import THRESHOLD
+from unittests._helpers import seed_all
+from unittests._helpers.testers import (
+    MetricTester,
+    _assert_dtype_support,
+    inject_ignore_index,
+    remove_ignore_index_groups,
+)
+from unittests._helpers.testers import _assert_allclose as _core_assert_allclose
+from unittests._helpers.testers import _assert_requires_grad as _core_assert_requires_grad
+from unittests._helpers.testers import _assert_tensor as _core_assert_tensor
+from unittests.classification._inputs import _group_cases
 
 seed_all(42)
 
@@ -40,12 +38,8 @@ def _reference_fairlearn_binary(preds, target, groups, ignore_index):
         if not ((preds > 0) & (preds < 1)).all():
             preds = sigmoid(preds)
         preds = (preds >= THRESHOLD).astype(np.uint8)
-    target, preds, groups = remove_ignore_index_groups(
-        target, preds, groups, ignore_index
-    )
-    mf = MetricFrame(
-        metrics=metrics, y_true=target, y_pred=preds, sensitive_features=groups
-    )
+    target, preds, groups = remove_ignore_index_groups(target, preds, groups, ignore_index)
+    mf = MetricFrame(metrics=metrics, y_true=target, y_pred=preds, sensitive_features=groups)
     mf_group = mf.by_group
     ratios = mf.ratio()
     return {
@@ -58,9 +52,7 @@ def _reference_fairlearn_binary(preds, target, groups, ignore_index):
     }
 
 
-def _assert_tensor(
-    pl_result: dict[str, paddle.Tensor], key: Optional[str] = None
-) -> None:
+def _assert_tensor(pl_result: dict[str, paddle.Tensor], key: Optional[str] = None) -> None:
     if isinstance(pl_result, dict) and key is None:
         for key, val in pl_result.items():
             assert isinstance(val, paddle.Tensor), f"{key!r} is not a Tensor!"
@@ -76,21 +68,15 @@ def _assert_allclose(
     check_ddp_sorting: bool = False,
 ) -> None:
     if isinstance(pl_result, dict) and key is None:
-        for (pl_key, pl_val), (sk_key, sk_val) in zip(
-            pl_result.items(), sk_result.items()
-        ):
-            assert np.allclose(
-                pl_val.detach().cpu().numpy(), sk_val.numpy(), atol=atol, equal_nan=True
-            ), f"{pl_key} != {sk_key}"
+        for (pl_key, pl_val), (sk_key, sk_val) in zip(pl_result.items(), sk_result.items()):
+            assert np.allclose(pl_val.detach().cpu().numpy(), sk_val.numpy(), atol=atol, equal_nan=True), (
+                f"{pl_key} != {sk_key}"
+            )
     else:
-        _core_assert_allclose(
-            pl_result, sk_result, atol, key, check_ddp_sorting=check_ddp_sorting
-        )
+        _core_assert_allclose(pl_result, sk_result, atol, key, check_ddp_sorting=check_ddp_sorting)
 
 
-def _assert_requires_grad(
-    metric: Metric, pl_result: Any, key: Optional[str] = None
-) -> None:
+def _assert_requires_grad(metric: Metric, pl_result: Any, key: Optional[str] = None) -> None:
     if isinstance(pl_result, dict) and key is None:
         for res in pl_result.values():
             _core_assert_requires_grad(metric, res)
@@ -163,15 +149,11 @@ class BinaryFairnessTester(MetricTester):
         """
         metric_args = metric_args or {}
         functional_metric_args = {
-            k: v
-            for k, v in metric_args.items()
-            if k in inspect.signature(metric_functional).parameters
+            k: v for k, v in metric_args.items() if k in inspect.signature(metric_functional).parameters
         }
         _assert_dtype_support(
             metric_module(**metric_args) if metric_module is not None else None,
-            partial(metric_functional, **functional_metric_args)
-            if metric_functional is not None
-            else None,
+            partial(metric_functional, **functional_metric_args) if metric_functional is not None else None,
             preds,
             target,
             device="cpu",
@@ -204,15 +186,11 @@ class BinaryFairnessTester(MetricTester):
         """
         metric_args = metric_args or {}
         functional_metric_args = {
-            k: v
-            for k, v in metric_args.items()
-            if k in inspect.signature(metric_functional).parameters
+            k: v for k, v in metric_args.items() if k in inspect.signature(metric_functional).parameters
         }
         _assert_dtype_support(
             metric_module(**metric_args) if metric_module is not None else None,
-            partial(metric_functional, **functional_metric_args)
-            if metric_functional is not None
-            else None,
+            partial(metric_functional, **functional_metric_args) if metric_functional is not None else None,
             preds,
             target,
             device="cuda",
@@ -239,9 +217,7 @@ class TestBinaryFairness(BinaryFairnessTester):
             preds=preds,
             target=target,
             metric_class=BinaryFairness,
-            reference_metric=partial(
-                _reference_fairlearn_binary, ignore_index=ignore_index
-            ),
+            reference_metric=partial(_reference_fairlearn_binary, ignore_index=ignore_index),
             metric_args={
                 "threshold": THRESHOLD,
                 "ignore_index": ignore_index,
@@ -262,9 +238,7 @@ class TestBinaryFairness(BinaryFairnessTester):
             preds=preds,
             target=target,
             metric_functional=binary_fairness,
-            reference_metric=partial(
-                _reference_fairlearn_binary, ignore_index=ignore_index
-            ),
+            reference_metric=partial(_reference_fairlearn_binary, ignore_index=ignore_index),
             metric_args={
                 "threshold": THRESHOLD,
                 "ignore_index": ignore_index,
@@ -290,14 +264,8 @@ class TestBinaryFairness(BinaryFairnessTester):
     def test_binary_fairness_half_cpu(self, inputs, dtype):
         """Test class implementation of metric."""
         preds, target, groups = inputs
-        if (
-            not True
-            and (preds < 0).any()
-            and dtype == paddle.float16
-        ):
-            pytest.xfail(
-                reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1"
-            )
+        if not True and (preds < 0).any() and dtype == paddle.float16:
+            pytest.xfail(reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1")
         self.run_precision_test_cpu(
             preds=preds,
             target=target,

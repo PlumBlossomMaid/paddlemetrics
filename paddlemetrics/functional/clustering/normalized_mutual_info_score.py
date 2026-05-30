@@ -2,11 +2,13 @@ from typing import Literal
 
 import paddle
 
-from paddlemetrics.functional.clustering.mutual_info_score import \
-    mutual_info_score
+from paddlemetrics.functional.clustering.mutual_info_score import mutual_info_score
 from paddlemetrics.functional.clustering.utils import (
-    _validate_average_method_arg, calculate_entropy,
-    calculate_generalized_mean, check_cluster_labels)
+    _validate_average_method_arg,
+    calculate_entropy,
+    calculate_generalized_mean,
+    check_cluster_labels,
+)
 
 
 def normalized_mutual_info_score(
@@ -35,9 +37,7 @@ def normalized_mutual_info_score(
     check_cluster_labels(preds, target)
     _validate_average_method_arg(average_method)
     mutual_info = mutual_info_score(preds, target)
-    if paddle.allclose(
-        x=mutual_info, y=paddle.tensor(0.0), atol=paddle.finfo().eps
-    ).item():
+    if paddle.allclose(x=mutual_info, y=paddle.tensor(0.0), atol=paddle.finfo(paddle.float32).eps).item():
         return mutual_info
     normalizer = calculate_generalized_mean(
         paddle.stack([calculate_entropy(preds), calculate_entropy(target)]),

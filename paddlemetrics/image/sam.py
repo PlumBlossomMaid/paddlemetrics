@@ -67,9 +67,7 @@ class SpectralAngleMapper(Metric):
 
     def __init__(
         self,
-        reduction: Optional[
-            Literal["elementwise_mean", "sum", "none"]
-        ] = "elementwise_mean",
+        reduction: Optional[Literal["elementwise_mean", "sum", "none"]] = "elementwise_mean",
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
@@ -106,11 +104,7 @@ class SpectralAngleMapper(Metric):
             preds = dim_zero_cat(self.preds)
             target = dim_zero_cat(self.target)
             return _sam_compute(preds, target, self.reduction)
-        return (
-            self.sum_sam / self.numel
-            if self.reduction == "elementwise_mean"
-            else self.sum_sam
-        )
+        return self.sum_sam / self.numel if self.reduction == "elementwise_mean" else self.sum_sam
 
     def plot(
         self,

@@ -9,12 +9,14 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 import numpy as np
 import paddle
 from paddle import Tensor
-from paddlemetrics.utils.data import apply_to_collection
 
 from paddlemetrics.utils import rank_zero_warn
-from paddlemetrics.utils.imports import (_FASTER_COCO_EVAL_AVAILABLE,
-                                            _PYCOCOTOOLS_AVAILABLE,
-                                            _PYCOCOTOOLS_GREATER_EQUAL_2_0_9)
+from paddlemetrics.utils.data import apply_to_collection
+from paddlemetrics.utils.imports import (
+    _FASTER_COCO_EVAL_AVAILABLE,
+    _PYCOCOTOOLS_AVAILABLE,
+    _PYCOCOTOOLS_GREATER_EQUAL_2_0_9,
+)
 
 if not (_PYCOCOTOOLS_AVAILABLE or _FASTER_COCO_EVAL_AVAILABLE):
     __doctest_skip__ = ["CocoBackend.tm_to_coco", "CocoBackend.coco_to_tm"]
@@ -23,25 +25,20 @@ if not (_PYCOCOTOOLS_AVAILABLE or _FASTER_COCO_EVAL_AVAILABLE):
 def _input_validator(
     preds: Sequence[dict[str, paddle.Tensor]],
     targets: Sequence[dict[str, paddle.Tensor]],
-    iou_type: Union[
-        Literal["bbox", "segm"], tuple[Literal["bbox", "segm"], ...]
-    ] = "bbox",
-    ignore_score: bool = False) -> None:
+    iou_type: Union[Literal["bbox", "segm"], tuple[Literal["bbox", "segm"], ...]] = "bbox",
+    ignore_score: bool = False,
+) -> None:
     """Ensure the correct input format of `preds` and `targets`."""
     if isinstance(iou_type, str):
-        iou_type = (iou_type)
+        iou_type = iou_type
     name_map = {"bbox": "boxes", "segm": "masks"}
     if any(tp not in name_map for tp in iou_type):
         raise Exception(f"IOU type {iou_type} is not supported")
     item_val_name = [name_map[tp] for tp in iou_type]
     if not isinstance(preds, Sequence):
-        raise ValueError(
-            f"Expected argument `preds` to be of type Sequence, but got {preds}"
-        )
+        raise ValueError(f"Expected argument `preds` to be of type Sequence, but got {preds}")
     if not isinstance(targets, Sequence):
-        raise ValueError(
-            f"Expected argument `target` to be of type Sequence, but got {targets}"
-        )
+        raise ValueError(f"Expected argument `target` to be of type Sequence, but got {targets}")
     if len(preds) != len(targets):
         raise ValueError(
             f"Expected argument `preds` and `target` to have the same length, but got {len(preds)} and {len(targets)}"
@@ -55,9 +52,7 @@ def _input_validator(
     for ivn in item_val_name:
         if not all(isinstance(pred[ivn], paddle.Tensor) for pred in preds):
             raise ValueError(f"Expected all {ivn} in `preds` to be of type Tensor")
-    if not ignore_score and not all(
-        isinstance(pred["scores"], paddle.Tensor) for pred in preds
-    ):
+    if not ignore_score and not all(isinstance(pred["scores"], paddle.Tensor) for pred in preds):
         raise ValueError("Expected all scores in `preds` to be of type Tensor")
     if not all(isinstance(pred["labels"], paddle.Tensor) for pred in preds):
         raise ValueError("Expected all labels in `preds` to be of type Tensor")
@@ -76,11 +71,7 @@ def _input_validator(
         return
     for i, item in enumerate(preds):
         for ivn in item_val_name:
-            if (
-                not item[ivn].size(0)
-                == item["labels"].size(0)
-                == item["scores"].size(0)
-            ):
+            if not item[ivn].size(0) == item["labels"].size(0) == item["scores"].size(0):
                 raise ValueError(
                     f"Input '{ivn}', labels and scores of sample {i} in predictions have a different length (expected {item[ivn].size(0)} labels and scores, got {item['labels'].size(0)} labels and {item['scores'].size(0)})"
                 )
@@ -94,14 +85,12 @@ def _fix_empty_tensors(boxes: paddle.Tensor) -> paddle.Tensor:
 
 
 def _validate_iou_type_arg(
-    iou_type: Union[
-        Literal["bbox", "segm"], tuple[Literal["bbox", "segm"], ...]
-    ] = "bbox"
+    iou_type: Union[Literal["bbox", "segm"], tuple[Literal["bbox", "segm"], ...]] = "bbox",
 ) -> tuple[Literal["bbox", "segm"], ...]:
     """Validate that iou type argument is correct."""
     allowed_iou_types = "segm", "bbox"
     if isinstance(iou_type, str):
-        iou_type = (iou_type)
+        iou_type = iou_type
     if any(tp not in allowed_iou_types for tp in iou_type):
         raise ValueError(
             f"Expected argument `iou_type` to be one of {allowed_iou_types} or a tuple of, but got {iou_type}"
@@ -109,9 +98,7 @@ def _validate_iou_type_arg(
     return iou_type
 
 
-def _load_coco_backend_tools(
-    backend: Literal["pycocotools", "faster_coco_eval"]
-) -> tuple[object, object, ModuleType]:
+def _load_coco_backend_tools(backend: Literal["pycocotools", "faster_coco_eval"]) -> tuple[object, object, ModuleType]:
     """Load the backend tools for the given backend."""
     if backend == "pycocotools":
         if not _PYCOCOTOOLS_AVAILABLE:
@@ -185,18 +172,13 @@ class CocoBackend:
         detection_box: List[paddle.Tensor],
         detection_mask: List[paddle.Tensor],
         detection_scores: List[paddle.Tensor],
-        iou_type: Union[
-            Literal["bbox", "segm"], tuple[Literal["bbox", "segm"], ...]
-        ] = ("bbox"),
-        average: Literal["macro", "micro"] = "micro") -> tuple[object, object]:
+        iou_type: Union[Literal["bbox", "segm"], tuple[Literal["bbox", "segm"], ...]] = ("bbox"),
+        average: Literal["macro", "micro"] = "micro",
+    ) -> tuple[object, object]:
         """Returns the coco datasets for the target and the predictions."""
         if average == "micro":
-            groundtruth_labels = apply_to_collection(
-                groundtruth_labels, Tensor, lambda x: paddle.zeros_like(x)
-            )
-            detection_labels = apply_to_collection(
-                detection_labels, Tensor, lambda x: paddle.zeros_like(x)
-            )
+            groundtruth_labels = apply_to_collection(groundtruth_labels, Tensor, lambda x: paddle.zeros_like(x))
+            detection_labels = apply_to_collection(detection_labels, Tensor, lambda x: paddle.zeros_like(x))
         coco_target, coco_preds = self.coco(), self.coco()
         all_labels = (
             paddle.concat(detection_labels + groundtruth_labels).unique().cpu().tolist()
@@ -211,7 +193,8 @@ class CocoBackend:
             area=groundtruth_area,
             iou_type=iou_type,
             all_labels=all_labels,
-            average=average)
+            average=average,
+        )
         coco_preds.dataset = self._get_coco_format(
             labels=detection_labels,
             boxes=detection_box if len(detection_box) > 0 else None,
@@ -219,7 +202,8 @@ class CocoBackend:
             scores=detection_scores,
             iou_type=iou_type,
             all_labels=all_labels,
-            average=average)
+            average=average,
+        )
         with contextlib.redirect_stdout(io.StringIO()):
             coco_target.createIndex()
             coco_preds.createIndex()
@@ -249,10 +233,9 @@ class CocoBackend:
     def coco_to_tm(
         coco_preds: str,
         coco_target: str,
-        iou_type: Union[
-            Literal["bbox", "segm"], tuple[Literal["bbox", "segm"], ...]
-        ] = ("bbox"),
-        backend: Literal["pycocotools", "faster_coco_eval"] = "pycocotools") -> tuple[list[dict[str, paddle.Tensor]], list[dict[str, paddle.Tensor]]]:
+        iou_type: Union[Literal["bbox", "segm"], tuple[Literal["bbox", "segm"], ...]] = ("bbox"),
+        backend: Literal["pycocotools", "faster_coco_eval"] = "pycocotools",
+    ) -> tuple[list[dict[str, paddle.Tensor]], list[dict[str, paddle.Tensor]]]:
         """Utility function for converting .json coco format files to the input format of the mAP metric.
 
         The function accepts a file for the predictions and a file for the target in coco format and converts them to
@@ -330,13 +313,9 @@ class CocoBackend:
                 "labels": paddle.tensor(preds[key]["labels"], dtype=paddle.int32),
             }
             if "bbox" in iou_type:
-                bp["boxes"] = paddle.tensor(
-                    np.array(preds[key]["boxes"]), dtype=paddle.float32
-                )
+                bp["boxes"] = paddle.tensor(np.array(preds[key]["boxes"]), dtype=paddle.float32)
             if "segm" in iou_type:
-                bp["masks"] = paddle.tensor(
-                    np.array(preds[key]["masks"]), dtype=paddle.uint8
-                )
+                bp["masks"] = paddle.tensor(np.array(preds[key]["masks"]), dtype=paddle.uint8)
             batched_preds.append(bp)
             bt = {
                 "labels": paddle.tensor(target[key]["labels"], dtype=paddle.int32),
@@ -346,9 +325,7 @@ class CocoBackend:
             if "bbox" in iou_type:
                 bt["boxes"] = paddle.tensor(target[key]["boxes"], dtype=paddle.float32)
             if "segm" in iou_type:
-                bt["masks"] = paddle.tensor(
-                    np.array(target[key]["masks"]), dtype=paddle.uint8
-                )
+                bt["masks"] = paddle.tensor(np.array(target[key]["masks"]), dtype=paddle.uint8)
             batched_target.append(bt)
         return batched_preds, batched_target
 
@@ -364,10 +341,9 @@ class CocoBackend:
         detection_mask: List[paddle.Tensor],
         detection_scores: List[paddle.Tensor],
         name: str = "tm_map_input",
-        iou_type: Union[
-            Literal["bbox", "segm"], tuple[Literal["bbox", "segm"], ...]
-        ] = ("bbox"),
-        average: Literal["macro", "micro"] = "micro") -> None:
+        iou_type: Union[Literal["bbox", "segm"], tuple[Literal["bbox", "segm"], ...]] = ("bbox"),
+        average: Literal["macro", "micro"] = "micro",
+    ) -> None:
         """Utility function for converting the input for mAP metric to coco format and saving it to a json file.
 
         This function should be used after calling `.update(...)` or `.forward(...)` on all data that should be written
@@ -422,7 +398,8 @@ class CocoBackend:
             area=groundtruth_area,
             all_labels=all_labels,
             iou_type=iou_type,
-            average=average)
+            average=average,
+        )
         preds_dataset = self._get_coco_format(
             labels=detection_labels,
             boxes=detection_box if len(detection_box) > 0 else None,
@@ -430,19 +407,16 @@ class CocoBackend:
             scores=detection_scores,
             all_labels=all_labels,
             iou_type=iou_type,
-            average=average)
+            average=average,
+        )
         if "segm" in iou_type:
             preds_dataset["annotations"] = apply_to_collection(
-                preds_dataset["annotations"],
-                dtype=bytes,
-                function=lambda x: x.decode("utf-8"))
-            preds_dataset["annotations"] = apply_to_collection(
-                preds_dataset["annotations"],
-                dtype=(np.uint32, np.uint64),
-                function=lambda x: int(x))
-            target_dataset = apply_to_collection(
-                target_dataset, dtype=bytes, function=lambda x: x.decode("utf-8")
+                preds_dataset["annotations"], dtype=bytes, function=lambda x: x.decode("utf-8")
             )
+            preds_dataset["annotations"] = apply_to_collection(
+                preds_dataset["annotations"], dtype=(np.uint32, np.uint64), function=lambda x: int(x)
+            )
+            target_dataset = apply_to_collection(target_dataset, dtype=bytes, function=lambda x: x.decode("utf-8"))
             target_dataset = apply_to_collection(
                 target_dataset, dtype=(np.uint32, np.uint64), function=lambda x: int(x)
             )
@@ -462,10 +436,9 @@ class CocoBackend:
         scores: Optional[List[paddle.Tensor]] = None,
         crowds: Optional[List[paddle.Tensor]] = None,
         area: Optional[List[paddle.Tensor]] = None,
-        iou_type: Union[
-            Literal["bbox", "segm"], tuple[Literal["bbox", "segm"], ...]
-        ] = ("bbox"),
-        average: Literal["macro", "micro"] = "micro") -> dict:
+        iou_type: Union[Literal["bbox", "segm"], tuple[Literal["bbox", "segm"], ...]] = ("bbox"),
+        average: Literal["macro", "micro"] = "micro",
+    ) -> dict:
         """Transforms and returns all cached targets or predictions in COCO format.
 
         Format is defined at
@@ -486,9 +459,7 @@ class CocoBackend:
             image_labels = image_labels.cpu().tolist()
             images.append({"id": image_id})
             if "segm" in iou_type and len(image_masks) > 0:
-                images[-1]["height"], images[-1]["width"] = (
-                    image_masks[0][0][0],
-                    image_masks[0][0][1])
+                images[-1]["height"], images[-1]["width"] = (image_masks[0][0][0], image_masks[0][0][1])
             for k, image_label in enumerate(image_labels):
                 if boxes is not None:
                     image_box = image_boxes[k]
@@ -508,11 +479,7 @@ class CocoBackend:
                 if area is not None and area[image_id][k].cpu().tolist() > 0:
                     area_stat = area[image_id][k].cpu().tolist()
                 else:
-                    area_stat = (
-                        self.mask_utils.area(image_mask)
-                        if "segm" in iou_type
-                        else image_box[2] * image_box[3]
-                    )
+                    area_stat = self.mask_utils.area(image_mask) if "segm" in iou_type else image_box[2] * image_box[3]
                     if len(iou_type) > 1:
                         area_stat_box = image_box[2] * image_box[3]
                         area_stat_mask = self.mask_utils.area(image_mask)
@@ -521,9 +488,7 @@ class CocoBackend:
                     "image_id": image_id,
                     "area": area_stat,
                     "category_id": image_label,
-                    "iscrowd": crowds[image_id][k].cpu().tolist()
-                    if crowds is not None
-                    else 0,
+                    "iscrowd": crowds[image_id][k].cpu().tolist() if crowds is not None else 0,
                 }
                 if area_stat_box is not None:
                     annotation["area_bbox"] = area_stat_box
@@ -541,11 +506,7 @@ class CocoBackend:
                     annotation["score"] = score
                 annotations.append(annotation)
                 annotation_id += 1
-        classes = (
-            [{"id": i, "name": str(i)} for i in all_labels]
-            if average != "micro"
-            else [{"id": 0, "name": "0"}]
-        )
+        classes = [{"id": i, "name": str(i)} for i in all_labels] if average != "micro" else [{"id": 0, "name": "0"}]
         result = {"images": images, "annotations": annotations, "categories": classes}
         if _PYCOCOTOOLS_GREATER_EQUAL_2_0_9:
             result["info"] = {
@@ -557,7 +518,8 @@ class CocoBackend:
 def _warning_on_too_many_detections(limit: int) -> None:
     rank_zero_warn(
         f"Encountered more than {limit} detections in a single image. This means that certain detections with the lowest scores will be ignored, that may have an undesirable impact on performance. Please consider adjusting the `max_detection_threshold` to suit your use case. To disable this warning, set attribute class `warn_on_many_detections=False`, after initializing the metric.",
-        UserWarning)
+        UserWarning,
+    )
 
 
 def _get_safe_item_values(
@@ -566,7 +528,8 @@ def _get_safe_item_values(
     max_detection_thresholds: List[int],
     coco_backend: CocoBackend,
     item: dict[str, Any],
-    warn: bool = False) -> tuple[Optional[paddle.Tensor], Optional[tuple]]:
+    warn: bool = False,
+) -> tuple[Optional[paddle.Tensor], Optional[tuple]]:
     """Convert and return the boxes or masks from the item depending on the iou_type.
 
     Args:
@@ -602,9 +565,9 @@ def _get_safe_item_values(
         boxes = _fix_empty_tensors(item["boxes"])
         if boxes.size > 0:
             pass  # TODO: fix removed code block
-def _get_classes(
-    detection_labels: List[paddle.Tensor], groundtruth_labels: List[paddle.Tensor]
-) -> List[int]:
+
+
+def _get_classes(detection_labels: List[paddle.Tensor], groundtruth_labels: List[paddle.Tensor]) -> List[int]:
     if len(detection_labels) > 0 or len(groundtruth_labels) > 0:
         return paddle.concat(detection_labels + groundtruth_labels).unique().cpu().tolist()
     return []
@@ -627,7 +590,8 @@ def _calculate_map_with_coco(
     rec_thresholds: List[float],
     max_detection_thresholds: List[int],
     class_metrics: bool,
-    extended_summary: bool) -> Dict[str, paddle.Tensor]:
+    extended_summary: bool,
+) -> Dict[str, paddle.Tensor]:
     coco_preds, coco_target = coco_backend._get_coco_datasets(
         groundtruth_labels,
         groundtruth_box,
@@ -639,7 +603,8 @@ def _calculate_map_with_coco(
         detection_mask,
         detection_scores,
         iou_type,
-        average=average)
+        average=average,
+    )
     result_dict = {}
     with contextlib.redirect_stdout(io.StringIO()):
         for i_type in iou_type:
@@ -650,14 +615,11 @@ def _calculate_map_with_coco(
             if len(coco_preds.imgs) == 0 or len(coco_target.imgs) == 0:
                 result_dict.update(
                     coco_backend._coco_stats_to_tensor_dict(
-                        12 * [-1.0],
-                        prefix=prefix,
-                        max_detection_thresholds=max_detection_thresholds)
+                        12 * [-1.0], prefix=prefix, max_detection_thresholds=max_detection_thresholds
+                    )
                 )
             else:
-                coco_eval = coco_backend.cocoeval(
-                    coco_target, coco_preds, iouType=i_type
-                )
+                coco_eval = coco_backend.cocoeval(coco_target, coco_preds, iouType=i_type)
                 coco_eval.params.iouThrs = np.array(iou_thresholds, dtype=np.float64)
                 coco_eval.params.recThrs = np.array(rec_thresholds, dtype=np.float64)
                 coco_eval.params.maxDets = max_detection_thresholds
@@ -667,20 +629,16 @@ def _calculate_map_with_coco(
                 stats = coco_eval.stats
                 result_dict.update(
                     coco_backend._coco_stats_to_tensor_dict(
-                        stats,
-                        prefix=prefix,
-                        max_detection_thresholds=max_detection_thresholds)
+                        stats, prefix=prefix, max_detection_thresholds=max_detection_thresholds
+                    )
                 )
                 summary = {}
                 if extended_summary:
                     summary = {
                         f"{prefix}ious": apply_to_collection(
-                            coco_eval.ious,
-                            np.ndarray,
-                            lambda x: paddle.tensor(x, dtype=paddle.float32)),
-                        f"{prefix}precision": paddle.tensor(
-                            coco_eval.eval["precision"]
+                            coco_eval.ious, np.ndarray, lambda x: paddle.tensor(x, dtype=paddle.float32)
                         ),
+                        f"{prefix}precision": paddle.tensor(coco_eval.eval["precision"]),
                         f"{prefix}recall": paddle.tensor(coco_eval.eval["recall"]),
                         f"{prefix}scores": paddle.tensor(coco_eval.eval["scores"]),
                     }
@@ -697,22 +655,17 @@ def _calculate_map_with_coco(
                         detection_mask,
                         detection_scores,
                         iou_type,
-                        average="macro")
-                    coco_eval = coco_backend.cocoeval(
-                        coco_target, coco_preds, iouType=i_type
+                        average="macro",
                     )
-                    coco_eval.params.iouThrs = np.array(
-                        iou_thresholds, dtype=np.float64
-                    )
-                    coco_eval.params.recThrs = np.array(
-                        rec_thresholds, dtype=np.float64
-                    )
+                    coco_eval = coco_backend.cocoeval(coco_target, coco_preds, iouType=i_type)
+                    coco_eval.params.iouThrs = np.array(iou_thresholds, dtype=np.float64)
+                    coco_eval.params.recThrs = np.array(rec_thresholds, dtype=np.float64)
                     coco_eval.params.maxDets = max_detection_thresholds
                     map_per_class_list = []
                     mar_per_class_list = []
                     for class_id in _get_classes(
-                        detection_labels=detection_labels,
-                        groundtruth_labels=groundtruth_labels):
+                        detection_labels=detection_labels, groundtruth_labels=groundtruth_labels
+                    ):
                         coco_eval.params.catIds = [class_id]
                         with contextlib.redirect_stdout(io.StringIO()):
                             coco_eval.evaluate()
@@ -721,12 +674,8 @@ def _calculate_map_with_coco(
                             class_stats = coco_eval.stats
                         map_per_class_list.append(paddle.tensor([class_stats[0]]))
                         mar_per_class_list.append(paddle.tensor([class_stats[8]]))
-                    map_per_class_values = paddle.tensor(
-                        map_per_class_list, dtype=paddle.float32
-                    )
-                    mar_per_class_values = paddle.tensor(
-                        mar_per_class_list, dtype=paddle.float32
-                    )
+                    map_per_class_values = paddle.tensor(map_per_class_list, dtype=paddle.float32)
+                    mar_per_class_values = paddle.tensor(mar_per_class_list, dtype=paddle.float32)
                 else:
                     map_per_class_values = paddle.tensor([-1], dtype=paddle.float32)
                     mar_per_class_values = paddle.tensor([-1], dtype=paddle.float32)
@@ -740,10 +689,9 @@ def _calculate_map_with_coco(
     result_dict.update(
         {
             "classes": paddle.tensor(
-                _get_classes(
-                    detection_labels=detection_labels,
-                    groundtruth_labels=groundtruth_labels),
-                dtype=paddle.int32)
+                _get_classes(detection_labels=detection_labels, groundtruth_labels=groundtruth_labels),
+                dtype=paddle.int32,
+            )
         }
     )
     return result_dict

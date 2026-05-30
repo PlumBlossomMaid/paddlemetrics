@@ -41,13 +41,8 @@ def _rmse_sw_update(
         )
     _check_same_shape(preds, target)
     if len(preds.shape) != 4:
-        raise ValueError(
-            f"Expected `preds` and `target` to have BxCxHxW shape. But got {preds.shape}."
-        )
-    if (
-        round(window_size / 2) >= target.shape[2]
-        or round(window_size / 2) >= target.shape[3]
-    ):
+        raise ValueError(f"Expected `preds` and `target` to have BxCxHxW shape. But got {preds.shape}.")
+    if round(window_size / 2) >= target.shape[2] or round(window_size / 2) >= target.shape[3]:
         raise ValueError(
             f"Parameter `round(window_size / 2)` is expected to be smaller than {min(target.shape[2], target.shape[3])} but got {round(window_size / 2)}."
         )
@@ -63,11 +58,7 @@ def _rmse_sw_update(
         rmse_val = _rmse_map[:, :, crop_slide:-crop_slide, crop_slide:-crop_slide]
         rmse_val_sum += rmse_val.sum(0).mean()
     else:
-        rmse_val_sum = (
-            _rmse_map[:, :, crop_slide:-crop_slide, crop_slide:-crop_slide]
-            .sum(0)
-            .mean()
-        )
+        rmse_val_sum = _rmse_map[:, :, crop_slide:-crop_slide, crop_slide:-crop_slide].sum(0).mean()
     if rmse_map is not None:
         rmse_map += _rmse_map.sum(0)
     else:
@@ -128,11 +119,7 @@ def root_mean_squared_error_using_sliding_window(
         ValueError: If ``window_size`` is not a positive integer.
 
     """
-    if (
-        not isinstance(window_size, int)
-        or isinstance(window_size, int)
-        and window_size < 1
-    ):
+    if not isinstance(window_size, int) or isinstance(window_size, int) and window_size < 1:
         raise ValueError("Argument `window_size` is expected to be a positive integer.")
     rmse_val_sum, rmse_map, total_images = _rmse_sw_update(
         preds, target, window_size, rmse_val_sum=None, rmse_map=None, total_images=None

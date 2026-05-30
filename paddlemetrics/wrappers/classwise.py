@@ -111,26 +111,16 @@ class ClasswiseWrapper(WrapperMetric):
     ) -> None:
         super().__init__()
         if not isinstance(metric, Metric):
-            raise ValueError(
-                f"Expected argument `metric` to be an instance of `paddlemetrics.Metric` but got {metric}"
-            )
+            raise ValueError(f"Expected argument `metric` to be an instance of `paddlemetrics.Metric` but got {metric}")
         self.metric = metric
-        if labels is not None and not (
-            isinstance(labels, list) and all(isinstance(lab, str) for lab in labels)
-        ):
-            raise ValueError(
-                f"Expected argument `labels` to either be `None` or a list of strings but got {labels}"
-            )
+        if labels is not None and not (isinstance(labels, list) and all(isinstance(lab, str) for lab in labels)):
+            raise ValueError(f"Expected argument `labels` to either be `None` or a list of strings but got {labels}")
         self.labels = labels
         if prefix is not None and not isinstance(prefix, str):
-            raise ValueError(
-                f"Expected argument `prefix` to either be `None` or a string but got {prefix}"
-            )
+            raise ValueError(f"Expected argument `prefix` to either be `None` or a string but got {prefix}")
         self._prefix = prefix
         if postfix is not None and not isinstance(postfix, str):
-            raise ValueError(
-                f"Expected argument `postfix` to either be `None` or a string but got {postfix}"
-            )
+            raise ValueError(f"Expected argument `postfix` to either be `None` or a string but got {postfix}")
         self._postfix = postfix
         self._update_count = 1
 
@@ -219,11 +209,7 @@ class ClasswiseWrapper(WrapperMetric):
 
     def __getattr__(self, name: str) -> Union[paddle.Tensor, "Module"]:
         """Get attribute from classwise wrapper."""
-        if (
-            name == "metric"
-            or name in self.__dict__
-            and name not in self.metric.__dict__
-        ):
+        if name == "metric" or name in self.__dict__ and name not in self.metric.__dict__:
             return super().__getattr__(name)
         return getattr(self.metric, name)
 

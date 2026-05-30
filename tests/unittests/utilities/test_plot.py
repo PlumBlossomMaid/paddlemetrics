@@ -6,123 +6,163 @@ import matplotlib.pyplot as plt
 import numpy as np
 import paddle
 import pytest
-from unittests._helpers import (_IS_WINDOWS, _TORCH_LESS_THAN_2_1,
-                                _TRANSFORMERS_GREATER_EQUAL_4_54,
-                                _TRANSFORMERS_RANGE_GE_4_50_LT_4_54)
 
 from paddlemetrics import MetricCollection
-from paddlemetrics.aggregation import (MaxMetric, MeanMetric, MinMetric,
-                                      SumMetric)
-from paddlemetrics.audio import (ComplexScaleInvariantSignalNoiseRatio,
-                                ScaleInvariantSignalDistortionRatio,
-                                ScaleInvariantSignalNoiseRatio,
-                                ShortTimeObjectiveIntelligibility,
-                                SignalDistortionRatio, SignalNoiseRatio)
+from paddlemetrics.aggregation import MaxMetric, MeanMetric, MinMetric, SumMetric
+from paddlemetrics.audio import (
+    ComplexScaleInvariantSignalNoiseRatio,
+    ScaleInvariantSignalDistortionRatio,
+    ScaleInvariantSignalNoiseRatio,
+    ShortTimeObjectiveIntelligibility,
+    SignalDistortionRatio,
+    SignalNoiseRatio,
+)
 from paddlemetrics.audio.pesq import PerceptualEvaluationSpeechQuality
 from paddlemetrics.audio.pit import PermutationInvariantTraining
 from paddlemetrics.audio.srmr import SpeechReverberationModulationEnergyRatio
-from paddlemetrics.classification import (BinaryAccuracy, BinaryAUROC,
-                                         BinaryAveragePrecision,
-                                         BinaryCalibrationError,
-                                         BinaryCohenKappa,
-                                         BinaryConfusionMatrix, BinaryEER,
-                                         BinaryF1Score, BinaryFairness,
-                                         BinaryFBetaScore,
-                                         BinaryHammingDistance,
-                                         BinaryHingeLoss, BinaryJaccardIndex,
-                                         BinaryLogAUC, BinaryMatthewsCorrCoef,
-                                         BinaryPrecision,
-                                         BinaryPrecisionRecallCurve,
-                                         BinaryRecall, BinaryROC,
-                                         BinarySpecificity, MulticlassAccuracy,
-                                         MulticlassAUROC,
-                                         MulticlassAveragePrecision,
-                                         MulticlassCalibrationError,
-                                         MulticlassCohenKappa,
-                                         MulticlassConfusionMatrix,
-                                         MulticlassEER, MulticlassExactMatch,
-                                         MulticlassF1Score,
-                                         MulticlassFBetaScore,
-                                         MulticlassHammingDistance,
-                                         MulticlassHingeLoss,
-                                         MulticlassJaccardIndex,
-                                         MulticlassLogAUC,
-                                         MulticlassMatthewsCorrCoef,
-                                         MulticlassPrecision,
-                                         MulticlassPrecisionRecallCurve,
-                                         MulticlassRecall, MulticlassROC,
-                                         MulticlassSpecificity,
-                                         MultilabelAveragePrecision,
-                                         MultilabelConfusionMatrix,
-                                         MultilabelCoverageError,
-                                         MultilabelExactMatch,
-                                         MultilabelF1Score,
-                                         MultilabelFBetaScore,
-                                         MultilabelHammingDistance,
-                                         MultilabelJaccardIndex,
-                                         MultilabelLogAUC,
-                                         MultilabelMatthewsCorrCoef,
-                                         MultilabelPrecision,
-                                         MultilabelPrecisionRecallCurve,
-                                         MultilabelRankingAveragePrecision,
-                                         MultilabelRankingLoss,
-                                         MultilabelRecall, MultilabelROC,
-                                         MultilabelSpecificity)
-from paddlemetrics.clustering import (AdjustedRandScore, CalinskiHarabaszScore,
-                                     DunnIndex, MutualInfoScore,
-                                     NormalizedMutualInfoScore, RandScore)
+from paddlemetrics.classification import (
+    BinaryAccuracy,
+    BinaryAUROC,
+    BinaryAveragePrecision,
+    BinaryCalibrationError,
+    BinaryCohenKappa,
+    BinaryConfusionMatrix,
+    BinaryEER,
+    BinaryF1Score,
+    BinaryFairness,
+    BinaryFBetaScore,
+    BinaryHammingDistance,
+    BinaryHingeLoss,
+    BinaryJaccardIndex,
+    BinaryLogAUC,
+    BinaryMatthewsCorrCoef,
+    BinaryPrecision,
+    BinaryPrecisionRecallCurve,
+    BinaryRecall,
+    BinaryROC,
+    BinarySpecificity,
+    MulticlassAccuracy,
+    MulticlassAUROC,
+    MulticlassAveragePrecision,
+    MulticlassCalibrationError,
+    MulticlassCohenKappa,
+    MulticlassConfusionMatrix,
+    MulticlassEER,
+    MulticlassExactMatch,
+    MulticlassF1Score,
+    MulticlassFBetaScore,
+    MulticlassHammingDistance,
+    MulticlassHingeLoss,
+    MulticlassJaccardIndex,
+    MulticlassLogAUC,
+    MulticlassMatthewsCorrCoef,
+    MulticlassPrecision,
+    MulticlassPrecisionRecallCurve,
+    MulticlassRecall,
+    MulticlassROC,
+    MulticlassSpecificity,
+    MultilabelAveragePrecision,
+    MultilabelConfusionMatrix,
+    MultilabelCoverageError,
+    MultilabelExactMatch,
+    MultilabelF1Score,
+    MultilabelFBetaScore,
+    MultilabelHammingDistance,
+    MultilabelJaccardIndex,
+    MultilabelLogAUC,
+    MultilabelMatthewsCorrCoef,
+    MultilabelPrecision,
+    MultilabelPrecisionRecallCurve,
+    MultilabelRankingAveragePrecision,
+    MultilabelRankingLoss,
+    MultilabelRecall,
+    MultilabelROC,
+    MultilabelSpecificity,
+)
+from paddlemetrics.clustering import (
+    AdjustedRandScore,
+    CalinskiHarabaszScore,
+    DunnIndex,
+    MutualInfoScore,
+    NormalizedMutualInfoScore,
+    RandScore,
+)
 from paddlemetrics.detection import PanopticQuality
-from paddlemetrics.detection.mean_ap import MeanAveragePrecision
 from paddlemetrics.functional.audio import scale_invariant_signal_noise_ratio
-from paddlemetrics.image import (DeepImageStructureAndTextureSimilarity,
-                                ErrorRelativeGlobalDimensionlessSynthesis,
-                                FrechetInceptionDistance, InceptionScore,
-                                KernelInceptionDistance,
-                                LearnedPerceptualImagePatchSimilarity,
-                                MemorizationInformedFrechetInceptionDistance,
-                                MultiScaleStructuralSimilarityIndexMeasure,
-                                PeakSignalNoiseRatio,
-                                RelativeAverageSpectralError,
-                                RootMeanSquaredErrorUsingSlidingWindow,
-                                SpectralAngleMapper, SpectralDistortionIndex,
-                                StructuralSimilarityIndexMeasure,
-                                TotalVariation, UniversalImageQualityIndex)
+from paddlemetrics.image import (
+    ErrorRelativeGlobalDimensionlessSynthesis,
+    MultiScaleStructuralSimilarityIndexMeasure,
+    PeakSignalNoiseRatio,
+    RelativeAverageSpectralError,
+    RootMeanSquaredErrorUsingSlidingWindow,
+    SpectralAngleMapper,
+    SpectralDistortionIndex,
+    StructuralSimilarityIndexMeasure,
+    TotalVariation,
+    UniversalImageQualityIndex,
+)
 from paddlemetrics.multimodal import LipVertexError
-from paddlemetrics.nominal import (CramersV, FleissKappa,
-                                  PearsonsContingencyCoefficient, TheilsU,
-                                  TschuprowsT)
-from paddlemetrics.regression import (ConcordanceCorrCoef,
-                                     ContinuousRankedProbabilityScore,
-                                     CosineSimilarity, ExplainedVariance,
-                                     JensenShannonDivergence,
-                                     KendallRankCorrCoef, KLDivergence,
-                                     LogCoshError, MeanAbsoluteError,
-                                     MeanAbsolutePercentageError,
-                                     MeanSquaredError, MeanSquaredLogError,
-                                     MinkowskiDistance,
-                                     NormalizedRootMeanSquaredError,
-                                     PearsonCorrCoef, R2Score,
-                                     RelativeSquaredError, SpearmanCorrCoef,
-                                     SymmetricMeanAbsolutePercentageError,
-                                     TweedieDevianceScore,
-                                     WeightedMeanAbsolutePercentageError)
-from paddlemetrics.retrieval import (RetrievalFallOut, RetrievalHitRate,
-                                    RetrievalMAP, RetrievalMRR,
-                                    RetrievalNormalizedDCG, RetrievalPrecision,
-                                    RetrievalPrecisionRecallCurve,
-                                    RetrievalRecall,
-                                    RetrievalRecallAtFixedPrecision,
-                                    RetrievalRPrecision)
+from paddlemetrics.nominal import CramersV, FleissKappa, PearsonsContingencyCoefficient, TheilsU, TschuprowsT
+from paddlemetrics.regression import (
+    ConcordanceCorrCoef,
+    ContinuousRankedProbabilityScore,
+    CosineSimilarity,
+    ExplainedVariance,
+    JensenShannonDivergence,
+    KendallRankCorrCoef,
+    KLDivergence,
+    LogCoshError,
+    MeanAbsoluteError,
+    MeanAbsolutePercentageError,
+    MeanSquaredError,
+    MeanSquaredLogError,
+    MinkowskiDistance,
+    NormalizedRootMeanSquaredError,
+    PearsonCorrCoef,
+    R2Score,
+    RelativeSquaredError,
+    SpearmanCorrCoef,
+    SymmetricMeanAbsolutePercentageError,
+    TweedieDevianceScore,
+    WeightedMeanAbsolutePercentageError,
+)
+from paddlemetrics.retrieval import (
+    RetrievalFallOut,
+    RetrievalHitRate,
+    RetrievalMAP,
+    RetrievalMRR,
+    RetrievalNormalizedDCG,
+    RetrievalPrecision,
+    RetrievalPrecisionRecallCurve,
+    RetrievalRecall,
+    RetrievalRecallAtFixedPrecision,
+    RetrievalRPrecision,
+)
 from paddlemetrics.shape import ProcrustesDisparity
-from paddlemetrics.text import (BERTScore, BLEUScore, CharErrorRate,
-                               EditDistance, ExtendedEditDistance, InfoLM,
-                               MatchErrorRate, Perplexity, ROUGEScore,
-                               SacreBLEUScore, SQuAD, TranslationEditRate,
-                               WordErrorRate, WordInfoLost, WordInfoPreserved)
+from paddlemetrics.text import (
+    BLEUScore,
+    CharErrorRate,
+    EditDistance,
+    ExtendedEditDistance,
+    MatchErrorRate,
+    Perplexity,
+    ROUGEScore,
+    SacreBLEUScore,
+    SQuAD,
+    TranslationEditRate,
+    WordErrorRate,
+    WordInfoLost,
+    WordInfoPreserved,
+)
 from paddlemetrics.utils.plot import _get_col_row_split
-from paddlemetrics.wrappers import (BootStrapper, ClasswiseWrapper,
-                                   MetricTracker, MinMaxMetric,
-                                   MultioutputWrapper, Running)
+from paddlemetrics.wrappers import (
+    BootStrapper,
+    ClasswiseWrapper,
+    MetricTracker,
+    MinMaxMetric,
+    MultioutputWrapper,
+    Running,
+)
 
 _rand_input = lambda: paddle.rand(10)
 _binary_randint_input = lambda: paddle.randint(low=0, high=2, shape=(10,))
@@ -145,9 +185,7 @@ _text_input_4 = lambda: [["there is a cat on the mat", "a cat is on the mat"]]
 @pytest.mark.parametrize(
     ("metric_class", "preds", "target"),
     [
-        pytest.param(
-            BinaryAccuracy, _rand_input, _binary_randint_input, id="binary accuracy"
-        ),
+        pytest.param(BinaryAccuracy, _rand_input, _binary_randint_input, id="binary accuracy"),
         pytest.param(
             partial(MulticlassAccuracy, num_classes=3),
             _multiclass_randint_input,
@@ -160,9 +198,7 @@ _text_input_4 = lambda: [["there is a cat on the mat", "a cat is on the mat"]]
             _multiclass_randint_input,
             id="multiclass accuracy and average=None",
         ),
-        pytest.param(
-            BinaryAUROC, _rand_input, _binary_randint_input, id="binary auroc"
-        ),
+        pytest.param(BinaryAUROC, _rand_input, _binary_randint_input, id="binary auroc"),
         pytest.param(
             partial(MulticlassAUROC, num_classes=3),
             _multiclass_randn_input,
@@ -236,9 +272,7 @@ _text_input_4 = lambda: [["there is a cat on the mat", "a cat is on the mat"]]
             lambda: paddle.tensor([[3.0, 2.0], [1.0, 0.0]]),
             id="peak signal noise ratio",
         ),
-        pytest.param(
-            SpectralAngleMapper, _image_input, _image_input, id="spectral angle mapper"
-        ),
+        pytest.param(SpectralAngleMapper, _image_input, _image_input, id="spectral angle mapper"),
         pytest.param(
             StructuralSimilarityIndexMeasure,
             _image_input,
@@ -275,9 +309,7 @@ _text_input_4 = lambda: [["there is a cat on the mat", "a cat is on the mat"]]
             _rand_input,
             id="scale_invariant_signal_distortion_ratio",
         ),
-        pytest.param(
-            SignalNoiseRatio, _rand_input, _rand_input, id="signal_noise_ratio"
-        ),
+        pytest.param(SignalNoiseRatio, _rand_input, _rand_input, id="signal_noise_ratio"),
         pytest.param(
             ComplexScaleInvariantSignalNoiseRatio,
             lambda: paddle.randn(10, 3, 5, 2),
@@ -312,30 +344,11 @@ _text_input_4 = lambda: [["there is a cat on the mat", "a cat is on the mat"]]
             lambda: paddle.randn(3, 2, 5),
             id="permutation_invariant_training",
         ),
-        pytest.param(
-            MeanSquaredError, _rand_input, _rand_input, id="mean squared error"
-        ),
+        pytest.param(MeanSquaredError, _rand_input, _rand_input, id="mean squared error"),
         pytest.param(SumMetric, _rand_input, None, id="sum metric"),
         pytest.param(MeanMetric, _rand_input, None, id="mean metric"),
         pytest.param(MinMetric, _rand_input, None, id="min metric"),
         pytest.param(MaxMetric, _rand_input, None, id="min metric"),
-        pytest.param(
-            MeanAveragePrecision,
-            lambda: [
-                {
-                    "boxes": paddle.tensor([[258.0, 41.0, 606.0, 285.0]]),
-                    "scores": paddle.tensor([0.536]),
-                    "labels": paddle.tensor([0]),
-                }
-            ],
-            lambda: [
-                {
-                    "boxes": paddle.tensor([[214.0, 41.0, 562.0, 285.0]]),
-                    "labels": paddle.tensor([0]),
-                }
-            ],
-            id="mean average precision",
-        ),
         pytest.param(
             partial(PanopticQuality, things={0, 1}, stuffs={6, 7}),
             _panoptic_input,
@@ -402,9 +415,7 @@ _text_input_4 = lambda: [["there is a cat on the mat", "a cat is on the mat"]]
             _multilabel_randint_input,
             id="multilabel specificity",
         ),
-        pytest.param(
-            BinaryLogAUC, _rand_input, _binary_randint_input, id="binary log auc"
-        ),
+        pytest.param(BinaryLogAUC, _rand_input, _binary_randint_input, id="binary log auc"),
         pytest.param(
             partial(MulticlassLogAUC, num_classes=3),
             _multiclass_randn_input,
@@ -435,9 +446,7 @@ _text_input_4 = lambda: [["there is a cat on the mat", "a cat is on the mat"]]
             _multilabel_randint_input,
             id="multilabel ranking loss",
         ),
-        pytest.param(
-            BinaryPrecision, _rand_input, _binary_randint_input, id="binary precision"
-        ),
+        pytest.param(BinaryPrecision, _rand_input, _binary_randint_input, id="binary precision"),
         pytest.param(
             partial(MulticlassPrecision, num_classes=3),
             _multiclass_randn_input,
@@ -450,9 +459,7 @@ _text_input_4 = lambda: [["there is a cat on the mat", "a cat is on the mat"]]
             _multilabel_randint_input,
             id="multilabel precision",
         ),
-        pytest.param(
-            BinaryRecall, _rand_input, _binary_randint_input, id="binary recall"
-        ),
+        pytest.param(BinaryRecall, _rand_input, _binary_randint_input, id="binary recall"),
         pytest.param(
             partial(MulticlassRecall, num_classes=3),
             _multiclass_randn_input,
@@ -496,21 +503,7 @@ _text_input_4 = lambda: [["there is a cat on the mat", "a cat is on the mat"]]
             _image_input,
             id="relative average spectral error",
         ),
-        pytest.param(
-            LearnedPerceptualImagePatchSimilarity,
-            lambda: paddle.rand(10, 3, 100, 100),
-            lambda: paddle.rand(10, 3, 100, 100),
-            id="learned perceptual image patch similarity",
-        ),
-        pytest.param(
-            DeepImageStructureAndTextureSimilarity,
-            _image_input,
-            _image_input,
-            id="deep image structure and texture similarity",
-        ),
-        pytest.param(
-            ConcordanceCorrCoef, _rand_input, _rand_input, id="concordance corr coef"
-        ),
+        pytest.param(ConcordanceCorrCoef, _rand_input, _rand_input, id="concordance corr coef"),
         pytest.param(
             CosineSimilarity,
             _multilabel_rand_input,
@@ -523,12 +516,8 @@ _text_input_4 = lambda: [["there is a cat on the mat", "a cat is on the mat"]]
             _rand_input,
             id="continues ranked probability score",
         ),
-        pytest.param(
-            ExplainedVariance, _rand_input, _rand_input, id="explained variance"
-        ),
-        pytest.param(
-            KendallRankCorrCoef, _rand_input, _rand_input, id="kendall rank corr coef"
-        ),
+        pytest.param(ExplainedVariance, _rand_input, _rand_input, id="explained variance"),
+        pytest.param(KendallRankCorrCoef, _rand_input, _rand_input, id="kendall rank corr coef"),
         pytest.param(
             KLDivergence,
             lambda: paddle.randn(10, 3).softmax(dim=-1),
@@ -542,12 +531,8 @@ _text_input_4 = lambda: [["there is a cat on the mat", "a cat is on the mat"]]
             id="kl divergence",
         ),
         pytest.param(LogCoshError, _rand_input, _rand_input, id="log cosh error"),
-        pytest.param(
-            MeanSquaredLogError, _rand_input, _rand_input, id="mean squared log error"
-        ),
-        pytest.param(
-            MeanAbsoluteError, _rand_input, _rand_input, id="mean absolute error"
-        ),
+        pytest.param(MeanSquaredLogError, _rand_input, _rand_input, id="mean squared log error"),
+        pytest.param(MeanAbsoluteError, _rand_input, _rand_input, id="mean absolute error"),
         pytest.param(
             MeanAbsolutePercentageError,
             _rand_input,
@@ -568,21 +553,15 @@ _text_input_4 = lambda: [["there is a cat on the mat", "a cat is on the mat"]]
         ),
         pytest.param(PearsonCorrCoef, _rand_input, _rand_input, id="pearson corr coef"),
         pytest.param(R2Score, _rand_input, _rand_input, id="r2 score"),
-        pytest.param(
-            RelativeSquaredError, _rand_input, _rand_input, id="relative squared error"
-        ),
-        pytest.param(
-            SpearmanCorrCoef, _rand_input, _rand_input, id="spearman corr coef"
-        ),
+        pytest.param(RelativeSquaredError, _rand_input, _rand_input, id="relative squared error"),
+        pytest.param(SpearmanCorrCoef, _rand_input, _rand_input, id="spearman corr coef"),
         pytest.param(
             SymmetricMeanAbsolutePercentageError,
             _rand_input,
             _rand_input,
             id="symmetric mape",
         ),
-        pytest.param(
-            TweedieDevianceScore, _rand_input, _rand_input, id="tweedie deviance score"
-        ),
+        pytest.param(TweedieDevianceScore, _rand_input, _rand_input, id="tweedie deviance score"),
         pytest.param(
             WeightedMeanAbsolutePercentageError,
             _rand_input,
@@ -596,9 +575,7 @@ _text_input_4 = lambda: [["there is a cat on the mat", "a cat is on the mat"]]
             id="bootstrapper",
         ),
         pytest.param(
-            partial(
-                ClasswiseWrapper, metric=MulticlassAccuracy(num_classes=3, average=None)
-            ),
+            partial(ClasswiseWrapper, metric=MulticlassAccuracy(num_classes=3, average=None)),
             _multiclass_randn_input,
             _multiclass_randint_input,
             id="classwise wrapper",
@@ -651,9 +628,7 @@ _text_input_4 = lambda: [["there is a cat on the mat", "a cat is on the mat"]]
             _multilabel_randint_input,
             id="multilabel hamming distance",
         ),
-        pytest.param(
-            BinaryHingeLoss, _rand_input, _binary_randint_input, id="binary hinge loss"
-        ),
+        pytest.param(BinaryHingeLoss, _rand_input, _binary_randint_input, id="binary hinge loss"),
         pytest.param(
             partial(MulticlassHingeLoss, num_classes=3),
             _multiclass_randn_input,
@@ -678,9 +653,7 @@ _text_input_4 = lambda: [["there is a cat on the mat", "a cat is on the mat"]]
             _multilabel_randint_input,
             id="multilabel jaccard index",
         ),
-        pytest.param(
-            BinaryF1Score, _rand_input, _binary_randint_input, id="binary f1 score"
-        ),
+        pytest.param(BinaryF1Score, _rand_input, _binary_randint_input, id="binary f1 score"),
         pytest.param(
             partial(BinaryFBetaScore, beta=2.0),
             _rand_input,
@@ -711,14 +684,10 @@ _text_input_4 = lambda: [["there is a cat on the mat", "a cat is on the mat"]]
             _multilabel_randint_input,
             id="multilabel fbeta score",
         ),
-        pytest.param(
-            WordInfoPreserved, _text_input_1, _text_input_2, id="word info preserved"
-        ),
+        pytest.param(WordInfoPreserved, _text_input_1, _text_input_2, id="word info preserved"),
         pytest.param(WordInfoLost, _text_input_1, _text_input_2, id="word info lost"),
         pytest.param(WordErrorRate, _text_input_1, _text_input_2, id="word error rate"),
-        pytest.param(
-            CharErrorRate, _text_input_1, _text_input_2, id="character error rate"
-        ),
+        pytest.param(CharErrorRate, _text_input_1, _text_input_2, id="character error rate"),
         pytest.param(
             ExtendedEditDistance,
             _text_input_1,
@@ -726,36 +695,8 @@ _text_input_4 = lambda: [["there is a cat on the mat", "a cat is on the mat"]]
             id="extended edit distance",
         ),
         pytest.param(EditDistance, _text_input_1, _text_input_2, id="edit distance"),
-        pytest.param(
-            MatchErrorRate, _text_input_1, _text_input_2, id="match error rate"
-        ),
+        pytest.param(MatchErrorRate, _text_input_1, _text_input_2, id="match error rate"),
         pytest.param(BLEUScore, _text_input_3, _text_input_4, id="bleu score"),
-        pytest.param(
-            partial(
-                InfoLM,
-                model_name_or_path="google/bert_uncased_L-2_H-128_A-2",
-                idf=False,
-                verbose=False,
-            ),
-            _text_input_1,
-            _text_input_2,
-            id="info lm",
-            marks=[
-                pytest.mark.xfail(
-                    RuntimeError,
-                    condition=_TORCH_LESS_THAN_2_1
-                    and _TRANSFORMERS_RANGE_GE_4_50_LT_4_54,
-                    reason="could be due to torch compatibility issues with transformers",
-                ),
-                pytest.mark.xfail(
-                    ImportError,
-                    condition=_TORCH_LESS_THAN_2_1
-                    and _IS_WINDOWS
-                    and _TRANSFORMERS_GREATER_EQUAL_4_54,
-                    reason="another strange behaviour of transformers on windows",
-                ),
-            ],
-        ),
         pytest.param(
             Perplexity,
             lambda: paddle.rand(2, 8, 5),
@@ -768,9 +709,7 @@ _text_input_4 = lambda: [["there is a cat on the mat", "a cat is on the mat"]]
             lambda: "Is your name John",
             id="rouge score",
         ),
-        pytest.param(
-            SacreBLEUScore, _text_input_3, _text_input_4, id="sacre bleu score"
-        ),
+        pytest.param(SacreBLEUScore, _text_input_3, _text_input_4, id="sacre bleu score"),
         pytest.param(
             SQuAD,
             lambda: [{"prediction_text": "1976", "id": "56e10a3be3433e1400422b22"}],
@@ -788,13 +727,9 @@ _text_input_4 = lambda: [["there is a cat on the mat", "a cat is on the mat"]]
             _text_input_4,
             id="translation edit rate",
         ),
-        pytest.param(
-            MutualInfoScore, _nominal_input, _nominal_input, id="mutual info score"
-        ),
+        pytest.param(MutualInfoScore, _nominal_input, _nominal_input, id="mutual info score"),
         pytest.param(RandScore, _nominal_input, _nominal_input, id="rand score"),
-        pytest.param(
-            AdjustedRandScore, _nominal_input, _nominal_input, id="adjusted rand score"
-        ),
+        pytest.param(AdjustedRandScore, _nominal_input, _nominal_input, id="adjusted rand score"),
         pytest.param(
             CalinskiHarabaszScore,
             lambda: paddle.randn(100, 3),
@@ -807,9 +742,7 @@ _text_input_4 = lambda: [["there is a cat on the mat", "a cat is on the mat"]]
             _nominal_input,
             id="normalized mutual info score",
         ),
-        pytest.param(
-            DunnIndex, lambda: paddle.randn(100, 3), _nominal_input, id="dunn index"
-        ),
+        pytest.param(DunnIndex, lambda: paddle.randn(100, 3), _nominal_input, id="dunn index"),
         pytest.param(
             ProcrustesDisparity,
             lambda: paddle.randn(1, 100, 3),
@@ -825,9 +758,7 @@ _text_input_4 = lambda: [["there is a cat on the mat", "a cat is on the mat"]]
     ],
 )
 @pytest.mark.parametrize("num_vals", [1, 3])
-def test_plot_methods(
-    metric_class: object, preds: Callable, target: Callable, num_vals: int
-):
+def test_plot_methods(metric_class: object, preds: Callable, target: Callable, num_vals: int):
     """Test the plot method of metrics that only output a single tensor scalar."""
     metric = metric_class()
     inputs = (lambda: (preds(),)) if target is None else lambda: (preds(), target())
@@ -840,103 +771,6 @@ def test_plot_methods(
             val = metric(*inputs())
             vals.append(val[0] if isinstance(val, tuple) else val)
         fig, ax = metric.plot(vals)
-    assert isinstance(fig, plt.Figure)
-    assert isinstance(ax, matplotlib.axes.Axes)
-    plt.close(fig)
-
-
-@pytest.mark.parametrize(
-    ("metric_class", "preds", "target", "index_0"),
-    [
-        pytest.param(
-            partial(KernelInceptionDistance, feature=64, subsets=3, subset_size=20),
-            lambda: paddle.randint(
-                low=0, high=200, shape=(30, 3, 299, 299), dtype=paddle.uint8
-            ),
-            lambda: paddle.randint(
-                low=0, high=200, shape=(30, 3, 299, 299), dtype=paddle.uint8
-            ),
-            True,
-            id="kernel inception distance",
-        ),
-        pytest.param(
-            partial(FrechetInceptionDistance, feature=64),
-            lambda: paddle.randint(
-                low=0, high=200, shape=(30, 3, 299, 299), dtype=paddle.uint8
-            ),
-            lambda: paddle.randint(
-                low=0, high=200, shape=(30, 3, 299, 299), dtype=paddle.uint8
-            ),
-            False,
-            id="frechet inception distance",
-        ),
-        pytest.param(
-            partial(InceptionScore, feature=64),
-            lambda: paddle.randint(
-                low=0, high=255, shape=(30, 3, 299, 299), dtype=paddle.uint8
-            ),
-            None,
-            True,
-            id="inception score",
-        ),
-        pytest.param(
-            partial(MemorizationInformedFrechetInceptionDistance, feature=64),
-            lambda: paddle.randint(
-                low=0, high=200, shape=(30, 3, 299, 299), dtype=paddle.uint8
-            ),
-            lambda: paddle.randint(
-                low=0, high=200, shape=(30, 3, 299, 299), dtype=paddle.uint8
-            ),
-            False,
-            id="memorization informed frechet inception distance",
-        ),
-    ],
-)
-@pytest.mark.parametrize("num_vals", [1, 2])
-def test_plot_methods_special_image_metrics(
-    metric_class, preds, target, index_0, num_vals
-):
-    """Test the plot method of metrics that only output a single tensor scalar.
-
-    This takes care of FID, KID and inception score image metrics as these have a slightly different call and update
-    signature than other metrics.
-
-    """
-    metric = metric_class()
-    if num_vals == 1:
-        if target is None:
-            metric.update(preds())
-        else:
-            metric.update(preds(), real=True)
-            metric.update(target(), real=False)
-        fig, ax = metric.plot()
-    else:
-        vals = []
-        for _ in range(num_vals):
-            if target is None:
-                vals.append(metric(preds())[0])
-            else:
-                metric.update(preds(), real=True)
-                metric.update(target(), real=False)
-                vals.append(metric.compute() if not index_0 else metric.compute()[0])
-                metric.reset()
-        fig, ax = metric.plot(vals)
-    assert isinstance(fig, plt.Figure)
-    assert isinstance(ax, matplotlib.axes.Axes)
-    plt.close(fig)
-
-
-@pytest.mark.skipif(_IS_WINDOWS, reason="DDP not supported on windows")
-@pytest.mark.xfail(
-    RuntimeError,
-    condition=_TORCH_LESS_THAN_2_1 and _TRANSFORMERS_RANGE_GE_4_50_LT_4_54,
-    reason="could be due to torch compatibility issues with transformers",
-)
-def test_plot_methods_special_text_metrics():
-    """Test the plot method for text metrics that does not fit the default testing format."""
-    metric = BERTScore()
-    metric.update(_text_input_1(), _text_input_2())
-    fig, ax = metric.plot()
     assert isinstance(fig, plt.Figure)
     assert isinstance(ax, matplotlib.axes.Axes)
     plt.close(fig)
@@ -1031,9 +865,7 @@ def test_plot_methods_retrieval(metric_class, preds, target, indexes, num_vals):
     if num_vals != 1 and isinstance(metric, RetrievalPrecisionRecallCurve):
         pytest.skip("curve objects does not support plotting multiple steps")
     if num_vals != 1 and isinstance(metric, BinaryFairness):
-        pytest.skip(
-            "randomness in input leads to different keys for  `BinaryFairness` metric and breaks plotting"
-        )
+        pytest.skip("randomness in input leads to different keys for  `BinaryFairness` metric and breaks plotting")
     if num_vals == 1:
         metric.update(preds(), target(), indexes())
         fig, ax = metric.plot()
@@ -1105,9 +937,7 @@ def test_confusion_matrix_plotter(metric_class, preds, target, labels, use_label
     fig, axs = metric.plot(add_text=True, labels=labels)
     assert isinstance(fig, plt.Figure)
     cond1 = isinstance(axs, matplotlib.axes.Axes)
-    cond2 = isinstance(axs, np.ndarray) and all(
-        isinstance(a, matplotlib.axes.Axes) for a in axs
-    )
+    cond2 = isinstance(axs, np.ndarray) and all(isinstance(a, matplotlib.axes.Axes) for a in axs)
     assert cond1 or cond2
     plt.close(fig)
 

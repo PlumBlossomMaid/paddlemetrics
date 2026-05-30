@@ -2,17 +2,16 @@ from collections.abc import Sequence
 from typing import Any, Optional, Union
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.classification.base import _ClassificationTaskWrapper
-from paddlemetrics.classification.stat_scores import (BinaryStatScores,
-                                                     MulticlassStatScores,
-                                                     MultilabelStatScores)
+from paddlemetrics.classification.stat_scores import BinaryStatScores, MulticlassStatScores, MultilabelStatScores
 from paddlemetrics.functional.classification.f_beta import (
-    _binary_fbeta_score_arg_validation, _fbeta_reduce,
+    _binary_fbeta_score_arg_validation,
+    _fbeta_reduce,
     _multiclass_fbeta_score_arg_validation,
-    _multilabel_fbeta_score_arg_validation)
+    _multilabel_fbeta_score_arg_validation,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.enums import ClassificationTask
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
@@ -128,9 +127,7 @@ class BinaryFBetaScore(BinaryStatScores):
             **kwargs,
         )
         if validate_args:
-            _binary_fbeta_score_arg_validation(
-                beta, threshold, multidim_average, ignore_index, zero_division
-            )
+            _binary_fbeta_score_arg_validation(beta, threshold, multidim_average, ignore_index, zero_division)
         self.validate_args = validate_args
         self.zero_division = zero_division
         self.beta = beta
@@ -1160,19 +1157,13 @@ class FBetaScore(_ClassificationTaskWrapper):
             return BinaryFBetaScore(beta, threshold, **kwargs)
         if task == ClassificationTask.MULTICLASS:
             if not isinstance(num_classes, int):
-                raise ValueError(
-                    f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-                )
+                raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
             if not isinstance(top_k, int):
-                raise ValueError(
-                    f"`top_k` is expected to be `int` but `{type(top_k)} was passed.`"
-                )
+                raise ValueError(f"`top_k` is expected to be `int` but `{type(top_k)} was passed.`")
             return MulticlassFBetaScore(beta, num_classes, top_k, average, **kwargs)
         if task == ClassificationTask.MULTILABEL:
             if not isinstance(num_labels, int):
-                raise ValueError(
-                    f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-                )
+                raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
             return MultilabelFBetaScore(beta, num_labels, threshold, average, **kwargs)
         raise ValueError(f"Task {task} not supported!")
 
@@ -1234,18 +1225,12 @@ class F1Score(_ClassificationTaskWrapper):
             return BinaryF1Score(threshold, **kwargs)
         if task == ClassificationTask.MULTICLASS:
             if not isinstance(num_classes, int):
-                raise ValueError(
-                    f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-                )
+                raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
             if not isinstance(top_k, int):
-                raise ValueError(
-                    f"`top_k` is expected to be `int` but `{type(top_k)} was passed.`"
-                )
+                raise ValueError(f"`top_k` is expected to be `int` but `{type(top_k)} was passed.`")
             return MulticlassF1Score(num_classes, top_k, average, **kwargs)
         if task == ClassificationTask.MULTILABEL:
             if not isinstance(num_labels, int):
-                raise ValueError(
-                    f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-                )
+                raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
             return MultilabelF1Score(num_labels, threshold, average, **kwargs)
         raise ValueError(f"Task {task} not supported!")

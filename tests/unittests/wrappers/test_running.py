@@ -2,15 +2,14 @@ from functools import partial
 
 import paddle
 import pytest
-from unittests import NUM_PROCESSES, USE_PYTEST_POOL
-from unittests._helpers import _IS_WINDOWS
 
 from paddlemetrics.aggregation import MeanMetric, SumMetric
 from paddlemetrics.classification import BinaryAccuracy, BinaryConfusionMatrix
 from paddlemetrics.collections import MetricCollection
-from paddlemetrics.regression import (MeanAbsoluteError, MeanSquaredError,
-                                     PearsonCorrCoef)
+from paddlemetrics.regression import MeanAbsoluteError, MeanSquaredError, PearsonCorrCoef
 from paddlemetrics.wrappers import Running
+from unittests import NUM_PROCESSES, USE_PYTEST_POOL
+from unittests._helpers import _IS_WINDOWS
 
 
 def test_errors_on_wrong_input():
@@ -38,16 +37,12 @@ def test_basic_aggregation():
     for i in range(10):
         metric.update(i)
         val = metric.compute()
-        assert val == i + max(i - 1, 0) + max(
-            i - 2, 0
-        ), f"Running sum is not correct in step {i}"
+        assert val == i + max(i - 1, 0) + max(i - 2, 0), f"Running sum is not correct in step {i}"
     metric = Running(MeanMetric(), window=3)
     for i in range(10):
         metric.update(i)
         val = metric.compute()
-        assert val == (i + max(i - 1, 0) + max(i - 2, 0)) / min(
-            i + 1, 3
-        ), f"Running mean is not correct in step {i}"
+        assert val == (i + max(i - 1, 0) + max(i - 2, 0)) / min(i + 1, 3), f"Running mean is not correct in step {i}"
 
 
 def test_forward():
@@ -56,16 +51,14 @@ def test_forward():
     metric = Running(SumMetric(), window=3)
     for i in range(10):
         assert compare_metric(i) == metric(i)
-        assert metric.compute() == i + max(i - 1, 0) + max(
-            i - 2, 0
-        ), f"Running sum is not correct in step {i}"
+        assert metric.compute() == i + max(i - 1, 0) + max(i - 2, 0), f"Running sum is not correct in step {i}"
     compare_metric = MeanMetric()
     metric = Running(MeanMetric(), window=3)
     for i in range(10):
         assert compare_metric(i) == metric(i)
-        assert metric.compute() == (i + max(i - 1, 0) + max(i - 2, 0)) / min(
-            i + 1, 3
-        ), f"Running mean is not correct in step {i}"
+        assert metric.compute() == (i + max(i - 1, 0) + max(i - 2, 0)) / min(i + 1, 3), (
+            f"Running mean is not correct in step {i}"
+        )
 
 
 @pytest.mark.parametrize(
@@ -95,20 +88,17 @@ def test_advance_running(metric, preds, target, window):
         p_run = preds[max(i - (window - 1), 0) : i + 1, :].reshape(-1)
         t_run = target[max(i - (window - 1), 0) : i + 1, :].reshape(-1)
         assert paddle.allclose(x=base_metric(p, t), y=running_metric(p, t)).item()
-        assert paddle.allclose(
-            x=base_metric(p_run, t_run), y=running_metric.compute()
-        ).item()
+        assert paddle.allclose(x=base_metric(p_run, t_run), y=running_metric.compute()).item()
     base_metric.reset()
     running_metric.reset()
     for i in range(10):
         p, t = preds[i], target[i]
-        p_run, t_run = preds[max(i - (window - 1), 0) : i + 1, :].reshape(-1), target[
-            max(i - (window - 1), 0) : i + 1, :
-        ].reshape(-1)
+        p_run, t_run = (
+            preds[max(i - (window - 1), 0) : i + 1, :].reshape(-1),
+            target[max(i - (window - 1), 0) : i + 1, :].reshape(-1),
+        )
         running_metric.update(p, t)
-        assert paddle.allclose(
-            x=base_metric(p_run, t_run), y=running_metric.compute()
-        ).item()
+        assert paddle.allclose(x=base_metric(p_run, t_run), y=running_metric.compute()).item()
 
 
 @pytest.mark.parametrize("window", [3, 5])
@@ -125,9 +115,10 @@ def test_metric_collection(window):
     target = paddle.rand(10, 20)
     for i in range(10):
         p, t = preds[i], target[i]
-        p_run, t_run = preds[max(i - (window - 1), 0) : i + 1, :].reshape(-1), target[
-            max(i - (window - 1), 0) : i + 1, :
-        ].reshape(-1)
+        p_run, t_run = (
+            preds[max(i - (window - 1), 0) : i + 1, :].reshape(-1),
+            target[max(i - (window - 1), 0) : i + 1, :].reshape(-1),
+        )
         metric.update(p, t)
         res1, res2 = compare(p_run, t_run), metric.compute()
         for key in res1:
@@ -150,9 +141,7 @@ def _test_ddp_running(rank, dist_sync_on_step, expected):
 def test_ddp_running(dist_sync_on_step, expected):
     """Check that the dist_sync_on_step gets correctly passed to base metric."""
     pytest.pool.map(
-        partial(
-            _test_ddp_running, dist_sync_on_step=dist_sync_on_step, expected=expected
-        ),
+        partial(_test_ddp_running, dist_sync_on_step=dist_sync_on_step, expected=expected),
         range(NUM_PROCESSES),
     )
 

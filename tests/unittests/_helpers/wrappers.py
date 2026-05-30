@@ -15,9 +15,7 @@ def skip_on_running_out_of_memory(
 ):
     """Handle tests that sometimes runs out of memory, by simply skipping them."""
 
-    def test_decorator(
-        function: Callable, *args: Any, **kwargs: Any
-    ) -> Optional[Callable]:
+    def test_decorator(function: Callable, *args: Any, **kwargs: Any) -> Optional[Callable]:
         @wraps(function)
         def run_test(*args: Any, **kwargs: Any) -> Optional[Any]:
             try:
@@ -42,9 +40,7 @@ def skip_on_connection_issues(
 
     """
 
-    def test_decorator(
-        function: Callable, *args: Any, **kwargs: Any
-    ) -> Optional[Callable]:
+    def test_decorator(function: Callable, *args: Any, **kwargs: Any) -> Optional[Callable]:
         @wraps(function)
         def run_test(*args: Any, **kwargs: Any) -> Optional[Any]:
             from urllib.error import URLError
@@ -56,18 +52,12 @@ def skip_on_connection_issues(
                     raise ex
                 pytest.skip(reason)
             except URLError as ex:
-                if (
-                    "Error 403: Forbidden" not in str(ex)
-                    or not ALLOW_SKIP_IF_BAD_CONNECTION
-                ):
+                if "Error 403: Forbidden" not in str(ex) or not ALLOW_SKIP_IF_BAD_CONNECTION:
                     raise ex
                 pytest.skip(reason)
             except (OSError, ValueError) as ex:
                 if (
-                    all(
-                        msg_start not in str(ex)
-                        for msg_start in _ERROR_CONNECTION_MESSAGE_PATTERNS
-                    )
+                    all(msg_start not in str(ex) for msg_start in _ERROR_CONNECTION_MESSAGE_PATTERNS)
                     or not ALLOW_SKIP_IF_BAD_CONNECTION
                 ):
                     raise ex

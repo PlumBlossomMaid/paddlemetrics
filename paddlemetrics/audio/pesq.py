@@ -4,11 +4,9 @@ from typing import Any, Optional, Union
 import paddle
 from paddle import Tensor
 
-from paddlemetrics.functional.audio.pesq import \
-    perceptual_evaluation_speech_quality
+from paddlemetrics.functional.audio.pesq import perceptual_evaluation_speech_quality
 from paddlemetrics.metric import Metric
-from paddlemetrics.utils.imports import (_MATPLOTLIB_AVAILABLE,
-                                            _PESQ_AVAILABLE)
+from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE, _PESQ_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
 
 __doctest_requires__ = {"PerceptualEvaluationSpeechQuality": ["pesq"]}
@@ -91,19 +89,13 @@ class PerceptualEvaluationSpeechQuality(Metric):
                 "PerceptualEvaluationSpeechQuality metric requires that `pesq` is installed. Either install as `pip install paddlemetrics[audio]` or `pip install pesq`."
             )
         if fs not in (8000, 16000):
-            raise ValueError(
-                f"Expected argument `fs` to either be 8000 or 16000 but got {fs}"
-            )
+            raise ValueError(f"Expected argument `fs` to either be 8000 or 16000 but got {fs}")
         self.fs = fs
         if mode not in ("wb", "nb"):
-            raise ValueError(
-                f"Expected argument `mode` to either be 'wb' or 'nb' but got {mode}"
-            )
+            raise ValueError(f"Expected argument `mode` to either be 'wb' or 'nb' but got {mode}")
         self.mode = mode
         if not isinstance(n_processes, int) and n_processes <= 0:
-            raise ValueError(
-                f"Expected argument `n_processes` to be an int larger than 0 but got {n_processes}"
-            )
+            raise ValueError(f"Expected argument `n_processes` to be an int larger than 0 but got {n_processes}")
         self.n_processes = n_processes
         self.add_state("sum_pesq", default=paddle.tensor(0.0), dist_reduce_fx="sum")
         self.add_state("total", default=paddle.tensor(0), dist_reduce_fx="sum")

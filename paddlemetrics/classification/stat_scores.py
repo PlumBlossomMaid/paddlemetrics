@@ -3,16 +3,23 @@ from typing import Any, Callable, List, Optional, Union
 import paddle
 from typing_extensions import Literal
 
-from paddlemetrics.classification.base import _ClassificationTaskWrapper
 from paddlemetrics.functional.classification.stat_scores import (
-    _binary_stat_scores_arg_validation, _binary_stat_scores_compute,
-    _binary_stat_scores_format, _binary_stat_scores_tensor_validation,
-    _binary_stat_scores_update, _multiclass_stat_scores_arg_validation,
-    _multiclass_stat_scores_compute, _multiclass_stat_scores_format,
-    _multiclass_stat_scores_tensor_validation, _multiclass_stat_scores_update,
-    _multilabel_stat_scores_arg_validation, _multilabel_stat_scores_compute,
-    _multilabel_stat_scores_format, _multilabel_stat_scores_tensor_validation,
-    _multilabel_stat_scores_update)
+    _binary_stat_scores_arg_validation,
+    _binary_stat_scores_compute,
+    _binary_stat_scores_format,
+    _binary_stat_scores_tensor_validation,
+    _binary_stat_scores_update,
+    _multiclass_stat_scores_arg_validation,
+    _multiclass_stat_scores_compute,
+    _multiclass_stat_scores_format,
+    _multiclass_stat_scores_tensor_validation,
+    _multiclass_stat_scores_update,
+    _multilabel_stat_scores_arg_validation,
+    _multilabel_stat_scores_compute,
+    _multilabel_stat_scores_format,
+    _multilabel_stat_scores_tensor_validation,
+    _multilabel_stat_scores_update,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.data import dim_zero_cat
 from paddlemetrics.utils.enums import ClassificationTask
@@ -24,9 +31,7 @@ class _AbstractStatScores(Metric):
     tn: Union[List[paddle.Tensor], paddle.Tensor]
     fn: Union[List[paddle.Tensor], paddle.Tensor]
 
-    def _create_state(
-        self, size: int, multidim_average: Literal["global", "samplewise"] = "global"
-    ) -> None:
+    def _create_state(self, size: int, multidim_average: Literal["global", "samplewise"] = "global") -> None:
         """Initialize the states for the different statistics."""
         default: Union[Callable[[], list], Callable[[], paddle.Tensor]]
         if multidim_average == "samplewise":
@@ -40,9 +45,7 @@ class _AbstractStatScores(Metric):
         self.add_state("tn", default(), dist_reduce_fx=dist_reduce_fx)
         self.add_state("fn", default(), dist_reduce_fx=dist_reduce_fx)
 
-    def _update_state(
-        self, tp: paddle.Tensor, fp: paddle.Tensor, tn: paddle.Tensor, fn: paddle.Tensor
-    ) -> None:
+    def _update_state(self, tp: paddle.Tensor, fp: paddle.Tensor, tn: paddle.Tensor, fn: paddle.Tensor) -> None:
         """Update states depending on multidim_average argument."""
         if self.multidim_average == "samplewise":
             self.tp.append(tp)
@@ -150,9 +153,7 @@ class BinaryStatScores(_AbstractStatScores):
         zero_division = kwargs.pop("zero_division", 0)
         super(_AbstractStatScores, self).__init__(**kwargs)
         if validate_args:
-            _binary_stat_scores_arg_validation(
-                threshold, multidim_average, ignore_index, zero_division
-            )
+            _binary_stat_scores_arg_validation(threshold, multidim_average, ignore_index, zero_division)
         self.threshold = threshold
         self.multidim_average = multidim_average
         self.ignore_index = ignore_index
@@ -163,15 +164,9 @@ class BinaryStatScores(_AbstractStatScores):
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update state with predictions and targets."""
         if self.validate_args:
-            _binary_stat_scores_tensor_validation(
-                preds, target, self.multidim_average, self.ignore_index
-            )
-        preds, target = _binary_stat_scores_format(
-            preds, target, self.threshold, self.ignore_index
-        )
-        tp, fp, tn, fn = _binary_stat_scores_update(
-            preds, target, self.multidim_average
-        )
+            _binary_stat_scores_tensor_validation(preds, target, self.multidim_average, self.ignore_index)
+        preds, target = _binary_stat_scores_format(preds, target, self.threshold, self.ignore_index)
+        tp, fp, tn, fn = _binary_stat_scores_update(preds, target, self.multidim_average)
         self._update_state(tp, fp, tn, fn)
 
     def compute(self) -> paddle.Tensor:
@@ -349,9 +344,7 @@ class MulticlassStatScores(_AbstractStatScores):
     def compute(self) -> paddle.Tensor:
         """Compute the final statistics."""
         tp, fp, tn, fn = self._final_state()
-        return _multiclass_stat_scores_compute(
-            tp, fp, tn, fn, self.average, self.multidim_average
-        )
+        return _multiclass_stat_scores_compute(tp, fp, tn, fn, self.average, self.multidim_average)
 
 
 class MultilabelStatScores(_AbstractStatScores):
@@ -499,17 +492,13 @@ class MultilabelStatScores(_AbstractStatScores):
         preds, target = _multilabel_stat_scores_format(
             preds, target, self.num_labels, self.threshold, self.ignore_index
         )
-        tp, fp, tn, fn = _multilabel_stat_scores_update(
-            preds, target, self.multidim_average
-        )
+        tp, fp, tn, fn = _multilabel_stat_scores_update(preds, target, self.multidim_average)
         self._update_state(tp, fp, tn, fn)
 
     def compute(self) -> paddle.Tensor:
         """Compute the final statistics."""
         tp, fp, tn, fn = self._final_state()
-        return _multilabel_stat_scores_compute(
-            tp, fp, tn, fn, self.average, self.multidim_average
-        )
+        return _multilabel_stat_scores_compute(tp, fp, tn, fn, self.average, self.multidim_average)
 
 
 class StatScores(Metric):
@@ -563,18 +552,12 @@ class StatScores(Metric):
             return BinaryStatScores(threshold, **kwargs)
         if task == ClassificationTask.MULTICLASS:
             if not isinstance(num_classes, int):
-                raise ValueError(
-                    f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-                )
+                raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
             if not isinstance(top_k, int):
-                raise ValueError(
-                    f"`top_k` is expected to be `int` but `{type(top_k)} was passed.`"
-                )
+                raise ValueError(f"`top_k` is expected to be `int` but `{type(top_k)} was passed.`")
             return MulticlassStatScores(num_classes, top_k, average, **kwargs)
         if task == ClassificationTask.MULTILABEL:
             if not isinstance(num_labels, int):
-                raise ValueError(
-                    f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-                )
+                raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
             return MultilabelStatScores(num_labels, threshold, average, **kwargs)
         raise ValueError(f"Task {task} not supported!")

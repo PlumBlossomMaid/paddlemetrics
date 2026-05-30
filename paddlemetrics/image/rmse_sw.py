@@ -4,8 +4,7 @@ from typing import Any, Optional, Union
 import paddle
 from paddle import Tensor
 
-from paddlemetrics.functional.image.rmse_sw import (_rmse_sw_compute,
-                                                   _rmse_sw_update)
+from paddlemetrics.functional.image.rmse_sw import _rmse_sw_compute, _rmse_sw_update
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -54,14 +53,8 @@ class RootMeanSquaredErrorUsingSlidingWindow(Metric):
 
     def __init__(self, window_size: int = 8, **kwargs: dict[str, Any]) -> None:
         super().__init__(**kwargs)
-        if (
-            not isinstance(window_size, int)
-            or isinstance(window_size, int)
-            and window_size < 1
-        ):
-            raise ValueError(
-                "Argument `window_size` is expected to be a positive integer."
-            )
+        if not isinstance(window_size, int) or isinstance(window_size, int) and window_size < 1:
+            raise ValueError("Argument `window_size` is expected to be a positive integer.")
         self.window_size = window_size
         self.add_state("rmse_val_sum", default=paddle.tensor(0.0), dist_reduce_fx="sum")
         self.add_state("total_images", default=paddle.tensor(0.0), dist_reduce_fx="sum")
@@ -70,9 +63,7 @@ class RootMeanSquaredErrorUsingSlidingWindow(Metric):
         """Update state with predictions and targets."""
         if self.rmse_map is None:
             _img_shape = target.shape[1:]
-            self.rmse_map = paddle.zeros(
-                _img_shape, dtype=target.dtype, device=target.device
-            )
+            self.rmse_map = paddle.zeros(_img_shape, dtype=target.dtype, device=target.device)
         self.rmse_val_sum, self.rmse_map, self.total_images = _rmse_sw_update(
             preds,
             target,

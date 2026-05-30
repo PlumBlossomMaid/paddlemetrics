@@ -6,16 +6,14 @@ import paddle
 import pytest
 from numpy import array
 from typing_extensions import Literal
-from unittests._helpers import seed_all
-from unittests._helpers.testers import Metric, MetricTester
-from unittests.retrieval.helpers import (_custom_aggregate_fn,
-                                         _default_metric_class_input_arguments,
-                                         get_group_indexes)
-from unittests.retrieval.test_precision import _precision_at_k
-from unittests.retrieval.test_recall import _recall_at_k
 
 from paddlemetrics.retrieval import RetrievalPrecisionRecallCurve
 from paddlemetrics.retrieval.base import _retrieval_aggregate
+from unittests._helpers import seed_all
+from unittests._helpers.testers import Metric, MetricTester
+from unittests.retrieval.helpers import _custom_aggregate_fn, _default_metric_class_input_arguments, get_group_indexes
+from unittests.retrieval.test_precision import _precision_at_k
+from unittests.retrieval.test_recall import _recall_at_k
 
 seed_all(42)
 
@@ -83,19 +81,13 @@ def _compute_precision_recall_curve(
         else:
             for k in top_k:
                 r.append(_recall_at_k(trg, prd, top_k=k.item()))
-                p.append(
-                    _precision_at_k(trg, prd, top_k=k.item(), adaptive_k=adaptive_k)
-                )
+                p.append(_precision_at_k(trg, prd, top_k=k.item(), adaptive_k=adaptive_k))
             recalls.append(r)
             precisions.append(p)
     if not recalls:
         return paddle.zeros(max_k), paddle.zeros(max_k), top_k
-    recalls = _retrieval_aggregate(
-        paddle.tensor(recalls), aggregation=aggregation, axis=0
-    )
-    precisions = _retrieval_aggregate(
-        paddle.tensor(precisions), aggregation=aggregation, axis=0
-    )
+    recalls = _retrieval_aggregate(paddle.tensor(recalls), aggregation=aggregation, axis=0)
+    precisions = _retrieval_aggregate(paddle.tensor(precisions), aggregation=aggregation, axis=0)
     return precisions, recalls, top_k
 
 
@@ -133,9 +125,7 @@ class RetrievalPrecisionRecallCurveTester(MetricTester):
 @pytest.mark.parametrize("ignore_index", [None, 1])
 @pytest.mark.parametrize("max_k", [None, 1, 2, 5, 10])
 @pytest.mark.parametrize("adaptive_k", [False])
-@pytest.mark.parametrize(
-    "aggregation", ["mean", "median", "max", "min", _custom_aggregate_fn]
-)
+@pytest.mark.parametrize("aggregation", ["mean", "median", "max", "min", _custom_aggregate_fn])
 @pytest.mark.parametrize(**_default_metric_class_input_arguments)
 class TestRetrievalPrecisionRecallCurve(RetrievalPrecisionRecallCurveTester):
     """Test class for `RetrievalPrecisionRecallCurveTester` metric."""

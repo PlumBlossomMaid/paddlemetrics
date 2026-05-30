@@ -3,13 +3,13 @@ from functools import partial
 import paddle
 import pytest
 from mir_eval.separation import bss_eval_images as mir_eval_bss_eval_images
+
+from paddlemetrics.audio import SignalNoiseRatio
+from paddlemetrics.functional.audio import signal_noise_ratio
 from unittests import _Input
 from unittests._helpers import seed_all
 from unittests._helpers.testers import MetricTester
 from unittests.audio import _average_metric_wrapper
-
-from paddlemetrics.audio import SignalNoiseRatio
-from paddlemetrics.functional.audio import signal_noise_ratio
 
 seed_all(42)
 inputs = _Input(preds=paddle.rand(2, 1, 1, 25), target=paddle.rand(2, 1, 1, 25))
@@ -25,9 +25,7 @@ def _reference_bss_snr(preds: paddle.Tensor, target: paddle.Tensor, zero_mean: b
     for i in range(preds.shape[0]):
         ms = []
         for j in range(preds.shape[1]):
-            snr_v = mir_eval_bss_eval_images(
-                [target[i, j]], [preds[i, j]], compute_permutation=True
-            )[0][0]
+            snr_v = mir_eval_bss_eval_images([target[i, j]], [preds[i, j]], compute_permutation=True)[0][0]
             ms.append(snr_v)
         mss.append(ms)
     return paddle.tensor(mss)

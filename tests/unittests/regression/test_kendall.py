@@ -6,13 +6,13 @@ import paddle
 import pytest
 from lightning_utilities.core.imports import compare_version
 from scipy.stats import kendalltau
-from unittests import BATCH_SIZE, EXTRA_DIM, NUM_BATCHES, _Input
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
 
 from paddlemetrics.functional.regression.kendall import kendall_rank_corrcoef
 from paddlemetrics.regression.kendall import KendallRankCorrCoef
 from paddlemetrics.utils.imports import _SCIPY_GREATER_EQUAL_1_8
+from unittests import BATCH_SIZE, EXTRA_DIM, NUM_BATCHES, _Input
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
 
 seed_all(42)
 _single_inputs1 = _Input(
@@ -47,13 +47,7 @@ def _reference_scipy_kendall(preds, target, alternative, variant):
         metric_args = {"alternative": alternative or "two-sided"}
     if preds.ndim == 2:
         out = [
-            kendalltau(
-                p.numpy(),
-                t.numpy(),
-                method="asymptotic",
-                variant=variant,
-                **metric_args
-            )
+            kendalltau(p.numpy(), t.numpy(), method="asymptotic", variant=variant, **metric_args)
             for p, t in zip(preds.T, target.T)
         ]
         tau = paddle.concat([paddle.tensor(o[0]).unsqueeze(0) for o in out])
@@ -61,13 +55,7 @@ def _reference_scipy_kendall(preds, target, alternative, variant):
         if alternative is not None:
             return tau, p_value
         return tau
-    tau, p_value = kendalltau(
-        preds.numpy(),
-        target.numpy(),
-        method="asymptotic",
-        variant=variant,
-        **metric_args
-    )
+    tau, p_value = kendalltau(preds.numpy(), target.numpy(), method="asymptotic", variant=variant, **metric_args)
     if alternative is not None:
         return paddle.tensor(tau), paddle.tensor(p_value)
     return paddle.tensor(tau)
@@ -94,9 +82,7 @@ class TestKendallRankCorrCoef(MetricTester):
         """Test class implementation of metric."""
         num_outputs = EXTRA_DIM if preds.ndim == 3 else 1
         t_test = bool(alternative is not None)
-        _sk_kendall_tau = partial(
-            _reference_scipy_kendall, alternative=alternative, variant=variant
-        )
+        _sk_kendall_tau = partial(_reference_scipy_kendall, alternative=alternative, variant=variant)
         alternative = _adjust_alternative_to_scipy(alternative)
         self.run_class_metric_test(
             ddp,
@@ -112,16 +98,12 @@ class TestKendallRankCorrCoef(MetricTester):
             },
         )
 
-    def test_kendall_rank_corrcoef_functional(
-        self, preds, target, alternative, variant
-    ):
+    def test_kendall_rank_corrcoef_functional(self, preds, target, alternative, variant):
         """Test functional implementation of metric."""
         t_test = bool(alternative is not None)
         alternative = _adjust_alternative_to_scipy(alternative)
         metric_args = {"t_test": t_test, "alternative": alternative, "variant": variant}
-        _sk_kendall_tau = partial(
-            _reference_scipy_kendall, alternative=alternative, variant=variant
-        )
+        _sk_kendall_tau = partial(_reference_scipy_kendall, alternative=alternative, variant=variant)
         self.run_functional_metric_test(
             preds,
             target,
@@ -130,9 +112,7 @@ class TestKendallRankCorrCoef(MetricTester):
             metric_args=metric_args,
         )
 
-    def test_kendall_rank_corrcoef_differentiability(
-        self, preds, target, alternative, variant
-    ):
+    def test_kendall_rank_corrcoef_differentiability(self, preds, target, alternative, variant):
         """Test the differentiability of the metric, according to its `is_differentiable` attribute."""
         num_outputs = EXTRA_DIM if preds.ndim == 3 else 1
         self.run_differentiability_test(

@@ -4,8 +4,7 @@ from typing import Any, Optional, Union
 import paddle
 
 from paddlemetrics.functional.text.bleu import _bleu_score_update
-from paddlemetrics.functional.text.sacre_bleu import (_SacreBLEUTokenizer,
-                                                     _TokenizersLiteral)
+from paddlemetrics.functional.text.sacre_bleu import _SacreBLEUTokenizer, _TokenizersLiteral
 from paddlemetrics.text.bleu import BLEUScore
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -99,7 +98,7 @@ class SacreBLEUScore(BLEUScore):
         tokenize: _TokenizersLiteral = "13a",
         lowercase: bool = False,
         weights: Optional[Sequence[float]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__(n_gram=n_gram, smooth=smooth, weights=weights, **kwargs)
         self.tokenizer = _SacreBLEUTokenizer(tokenize, lowercase)

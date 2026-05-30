@@ -1,7 +1,6 @@
 from typing import Union
 
 import paddle
-from paddle import Tensor
 
 from paddlemetrics.utils.checks import _check_same_shape
 
@@ -49,9 +48,7 @@ def _mean_absolute_percentage_error_compute(
     return sum_abs_per_error / num_obs
 
 
-def mean_absolute_percentage_error(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> paddle.Tensor:
+def mean_absolute_percentage_error(preds: paddle.Tensor, target: paddle.Tensor) -> paddle.Tensor:
     """Compute mean absolute percentage error.
 
     Args:

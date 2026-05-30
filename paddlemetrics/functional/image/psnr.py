@@ -1,7 +1,6 @@
 from typing import Optional, Union
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.utils import rank_zero_warn, reduce
@@ -117,9 +116,7 @@ def peak_signal_noise_ratio(
 
     """
     if dim is None and reduction != "elementwise_mean":
-        rank_zero_warn(
-            f"The `reduction={reduction}` will not have any effect when `dim` is None."
-        )
+        rank_zero_warn(f"The `reduction={reduction}` will not have any effect when `dim` is None.")
     if isinstance(data_range, tuple):
         preds = paddle.clamp(preds, min=data_range[0], max=data_range[1])
         target = paddle.clamp(target, min=data_range[0], max=data_range[1])
@@ -127,6 +124,4 @@ def peak_signal_noise_ratio(
     else:
         data_range_val = paddle.tensor(float(data_range))
     sum_squared_error, num_obs = _psnr_update(preds, target, axis=dim)
-    return _psnr_compute(
-        sum_squared_error, num_obs, data_range_val, base=base, reduction=reduction
-    )
+    return _psnr_compute(sum_squared_error, num_obs, data_range_val, base=base, reduction=reduction)

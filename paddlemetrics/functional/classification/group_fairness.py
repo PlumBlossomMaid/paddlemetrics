@@ -1,12 +1,14 @@
 from typing import Optional
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.functional.classification.stat_scores import (
-    _binary_stat_scores_arg_validation, _binary_stat_scores_format,
-    _binary_stat_scores_tensor_validation, _binary_stat_scores_update)
+    _binary_stat_scores_arg_validation,
+    _binary_stat_scores_format,
+    _binary_stat_scores_tensor_validation,
+    _binary_stat_scores_update,
+)
 from paddlemetrics.utils import rank_zero_warn
 from paddlemetrics.utils.compute import _safe_divide
 from paddlemetrics.utils.data import _flexible_bincount
@@ -26,9 +28,7 @@ def _groups_validation(groups: paddle.Tensor, num_groups: int) -> None:
             f"number of groups {num_groups}. The group identifiers should be ``0, 1, ..., (num_groups - 1)``.",
         )
     if groups.dtype != paddle.long:
-        raise ValueError(
-            f"Expected dtype of argument groups to be long, not {groups.dtype}."
-        )
+        raise ValueError(f"Expected dtype of argument groups to be long, not {groups.dtype}.")
 
 
 def _groups_format(groups: paddle.Tensor) -> paddle.Tensor:
@@ -56,30 +56,27 @@ def _binary_groups_stat_scores(
         _groups_validation(groups, num_groups)
     preds, target = _binary_stat_scores_format(preds, target, threshold, ignore_index)
     groups = _groups_format(groups)
-    indexes, indices = paddle.sort(groups.squeeze(1))
+    indices = paddle.argsort(groups.squeeze(1))
+    indexes = groups.squeeze(1)[indices]
     preds = preds[indices]
     target = target[indices]
     split_sizes = _flexible_bincount(indexes).detach().cpu().tolist()
     group_preds = list(paddle.split(preds, split_sizes, axis=0))
     group_target = list(paddle.split(target, split_sizes, axis=0))
-    return [
-        _binary_stat_scores_update(group_p, group_t)
-        for group_p, group_t in zip(group_preds, group_target)
-    ]
+    return [_binary_stat_scores_update(group_p, group_t) for group_p, group_t in zip(group_preds, group_target)]
 
 
 def _groups_reduce(
-    group_stats: list[tuple[paddle.Tensor, paddle.Tensor, paddle.Tensor, paddle.Tensor]]
+    group_stats: list[tuple[paddle.Tensor, paddle.Tensor, paddle.Tensor, paddle.Tensor]],
 ) -> dict[str, paddle.Tensor]:
     """Compute rates for all the group statistics."""
     return {
-        f"group_{group}": (paddle.stack(stats) / paddle.stack(stats).sum())
-        for group, stats in enumerate(group_stats)
+        f"group_{group}": (paddle.stack(stats) / paddle.stack(stats).sum()) for group, stats in enumerate(group_stats)
     }
 
 
 def _groups_stat_transform(
-    group_stats: list[tuple[paddle.Tensor, paddle.Tensor, paddle.Tensor, paddle.Tensor]]
+    group_stats: list[tuple[paddle.Tensor, paddle.Tensor, paddle.Tensor, paddle.Tensor]],
 ) -> dict[str, paddle.Tensor]:
     """Transform group statistics by creating a tensor for each statistic."""
     return {
@@ -144,9 +141,7 @@ def binary_groups_stat_rates(
         {'group_0': tensor([0., 0., 1., 0.]), 'group_1': tensor([1., 0., 0., 0.])}
 
     """
-    group_stats = _binary_groups_stat_scores(
-        preds, target, groups, num_groups, threshold, ignore_index, validate_args
-    )
+    group_stats = _binary_groups_stat_scores(preds, target, groups, num_groups, threshold, ignore_index, validate_args)
     return _groups_reduce(group_stats)
 
 
@@ -158,9 +153,7 @@ def _compute_binary_demographic_parity(
     min_pos_rate_id = paddle.argmin(pos_rates)
     max_pos_rate_id = paddle.argmax(pos_rates)
     return {
-        f"DP_{min_pos_rate_id}_{max_pos_rate_id}": _safe_divide(
-            pos_rates[min_pos_rate_id], pos_rates[max_pos_rate_id]
-        )
+        f"DP_{min_pos_rate_id}_{max_pos_rate_id}": _safe_divide(pos_rates[min_pos_rate_id], pos_rates[max_pos_rate_id])
     }
 
 
@@ -222,9 +215,7 @@ def demographic_parity(
     """
     num_groups = paddle.unique(groups).shape[0]
     target = paddle.zeros(preds.shape)
-    group_stats = _binary_groups_stat_scores(
-        preds, target, groups, num_groups, threshold, ignore_index, validate_args
-    )
+    group_stats = _binary_groups_stat_scores(preds, target, groups, num_groups, threshold, ignore_index, validate_args)
     transformed_group_stats = _groups_stat_transform(group_stats)
     return _compute_binary_demographic_parity(**transformed_group_stats)
 
@@ -304,9 +295,7 @@ def equal_opportunity(
 
     """
     num_groups = paddle.unique(groups).shape[0]
-    group_stats = _binary_groups_stat_scores(
-        preds, target, groups, num_groups, threshold, ignore_index, validate_args
-    )
+    group_stats = _binary_groups_stat_scores(preds, target, groups, num_groups, threshold, ignore_index, validate_args)
     transformed_group_stats = _groups_stat_transform(group_stats)
     return _compute_binary_equal_opportunity(**transformed_group_stats)
 
@@ -346,14 +335,10 @@ def binary_fairness(
         )
     if task == "demographic_parity":
         if target is not None:
-            rank_zero_warn(
-                "The task demographic_parity does not require a target.", UserWarning
-            )
+            rank_zero_warn("The task demographic_parity does not require a target.", UserWarning)
         target = paddle.zeros(preds.shape)
     num_groups = paddle.unique(groups).shape[0]
-    group_stats = _binary_groups_stat_scores(
-        preds, target, groups, num_groups, threshold, ignore_index, validate_args
-    )
+    group_stats = _binary_groups_stat_scores(preds, target, groups, num_groups, threshold, ignore_index, validate_args)
     transformed_group_stats = _groups_stat_transform(group_stats)
     if task == "demographic_parity":
         return _compute_binary_demographic_parity(**transformed_group_stats)

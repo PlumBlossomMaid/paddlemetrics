@@ -7,7 +7,8 @@ from typing_extensions import Literal
 from paddlemetrics.classification.base import _ClassificationTaskWrapper
 from paddlemetrics.functional.classification.auroc import _reduce_auroc
 from paddlemetrics.functional.classification.precision_recall_curve import (
-    _adjust_threshold_arg, _binary_precision_recall_curve_arg_validation,
+    _adjust_threshold_arg,
+    _binary_precision_recall_curve_arg_validation,
     _binary_precision_recall_curve_compute,
     _binary_precision_recall_curve_format,
     _binary_precision_recall_curve_tensor_validation,
@@ -21,7 +22,8 @@ from paddlemetrics.functional.classification.precision_recall_curve import (
     _multilabel_precision_recall_curve_compute,
     _multilabel_precision_recall_curve_format,
     _multilabel_precision_recall_curve_tensor_validation,
-    _multilabel_precision_recall_curve_update)
+    _multilabel_precision_recall_curve_update,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.compute import _auc_compute_without_check
 from paddlemetrics.utils.data import dim_zero_cat
@@ -151,9 +153,7 @@ class BinaryPrecisionRecallCurve(Metric):
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update metric states."""
         if self.validate_args:
-            _binary_precision_recall_curve_tensor_validation(
-                preds, target, self.ignore_index
-            )
+            _binary_precision_recall_curve_tensor_validation(preds, target, self.ignore_index)
         preds, target, _ = _binary_precision_recall_curve_format(
             preds, target, self.thresholds, self.ignore_index, self.normalization
         )
@@ -166,11 +166,7 @@ class BinaryPrecisionRecallCurve(Metric):
 
     def compute(self) -> tuple[paddle.Tensor, paddle.Tensor, paddle.Tensor]:
         """Compute metric."""
-        state = (
-            (dim_zero_cat(self.preds), dim_zero_cat(self.target))
-            if self.thresholds is None
-            else self.confmat
-        )
+        state = (dim_zero_cat(self.preds), dim_zero_cat(self.target)) if self.thresholds is None else self.confmat
         return _binary_precision_recall_curve_compute(state, self.thresholds)
 
     def plot(
@@ -211,9 +207,7 @@ class BinaryPrecisionRecallCurve(Metric):
         curve_computed = curve or self.compute()
         curve_computed = curve_computed[1], curve_computed[0], curve_computed[2]
         score = (
-            _auc_compute_without_check(
-                curve_computed[0], curve_computed[1], direction=-1.0
-            )
+            _auc_compute_without_check(curve_computed[0], curve_computed[1], direction=-1.0)
             if not curve and score is True
             else None
         )
@@ -338,9 +332,7 @@ class MulticlassPrecisionRecallCurve(Metric):
     ) -> None:
         super().__init__(**kwargs)
         if validate_args:
-            _multiclass_precision_recall_curve_arg_validation(
-                num_classes, thresholds, ignore_index, average
-            )
+            _multiclass_precision_recall_curve_arg_validation(num_classes, thresholds, ignore_index, average)
         self.num_classes = num_classes
         self.average = average
         self.ignore_index = ignore_index
@@ -354,18 +346,14 @@ class MulticlassPrecisionRecallCurve(Metric):
             self.register_buffer("thresholds", thresholds, persistent=False)
             self.add_state(
                 "confmat",
-                default=paddle.zeros(
-                    len(thresholds), num_classes, 2, 2, dtype=paddle.long
-                ),
+                default=paddle.zeros(len(thresholds), num_classes, 2, 2, dtype=paddle.long),
                 dist_reduce_fx="sum",
             )
 
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update metric states."""
         if self.validate_args:
-            _multiclass_precision_recall_curve_tensor_validation(
-                preds, target, self.num_classes, self.ignore_index
-            )
+            _multiclass_precision_recall_curve_tensor_validation(preds, target, self.num_classes, self.ignore_index)
         preds, target, _ = _multiclass_precision_recall_curve_format(
             preds,
             target,
@@ -390,14 +378,8 @@ class MulticlassPrecisionRecallCurve(Metric):
         tuple[List[paddle.Tensor], List[paddle.Tensor], List[paddle.Tensor]],
     ]:
         """Compute metric."""
-        state = (
-            (dim_zero_cat(self.preds), dim_zero_cat(self.target))
-            if self.thresholds is None
-            else self.confmat
-        )
-        return _multiclass_precision_recall_curve_compute(
-            state, self.num_classes, self.thresholds, self.average
-        )
+        state = (dim_zero_cat(self.preds), dim_zero_cat(self.target)) if self.thresholds is None else self.confmat
+        return _multiclass_precision_recall_curve_compute(state, self.num_classes, self.thresholds, self.average)
 
     def plot(
         self,
@@ -442,9 +424,7 @@ class MulticlassPrecisionRecallCurve(Metric):
         curve_computed = curve or self.compute()
         curve_computed = curve_computed[1], curve_computed[0], curve_computed[2]
         score = (
-            _reduce_auroc(
-                curve_computed[0], curve_computed[1], average=None, direction=-1.0
-            )
+            _reduce_auroc(curve_computed[0], curve_computed[1], average=None, direction=-1.0)
             if not curve and score is True
             else None
         )
@@ -566,9 +546,7 @@ class MultilabelPrecisionRecallCurve(Metric):
     ) -> None:
         super().__init__(**kwargs)
         if validate_args:
-            _multilabel_precision_recall_curve_arg_validation(
-                num_labels, thresholds, ignore_index
-            )
+            _multilabel_precision_recall_curve_arg_validation(num_labels, thresholds, ignore_index)
         self.num_labels = num_labels
         self.ignore_index = ignore_index
         self.validate_args = validate_args
@@ -581,24 +559,18 @@ class MultilabelPrecisionRecallCurve(Metric):
             self.register_buffer("thresholds", thresholds, persistent=False)
             self.add_state(
                 "confmat",
-                default=paddle.zeros(
-                    len(thresholds), num_labels, 2, 2, dtype=paddle.long
-                ),
+                default=paddle.zeros(len(thresholds), num_labels, 2, 2, dtype=paddle.long),
                 dist_reduce_fx="sum",
             )
 
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update metric states."""
         if self.validate_args:
-            _multilabel_precision_recall_curve_tensor_validation(
-                preds, target, self.num_labels, self.ignore_index
-            )
+            _multilabel_precision_recall_curve_tensor_validation(preds, target, self.num_labels, self.ignore_index)
         preds, target, _ = _multilabel_precision_recall_curve_format(
             preds, target, self.num_labels, self.thresholds, self.ignore_index
         )
-        state = _multilabel_precision_recall_curve_update(
-            preds, target, self.num_labels, self.thresholds
-        )
+        state = _multilabel_precision_recall_curve_update(preds, target, self.num_labels, self.thresholds)
         if isinstance(state, paddle.Tensor):
             self.confmat += state
         else:
@@ -612,14 +584,8 @@ class MultilabelPrecisionRecallCurve(Metric):
         tuple[List[paddle.Tensor], List[paddle.Tensor], List[paddle.Tensor]],
     ]:
         """Compute metric."""
-        state = (
-            (dim_zero_cat(self.preds), dim_zero_cat(self.target))
-            if self.thresholds is None
-            else self.confmat
-        )
-        return _multilabel_precision_recall_curve_compute(
-            state, self.num_labels, self.thresholds, self.ignore_index
-        )
+        state = (dim_zero_cat(self.preds), dim_zero_cat(self.target)) if self.thresholds is None else self.confmat
+        return _multilabel_precision_recall_curve_compute(state, self.num_labels, self.thresholds, self.ignore_index)
 
     def plot(
         self,
@@ -664,9 +630,7 @@ class MultilabelPrecisionRecallCurve(Metric):
         curve_computed = curve or self.compute()
         curve_computed = curve_computed[1], curve_computed[0], curve_computed[2]
         score = (
-            _reduce_auroc(
-                curve_computed[0], curve_computed[1], average=None, direction=-1.0
-            )
+            _reduce_auroc(curve_computed[0], curve_computed[1], average=None, direction=-1.0)
             if not curve and score is True
             else None
         )
@@ -745,14 +709,10 @@ class PrecisionRecallCurve(_ClassificationTaskWrapper):
             return BinaryPrecisionRecallCurve(**kwargs)
         if task == ClassificationTask.MULTICLASS:
             if not isinstance(num_classes, int):
-                raise ValueError(
-                    f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-                )
+                raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
             return MulticlassPrecisionRecallCurve(num_classes, **kwargs)
         if task == ClassificationTask.MULTILABEL:
             if not isinstance(num_labels, int):
-                raise ValueError(
-                    f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-                )
+                raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
             return MultilabelPrecisionRecallCurve(num_labels, **kwargs)
         raise ValueError(f"Task {task} not supported!")

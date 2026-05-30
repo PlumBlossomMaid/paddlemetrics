@@ -7,17 +7,14 @@ from scipy.special import expit as sigmoid
 from scipy.special import softmax
 from sklearn.metrics import hinge_loss as sk_hinge
 from sklearn.preprocessing import OneHotEncoder
+
+from paddlemetrics.classification.hinge import BinaryHingeLoss, HingeLoss, MulticlassHingeLoss
+from paddlemetrics.functional.classification.hinge import binary_hinge_loss, multiclass_hinge_loss
+from paddlemetrics.metric import Metric
 from unittests import NUM_CLASSES
 from unittests._helpers import seed_all
-from unittests._helpers.testers import (MetricTester, inject_ignore_index,
-                                        remove_ignore_index)
+from unittests._helpers.testers import MetricTester, inject_ignore_index, remove_ignore_index
 from unittests.classification._inputs import _binary_cases, _multiclass_cases
-
-from paddlemetrics.classification.hinge import (BinaryHingeLoss, HingeLoss,
-                                               MulticlassHingeLoss)
-from paddlemetrics.functional.classification.hinge import (
-    binary_hinge_loss, multiclass_hinge_loss)
-from paddlemetrics.metric import Metric
 
 seed_all(42)
 
@@ -27,16 +24,12 @@ def _reference_sklearn_binary_hinge_loss(preds, target, ignore_index):
     target = target.numpy().flatten()
     if not ((preds > 0) & (preds < 1)).all():
         preds = sigmoid(preds)
-    target, preds = remove_ignore_index(
-        target=target, preds=preds, ignore_index=ignore_index
-    )
+    target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
     target = 2 * target - 1
     return sk_hinge(target, preds)
 
 
-@pytest.mark.parametrize(
-    "inputs", [_binary_cases[1], _binary_cases[2], _binary_cases[4], _binary_cases[5]]
-)
+@pytest.mark.parametrize("inputs", [_binary_cases[1], _binary_cases[2], _binary_cases[4], _binary_cases[5]])
 class TestBinaryHingeLoss(MetricTester):
     """Test class for `BinaryHingeLoss` metric."""
 
@@ -52,9 +45,7 @@ class TestBinaryHingeLoss(MetricTester):
             preds=preds,
             target=target,
             metric_class=BinaryHingeLoss,
-            reference_metric=partial(
-                _reference_sklearn_binary_hinge_loss, ignore_index=ignore_index
-            ),
+            reference_metric=partial(_reference_sklearn_binary_hinge_loss, ignore_index=ignore_index),
             metric_args={"ignore_index": ignore_index},
         )
 
@@ -68,9 +59,7 @@ class TestBinaryHingeLoss(MetricTester):
             preds=preds,
             target=target,
             metric_functional=binary_hinge_loss,
-            reference_metric=partial(
-                _reference_sklearn_binary_hinge_loss, ignore_index=ignore_index
-            ),
+            reference_metric=partial(_reference_sklearn_binary_hinge_loss, ignore_index=ignore_index),
             metric_args={"ignore_index": ignore_index},
         )
 
@@ -112,17 +101,13 @@ class TestBinaryHingeLoss(MetricTester):
         )
 
 
-def _reference_sklearn_multiclass_hinge_loss(
-    preds, target, multiclass_mode, ignore_index
-):
+def _reference_sklearn_multiclass_hinge_loss(preds, target, multiclass_mode, ignore_index):
     preds = preds.numpy()
     target = target.numpy().flatten()
     if not ((preds > 0) & (preds < 1)).all():
         preds = softmax(preds, 1)
     preds = np.moveaxis(preds, 1, -1).reshape((-1, preds.shape[1]))
-    target, preds = remove_ignore_index(
-        target=target, preds=preds, ignore_index=ignore_index
-    )
+    target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
     if multiclass_mode == "one-vs-all":
         enc = OneHotEncoder()
         enc.fit(target.reshape(-1, 1))
@@ -174,9 +159,7 @@ class TestMulticlassHingeLoss(MetricTester):
 
     @pytest.mark.parametrize("multiclass_mode", ["crammer-singer", "one-vs-all"])
     @pytest.mark.parametrize("ignore_index", [None, -1])
-    def test_multiclass_hinge_loss_functional(
-        self, inputs, multiclass_mode, ignore_index
-    ):
+    def test_multiclass_hinge_loss_functional(self, inputs, multiclass_mode, ignore_index):
         """Test functional implementation of metric."""
         preds, target = inputs
         if ignore_index is not None:

@@ -5,8 +5,7 @@ import paddle
 from paddle import Tensor
 from typing_extensions import Literal
 
-from paddlemetrics.functional.segmentation.mean_iou import (
-    _mean_iou_compute, _mean_iou_update, _mean_iou_validate_args)
+from paddlemetrics.functional.segmentation.mean_iou import _mean_iou_compute, _mean_iou_update, _mean_iou_validate_args
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -101,9 +100,7 @@ class MeanIoU(Metric):
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
-        _mean_iou_validate_args(
-            num_classes, include_background, per_class, input_format
-        )
+        _mean_iou_validate_args(num_classes, include_background, per_class, input_format)
         self.num_classes = num_classes
         self.include_background = include_background
         self.per_class = per_class
@@ -116,9 +113,7 @@ class MeanIoU(Metric):
                 default=paddle.zeros(num_classes if per_class else 1),
                 dist_reduce_fx="sum",
             )
-            self.add_state(
-                "num_batches", default=paddle.zeros(num_classes), dist_reduce_fx="sum"
-            )
+            self.add_state("num_batches", default=paddle.zeros(num_classes), dist_reduce_fx="sum")
             self._is_initialized = True
         else:
             self.add_state("score", default=paddle.zeros(1), dist_reduce_fx="sum")
@@ -141,34 +136,22 @@ class MeanIoU(Metric):
                             f"got {preds.shape} and {target.shape}.",
                         )
                 else:
-                    raise ValueError(
-                        "Argument `num_classes` must be provided when `input_format` is 'index'."
-                    )
+                    raise ValueError("Argument `num_classes` must be provided when `input_format` is 'index'.")
             except IndexError as err:
-                raise IndexError(
-                    f"Cannot determine `num_classes` from `preds` tensor: {preds}."
-                ) from err
+                raise IndexError(f"Cannot determine `num_classes` from `preds` tensor: {preds}.") from err
             if self.num_classes == 0:
                 raise ValueError(
                     f"Expected argument `num_classes` to be a positive integer, but got {self.num_classes}."
                 )
-            num_out_classes = (
-                self.num_classes - 1
-                if not self.include_background
-                else self.num_classes
-            )
+            num_out_classes = self.num_classes - 1 if not self.include_background else self.num_classes
             self.add_state(
                 "score",
-                default=paddle.zeros(
-                    num_out_classes, device=self.device, dtype=self.dtype
-                ),
+                default=paddle.zeros(num_out_classes, device=self.device, dtype=self.dtype),
                 dist_reduce_fx="sum",
             )
             self.add_state(
                 "num_batches",
-                default=paddle.zeros(
-                    num_out_classes, device=self.device, dtype=paddle.int32
-                ),
+                default=paddle.zeros(num_out_classes, device=self.device, dtype=paddle.int32),
                 dist_reduce_fx="sum",
             )
             self._is_initialized = True
@@ -187,9 +170,7 @@ class MeanIoU(Metric):
     def compute(self) -> paddle.Tensor:
         """Compute the final Mean Intersection over Union (mIoU)."""
         output_score = self.score / self.num_batches
-        return (
-            output_score.nan_to_num(-1.0) if self.per_class else output_score.nanmean()
-        )
+        return output_score.nan_to_num(-1.0) if self.per_class else output_score.nanmean()
 
     def plot(
         self,

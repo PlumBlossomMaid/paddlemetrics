@@ -3,7 +3,6 @@ from copy import deepcopy
 from typing import Any, Optional, Union
 
 import paddle
-from paddle import Tensor
 
 from paddlemetrics.collections import MetricCollection
 from paddlemetrics.metric import Metric
@@ -127,9 +126,7 @@ class MultitaskWrapper(WrapperMetric):
     ) -> None:
         super().__init__()
         if not isinstance(task_metrics, dict):
-            raise TypeError(
-                f"Expected argument `task_metrics` to be a dict. Found task_metrics = {task_metrics}"
-            )
+            raise TypeError(f"Expected argument `task_metrics` to be a dict. Found task_metrics = {task_metrics}")
         for metric in task_metrics.values():
             if not isinstance(metric, (Metric, MetricCollection)):
                 raise TypeError(
@@ -137,14 +134,10 @@ class MultitaskWrapper(WrapperMetric):
                 )
         self.task_metrics = paddle.nn.LayerDict(task_metrics)
         if prefix is not None and not isinstance(prefix, str):
-            raise ValueError(
-                f"Expected argument `prefix` to either be `None` or a string but got {prefix}"
-            )
+            raise ValueError(f"Expected argument `prefix` to either be `None` or a string but got {prefix}")
         self._prefix = prefix or ""
         if postfix is not None and not isinstance(postfix, str):
-            raise ValueError(
-                f"Expected argument `postfix` to either be `None` or a string but got {postfix}"
-            )
+            raise ValueError(f"Expected argument `postfix` to either be `None` or a string but got {postfix}")
         self._postfix = postfix or ""
 
     def items(self, flatten: bool = True) -> Iterable[tuple[str, paddle.nn.Layer]]:
@@ -214,10 +207,7 @@ class MultitaskWrapper(WrapperMetric):
 
     def _convert_output(self, output: dict[str, Any]) -> dict[str, Any]:
         """Convert the output of the underlying metrics to a dictionary with the task names as keys."""
-        return {
-            f"{self._prefix}{task_name}{self._postfix}": task_output
-            for task_name, task_output in output.items()
-        }
+        return {f"{self._prefix}{task_name}{self._postfix}": task_output for task_name, task_output in output.items()}
 
     def compute(self) -> dict[str, Any]:
         """Compute metrics for all tasks."""
@@ -259,9 +249,7 @@ class MultitaskWrapper(WrapperMetric):
             return arg
         raise ValueError(f"Expected input `{name}` to be a string, but got {type(arg)}")
 
-    def clone(
-        self, prefix: Optional[str] = None, postfix: Optional[str] = None
-    ) -> "MultitaskWrapper":
+    def clone(self, prefix: Optional[str] = None, postfix: Optional[str] = None) -> "MultitaskWrapper":
         """Make a copy of the metric.
 
         Args:
@@ -346,13 +334,9 @@ class MultitaskWrapper(WrapperMetric):
         """
         if axes is not None:
             if not isinstance(axes, Sequence):
-                raise TypeError(
-                    f"Expected argument `axes` to be a Sequence. Found type(axes) = {type(axes)}"
-                )
+                raise TypeError(f"Expected argument `axes` to be a Sequence. Found type(axes) = {type(axes)}")
             if not all(isinstance(ax, _AX_TYPE) for ax in axes):
-                raise TypeError(
-                    "Expected each ax in argument `axes` to be a matplotlib axis object"
-                )
+                raise TypeError("Expected each ax in argument `axes` to be a matplotlib axis object")
             if len(axes) != len(self.task_metrics):
                 raise ValueError(
                     f"Expected argument `axes` to be a Sequence of the same length as the number of tasks.Found len(axes) = {len(axes)} and {len(self.task_metrics)} tasks"

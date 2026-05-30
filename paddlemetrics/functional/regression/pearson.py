@@ -2,8 +2,7 @@ import math
 
 import paddle
 
-from paddlemetrics.functional.regression.utils import \
-    _check_data_shape_to_num_outputs
+from paddlemetrics.functional.regression.utils import _check_data_shape_to_num_outputs
 from paddlemetrics.utils import rank_zero_warn
 from paddlemetrics.utils.checks import _check_same_shape
 
@@ -74,12 +73,8 @@ def _pearson_corrcoef_update(
         var_x = var_x + batch_var_x + delta_x**2 * correction
         var_y = var_y + batch_var_y + delta_y**2 * correction
         corr_xy = corr_xy + batch_cov_xy + delta_x * delta_y * correction
-    max_abs_dev_x = paddle.maximum(
-        max_abs_dev_x, paddle.max((preds - mx_new).abs(), axis=0)[0]
-    )
-    max_abs_dev_y = paddle.maximum(
-        max_abs_dev_y, paddle.max((target - my_new).abs(), axis=0)[0]
-    )
+    max_abs_dev_x = paddle.maximum(max_abs_dev_x, paddle.max((preds - mx_new).abs(), axis=0)[0])
+    max_abs_dev_y = paddle.maximum(max_abs_dev_y, paddle.max((target - my_new).abs(), axis=0)[0])
     return (
         mx_new,
         my_new,
@@ -139,15 +134,11 @@ def _pearson_corrcoef_compute(
         | ~paddle.isfinite(var_y)
         | ~paddle.isfinite(corr_xy)
     )
-    corrcoef = paddle.full_like(
-        corr_xy, float("nan"), device=corr_xy.device, dtype=corr_xy.dtype
-    )
+    corrcoef = paddle.full_like(corr_xy, float("nan"), device=corr_xy.device, dtype=corr_xy.dtype)
     valid_mask = ~zero_var_mask
     if valid_mask.any():
         corrcoef[valid_mask] = (
-            (corr_xy[valid_mask] / (var_x[valid_mask] * var_y[valid_mask]).sqrt())
-            .squeeze()
-            .to(corrcoef.dtype)
+            (corr_xy[valid_mask] / (var_x[valid_mask] * var_y[valid_mask]).sqrt()).squeeze().to(corrcoef.dtype)
         )
         corrcoef = paddle.clamp(corrcoef, -1.0, 1.0)
     return corrcoef.squeeze()
@@ -202,6 +193,4 @@ def pearson_corrcoef(preds: paddle.Tensor, target: paddle.Tensor) -> paddle.Tens
         num_prior=nb,
         num_outputs=1 if preds.ndim == 1 else preds.shape[-1],
     )
-    return _pearson_corrcoef_compute(
-        max_abs_dev_x, max_abs_dev_y, var_x, var_y, corr_xy, nb
-    )
+    return _pearson_corrcoef_compute(max_abs_dev_x, max_abs_dev_y, var_x, var_y, corr_xy, nb)

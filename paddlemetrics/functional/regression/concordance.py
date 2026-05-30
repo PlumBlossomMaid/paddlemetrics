@@ -1,7 +1,6 @@
 import paddle
 
-from paddlemetrics.functional.regression.pearson import (
-    _pearson_corrcoef_compute, _pearson_corrcoef_update)
+from paddlemetrics.functional.regression.pearson import _pearson_corrcoef_compute, _pearson_corrcoef_update
 
 
 def _concordance_corrcoef_compute(
@@ -15,18 +14,10 @@ def _concordance_corrcoef_compute(
     nb: paddle.Tensor,
 ) -> paddle.Tensor:
     """Compute the final concordance correlation coefficient based on accumulated statistics."""
-    pearson = _pearson_corrcoef_compute(
-        max_abs_dev_x, max_abs_dev_y, var_x, var_y, corr_xy, nb
-    )
+    pearson = _pearson_corrcoef_compute(max_abs_dev_x, max_abs_dev_y, var_x, var_y, corr_xy, nb)
     var_x = var_x / (nb - 1)
     var_y = var_y / (nb - 1)
-    return (
-        2.0
-        * pearson
-        * var_x.sqrt()
-        * var_y.sqrt()
-        / (var_x + var_y + (mean_x - mean_y) ** 2)
-    )
+    return 2.0 * pearson * var_x.sqrt() * var_y.sqrt() / (var_x + var_y + (mean_x - mean_y) ** 2)
 
 
 def concordance_corrcoef(preds: paddle.Tensor, target: paddle.Tensor) -> paddle.Tensor:
@@ -84,6 +75,4 @@ def concordance_corrcoef(preds: paddle.Tensor, target: paddle.Tensor) -> paddle.
         num_prior=nb,
         num_outputs=1 if preds.ndim == 1 else preds.shape[-1],
     )
-    return _concordance_corrcoef_compute(
-        max_abs_dev_x, max_abs_dev_y, mean_x, mean_y, var_x, var_y, corr_xy, nb
-    )
+    return _concordance_corrcoef_compute(max_abs_dev_x, max_abs_dev_y, mean_x, mean_y, var_x, var_y, corr_xy, nb)

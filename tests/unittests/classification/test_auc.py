@@ -3,14 +3,14 @@ from typing import NamedTuple
 
 import numpy as np
 import paddle
-from paddle import Tensor
 import pytest
+from paddle import Tensor
 from sklearn.metrics import auc as _sk_auc
+
+from paddlemetrics.utils.compute import auc
 from unittests import NUM_BATCHES
 from unittests._helpers import seed_all
 from unittests._helpers.testers import MetricTester
-
-from paddlemetrics.utils.compute import auc
 
 seed_all(42)
 

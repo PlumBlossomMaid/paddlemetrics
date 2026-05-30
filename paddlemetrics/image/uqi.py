@@ -68,9 +68,7 @@ class UniversalImageQualityIndex(Metric):
         self,
         kernel_size: Sequence[int] = (11, 11),
         sigma: Sequence[float] = (1.5, 1.5),
-        reduction: Literal[
-            "elementwise_mean", "sum", "none", None
-        ] = "elementwise_mean",
+        reduction: Literal["elementwise_mean", "sum", "none", None] = "elementwise_mean",
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
@@ -98,31 +96,18 @@ class UniversalImageQualityIndex(Metric):
             self.preds.append(preds)
             self.target.append(target)
         else:
-            uqi_score = _uqi_compute(
-                preds, target, self.kernel_size, self.sigma, reduction="sum"
-            )
+            uqi_score = _uqi_compute(preds, target, self.kernel_size, self.sigma, reduction="sum")
             self.sum_uqi += uqi_score
             ps = preds.shape
-            self.numel += (
-                ps[0]
-                * ps[1]
-                * (ps[2] - self.kernel_size[0] + 1)
-                * (ps[3] - self.kernel_size[1] + 1)
-            )
+            self.numel += ps[0] * ps[1] * (ps[2] - self.kernel_size[0] + 1) * (ps[3] - self.kernel_size[1] + 1)
 
     def compute(self) -> paddle.Tensor:
         """Compute explained variance over state."""
         if self.reduction == "none" or self.reduction is None:
             preds = dim_zero_cat(self.preds)
             target = dim_zero_cat(self.target)
-            return _uqi_compute(
-                preds, target, self.kernel_size, self.sigma, self.reduction
-            )
-        return (
-            self.sum_uqi / self.numel
-            if self.reduction == "elementwise_mean"
-            else self.sum_uqi
-        )
+            return _uqi_compute(preds, target, self.kernel_size, self.sigma, self.reduction)
+        return self.sum_uqi / self.numel if self.reduction == "elementwise_mean" else self.sum_uqi
 
     def plot(
         self,

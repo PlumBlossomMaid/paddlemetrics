@@ -7,24 +7,30 @@ from scipy.special import expit as sigmoid
 from sklearn.metrics import confusion_matrix as sk_confusion_matrix
 from sklearn.metrics import precision_score as sk_precision_score
 from sklearn.metrics import recall_score as sk_recall_score
+
+from paddlemetrics.classification.precision_recall import (
+    BinaryPrecision,
+    BinaryRecall,
+    MulticlassPrecision,
+    MulticlassRecall,
+    MultilabelPrecision,
+    MultilabelRecall,
+    Precision,
+    Recall,
+)
+from paddlemetrics.functional.classification.precision_recall import (
+    binary_precision,
+    binary_recall,
+    multiclass_precision,
+    multiclass_recall,
+    multilabel_precision,
+    multilabel_recall,
+)
+from paddlemetrics.metric import Metric
 from unittests import NUM_CLASSES, THRESHOLD
 from unittests._helpers import seed_all
-from unittests._helpers.testers import (MetricTester, inject_ignore_index,
-                                        remove_ignore_index)
-from unittests.classification._inputs import (_binary_cases, _multiclass_cases,
-                                              _multilabel_cases)
-
-from paddlemetrics.classification.precision_recall import (BinaryPrecision,
-                                                          BinaryRecall,
-                                                          MulticlassPrecision,
-                                                          MulticlassRecall,
-                                                          MultilabelPrecision,
-                                                          MultilabelRecall,
-                                                          Precision, Recall)
-from paddlemetrics.functional.classification.precision_recall import (
-    binary_precision, binary_recall, multiclass_precision, multiclass_recall,
-    multilabel_precision, multilabel_recall)
-from paddlemetrics.metric import Metric
+from unittests._helpers.testers import MetricTester, inject_ignore_index, remove_ignore_index
+from unittests.classification._inputs import _binary_cases, _multiclass_cases, _multilabel_cases
 
 seed_all(42)
 
@@ -49,17 +55,13 @@ def _reference_sklearn_precision_recall_binary(
             preds = sigmoid(preds)
         preds = (preds >= prob_threshold).astype(np.uint8)
     if multidim_average == "global":
-        target, preds = remove_ignore_index(
-            target=target, preds=preds, ignore_index=ignore_index
-        )
+        target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
         return sk_fn(target, preds, zero_division=zero_division)
     res = []
     for pred, true in zip(preds, target):
         pred = pred.flatten()
         true = true.flatten()
-        true, pred = remove_ignore_index(
-            target=true, preds=pred, ignore_index=ignore_index
-        )
+        true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
         res.append(sk_fn(true, pred, zero_division=zero_division))
     return np.stack(res)
 
@@ -157,9 +159,7 @@ class TestBinaryPrecisionRecall(MetricTester):
             },
         )
 
-    def test_binary_precision_recall_differentiability(
-        self, inputs, module, functional, compare
-    ):
+    def test_binary_precision_recall_differentiability(self, inputs, module, functional, compare):
         """Test the differentiability of the metric, according to its `is_differentiable` attribute."""
         preds, target = inputs
         self.run_differentiability_test(
@@ -171,19 +171,11 @@ class TestBinaryPrecisionRecall(MetricTester):
         )
 
     @pytest.mark.parametrize("dtype", [paddle.float16, paddle.float64])
-    def test_binary_precision_recall_half_cpu(
-        self, inputs, module, functional, compare, dtype
-    ):
+    def test_binary_precision_recall_half_cpu(self, inputs, module, functional, compare, dtype):
         """Test dtype support of the metric on CPU."""
         preds, target = inputs
-        if (
-            not True
-            and (preds < 0).any()
-            and dtype == paddle.float16
-        ):
-            pytest.xfail(
-                reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1"
-            )
+        if not True and (preds < 0).any() and dtype == paddle.float16:
+            pytest.xfail(reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1")
         self.run_precision_test_cpu(
             preds=preds,
             target=target,
@@ -195,9 +187,7 @@ class TestBinaryPrecisionRecall(MetricTester):
 
     @pytest.mark.skipif(not paddle.cuda.is_available(), reason="test requires cuda")
     @pytest.mark.parametrize("dtype", [paddle.float16, paddle.float64])
-    def test_binary_precision_recall_half_gpu(
-        self, inputs, module, functional, compare, dtype
-    ):
+    def test_binary_precision_recall_half_gpu(self, inputs, module, functional, compare, dtype):
         """Test dtype support of the metric on GPU."""
         preds, target = inputs
         self.run_precision_test_gpu(
@@ -225,9 +215,7 @@ def _reference_sklearn_precision_recall_multiclass(
     if multidim_average == "global":
         preds = preds.numpy().flatten()
         target = target.numpy().flatten()
-        target, preds = remove_ignore_index(
-            target=target, preds=preds, ignore_index=ignore_index
-        )
+        target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
         return sk_fn(
             target,
             preds,
@@ -241,9 +229,7 @@ def _reference_sklearn_precision_recall_multiclass(
     for pred, true in zip(preds, target):
         pred = pred.flatten()
         true = true.flatten()
-        true, pred = remove_ignore_index(
-            target=true, preds=pred, ignore_index=ignore_index
-        )
+        true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
         if len(pred) == 0 and average == "weighted":
             r = 0.0
         else:
@@ -359,9 +345,7 @@ class TestMulticlassPrecisionRecall(MetricTester):
             },
         )
 
-    def test_multiclass_precision_recall_differentiability(
-        self, inputs, module, functional, compare
-    ):
+    def test_multiclass_precision_recall_differentiability(self, inputs, module, functional, compare):
         """Test the differentiability of the metric, according to its `is_differentiable` attribute."""
         preds, target = inputs
         self.run_differentiability_test(
@@ -373,19 +357,11 @@ class TestMulticlassPrecisionRecall(MetricTester):
         )
 
     @pytest.mark.parametrize("dtype", [paddle.float16, paddle.float64])
-    def test_multiclass_precision_recall_half_cpu(
-        self, inputs, module, functional, compare, dtype
-    ):
+    def test_multiclass_precision_recall_half_cpu(self, inputs, module, functional, compare, dtype):
         """Test dtype support of the metric on CPU."""
         preds, target = inputs
-        if (
-            not True
-            and (preds < 0).any()
-            and dtype == paddle.float16
-        ):
-            pytest.xfail(
-                reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1"
-            )
+        if not True and (preds < 0).any() and dtype == paddle.float16:
+            pytest.xfail(reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1")
         self.run_precision_test_cpu(
             preds=preds,
             target=target,
@@ -397,9 +373,7 @@ class TestMulticlassPrecisionRecall(MetricTester):
 
     @pytest.mark.skipif(not paddle.cuda.is_available(), reason="test requires cuda")
     @pytest.mark.parametrize("dtype", [paddle.float16, paddle.float64])
-    def test_multiclass_precision_recall_half_gpu(
-        self, inputs, module, functional, compare, dtype
-    ):
+    def test_multiclass_precision_recall_half_gpu(self, inputs, module, functional, compare, dtype):
         """Test dtype support of the metric on GPU."""
         preds, target = inputs
         self.run_precision_test_gpu(
@@ -417,9 +391,7 @@ _mc_k_preds = paddle.tensor([[0.35, 0.4, 0.25], [0.1, 0.5, 0.4], [0.2, 0.1, 0.7]
 _mc_k_targets2 = paddle.tensor([0, 0, 2])
 _mc_k_preds2 = paddle.tensor([[0.9, 0.1, 0.0], [0.9, 0.1, 0.0], [0.9, 0.1, 0.0]])
 _mc_k_target3 = paddle.tensor([0, 1, 2, 0])
-_mc_k_preds3 = paddle.tensor(
-    [[0.1, 0.2, 0.7], [0.4, 0.4, 0.2], [0.3, 0.3, 0.4], [0.3, 0.3, 0.4]]
-)
+_mc_k_preds3 = paddle.tensor([[0.1, 0.2, 0.7], [0.4, 0.4, 0.2], [0.3, 0.3, 0.4], [0.3, 0.3, 0.4]])
 
 
 @pytest.mark.parametrize(
@@ -577,14 +549,8 @@ def test_top_k(
     """A test to validate top_k functionality for precision and recall."""
     class_metric = metric_class(top_k=k, average=average, num_classes=3)
     class_metric.update(preds, target)
-    result = (
-        expected_prec
-        if metric_class.__name__ == "MulticlassPrecision"
-        else expected_recall
-    )
-    assert paddle.allclose(
-        x=class_metric.compute(), y=result, atol=0.0001, rtol=0.0001
-    ).item()
+    result = expected_prec if metric_class.__name__ == "MulticlassPrecision" else expected_recall
+    assert paddle.allclose(x=class_metric.compute(), y=result, atol=0.0001, rtol=0.0001).item()
     assert paddle.allclose(
         x=metric_fn(preds, target, top_k=k, average=average, num_classes=3),
         y=result,
@@ -609,30 +575,24 @@ def test_multiclass_precision_recall_with_top_k(num_classes):
     target = paddle.randint(low=0, high=num_classes, shape=(200,))
     previous_precision = 0.0
     for k in range(1, num_classes + 1):
-        precision_score = MulticlassPrecision(
-            num_classes=num_classes, top_k=k, average="macro"
-        )
+        precision_score = MulticlassPrecision(num_classes=num_classes, top_k=k, average="macro")
         precision = precision_score(preds, target)
-        assert (
-            precision >= previous_precision
-        ), f"Precision did not increase for top_k={k}"
+        assert precision >= previous_precision, f"Precision did not increase for top_k={k}"
         previous_precision = precision
         if k == num_classes:
-            assert paddle.isclose(
-                precision, paddle.tensor(1.0)
-            ), f"Precision is not 1 for top_k={k} when num_classes={num_classes}"
+            assert paddle.isclose(precision, paddle.tensor(1.0)), (
+                f"Precision is not 1 for top_k={k} when num_classes={num_classes}"
+            )
     previous_recall = 0.0
     for k in range(1, num_classes + 1):
-        recall_score = MulticlassRecall(
-            num_classes=num_classes, top_k=k, average="macro"
-        )
+        recall_score = MulticlassRecall(num_classes=num_classes, top_k=k, average="macro")
         recall = recall_score(preds, target)
         assert recall >= previous_recall, f"Recall did not increase for top_k={k}"
         previous_recall = recall
         if k == num_classes:
-            assert paddle.isclose(
-                recall, paddle.tensor(1.0)
-            ), f"Recall is not 1 for top_k={k} when num_classes={num_classes}"
+            assert paddle.isclose(recall, paddle.tensor(1.0)), (
+                f"Recall is not 1 for top_k={k} when num_classes={num_classes}"
+            )
 
 
 @pytest.mark.parametrize(("num_classes", "k"), [(5, 3), (10, 5)])
@@ -640,12 +600,8 @@ def test_multiclass_precision_recall_top_k_equivalence(num_classes, k):
     """Test that top-k Precision and Recall scores are equivalent to corrected top-1 scores."""
     preds = paddle.randn(200, num_classes).softmax(dim=-1)
     target = paddle.randint(low=0, high=num_classes, shape=(200,))
-    precision_top_k = MulticlassPrecision(
-        num_classes=num_classes, top_k=k, average="macro"
-    )
-    precision_top_1 = MulticlassPrecision(
-        num_classes=num_classes, top_k=1, average="macro"
-    )
+    precision_top_k = MulticlassPrecision(num_classes=num_classes, top_k=k, average="macro")
+    precision_top_1 = MulticlassPrecision(num_classes=num_classes, top_k=1, average="macro")
     recall_top_k = MulticlassRecall(num_classes=num_classes, top_k=k, average="macro")
     recall_top_1 = MulticlassRecall(num_classes=num_classes, top_k=1, average="macro")
     pred_top_k = paddle.argsort(preds, axis=1, descending=True)[:, :k]
@@ -656,30 +612,24 @@ def test_multiclass_precision_recall_top_k_equivalence(num_classes, k):
     precision_score_corrected = precision_top_1(pred_corrected_top_k, target)
     recall_score_top_k = recall_top_k(preds, target)
     recall_score_corrected = recall_top_1(pred_corrected_top_k, target)
-    assert paddle.isclose(
-        precision_score_top_k, precision_score_corrected
-    ), f"Top-{k} Precision ({precision_score_top_k}) does not match corrected top-1 Precision ({precision_score_corrected})"
-    assert paddle.isclose(
-        recall_score_top_k, recall_score_corrected
-    ), f"Top-{k} Recall ({recall_score_top_k}) does not match corrected top-1 Recall ({recall_score_corrected})"
+    assert paddle.isclose(precision_score_top_k, precision_score_corrected), (
+        f"Top-{k} Precision ({precision_score_top_k}) does not match corrected top-1 Precision ({precision_score_corrected})"
+    )
+    assert paddle.isclose(recall_score_top_k, recall_score_corrected), (
+        f"Top-{k} Recall ({recall_score_top_k}) does not match corrected top-1 Recall ({recall_score_corrected})"
+    )
 
 
-def _reference_sklearn_precision_recall_multilabel_global(
-    preds, target, sk_fn, ignore_index, average, zero_division
-):
+def _reference_sklearn_precision_recall_multilabel_global(preds, target, sk_fn, ignore_index, average, zero_division):
     if average == "micro":
         preds = preds.flatten()
         target = target.flatten()
-        target, preds = remove_ignore_index(
-            target=target, preds=preds, ignore_index=ignore_index
-        )
+        target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
         return sk_fn(target, preds, zero_division=zero_division)
     precision_recall, weights = [], []
     for i in range(preds.shape[1]):
         pred, true = preds[:, i].flatten(), target[:, i].flatten()
-        true, pred = remove_ignore_index(
-            target=true, preds=pred, ignore_index=ignore_index
-        )
+        true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
         precision_recall.append(sk_fn(true, pred, zero_division=zero_division))
         confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
         weights.append(confmat[1, 1] + confmat[1, 0])
@@ -696,16 +646,12 @@ def _reference_sklearn_precision_recall_multilabel_global(
     return None
 
 
-def _reference_sklearn_precision_recall_multilabel_local(
-    preds, target, sk_fn, ignore_index, average, zero_division
-):
+def _reference_sklearn_precision_recall_multilabel_local(preds, target, sk_fn, ignore_index, average, zero_division):
     precision_recall, weights = [], []
     for i in range(preds.shape[0]):
         if average == "micro":
             pred, true = preds[i].flatten(), target[i].flatten()
-            true, pred = remove_ignore_index(
-                target=true, preds=pred, ignore_index=ignore_index
-            )
+            true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
             precision_recall.append(sk_fn(true, pred, zero_division=zero_division))
             confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
             weights.append(confmat[1, 1] + confmat[1, 0])
@@ -713,9 +659,7 @@ def _reference_sklearn_precision_recall_multilabel_local(
             scores, w = [], []
             for j in range(preds.shape[1]):
                 pred, true = preds[i, j], target[i, j]
-                true, pred = remove_ignore_index(
-                    target=true, preds=pred, ignore_index=ignore_index
-                )
+                true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
                 scores.append(sk_fn(true, pred, zero_division=zero_division))
                 confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
                 w.append(confmat[1, 1] + confmat[1, 0])
@@ -873,9 +817,7 @@ class TestMultilabelPrecisionRecall(MetricTester):
             },
         )
 
-    def test_multilabel_precision_recall_differentiability(
-        self, inputs, module, functional, compare
-    ):
+    def test_multilabel_precision_recall_differentiability(self, inputs, module, functional, compare):
         """Test the differentiability of the metric, according to its `is_differentiable` attribute."""
         preds, target = inputs
         self.run_differentiability_test(
@@ -887,19 +829,11 @@ class TestMultilabelPrecisionRecall(MetricTester):
         )
 
     @pytest.mark.parametrize("dtype", [paddle.float16, paddle.float64])
-    def test_multilabel_precision_recall_half_cpu(
-        self, inputs, module, functional, compare, dtype
-    ):
+    def test_multilabel_precision_recall_half_cpu(self, inputs, module, functional, compare, dtype):
         """Test dtype support of the metric on CPU."""
         preds, target = inputs
-        if (
-            not True
-            and (preds < 0).any()
-            and dtype == paddle.float16
-        ):
-            pytest.xfail(
-                reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1"
-            )
+        if not True and (preds < 0).any() and dtype == paddle.float16:
+            pytest.xfail(reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1")
         self.run_precision_test_cpu(
             preds=preds,
             target=target,
@@ -911,9 +845,7 @@ class TestMultilabelPrecisionRecall(MetricTester):
 
     @pytest.mark.skipif(not paddle.cuda.is_available(), reason="test requires cuda")
     @pytest.mark.parametrize("dtype", [paddle.float16, paddle.float64])
-    def test_multilabel_precision_recall_half_gpu(
-        self, inputs, module, functional, compare, dtype
-    ):
+    def test_multilabel_precision_recall_half_gpu(self, inputs, module, functional, compare, dtype):
         """Test dtype support of the metric on GPU."""
         preds, target = inputs
         self.run_precision_test_gpu(

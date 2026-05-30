@@ -1,12 +1,10 @@
-import sys
 
 from typing import Literal, Optional, Union
 
 import paddle
 from paddle import Tensor
 
-from paddlemetrics.functional.segmentation.utils import (
-    _segmentation_inputs_format, edge_surface_distance)
+from paddlemetrics.functional.segmentation.utils import _segmentation_inputs_format, edge_surface_distance
 
 
 def _hausdorff_distance_validate_args(
@@ -19,25 +17,17 @@ def _hausdorff_distance_validate_args(
 ) -> None:
     """Validate the arguments of `hausdorff_distance` function."""
     if num_classes <= 0:
-        raise ValueError(
-            f"Expected argument `num_classes` must be a positive integer, but got {num_classes}."
-        )
+        raise ValueError(f"Expected argument `num_classes` must be a positive integer, but got {num_classes}.")
     if not isinstance(include_background, bool):
-        raise ValueError(
-            f"Expected argument `include_background` must be a boolean, but got {include_background}."
-        )
+        raise ValueError(f"Expected argument `include_background` must be a boolean, but got {include_background}.")
     if distance_metric not in ["euclidean", "chessboard", "taxicab"]:
         raise ValueError(
             f"Arg `distance_metric` must be one of 'euclidean', 'chessboard', 'taxicab', but got {distance_metric}."
         )
     if spacing is not None and not isinstance(spacing, (list, Tensor)):
-        raise ValueError(
-            f"Arg `spacing` must be a list or tensor, but got {type(spacing)}."
-        )
+        raise ValueError(f"Arg `spacing` must be a list or tensor, but got {type(spacing)}.")
     if not isinstance(directed, bool):
-        raise ValueError(
-            f"Expected argument `directed` must be a boolean, but got {directed}."
-        )
+        raise ValueError(f"Expected argument `directed` must be a boolean, but got {directed}.")
     if input_format not in ["one-hot", "index", "mixed"]:
         raise ValueError(
             f"Expected argument `input_format` to be one of 'one-hot', 'index', 'mixed', but got {input_format}."
@@ -92,9 +82,7 @@ def hausdorff_distance(
         directed,
         input_format,
     )
-    preds, target = _segmentation_inputs_format(
-        preds, target, include_background, num_classes, input_format
-    )
+    preds, target = _segmentation_inputs_format(preds, target, include_background, num_classes, input_format)
     distances = paddle.zeros(preds.shape[0], preds.shape[1], device=preds.place)
     for b in range(preds.shape[0]):
         for c in range(preds.shape[1]):
@@ -105,9 +93,5 @@ def hausdorff_distance(
                 spacing=spacing,
                 symmetric=not directed,
             )
-            distances[b, c] = (
-                paddle.max(dist)
-                if directed
-                else paddle.max(dist[0]._max(), dist[1]._max())
-            )
+            distances[b, c] = paddle.max(dist) if directed else paddle.max(dist[0].amax(), dist[1].amax())
     return distances

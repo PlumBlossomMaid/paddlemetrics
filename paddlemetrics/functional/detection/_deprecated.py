@@ -2,8 +2,7 @@ from collections.abc import Collection
 
 import paddle
 
-from paddlemetrics.functional.detection.panoptic_qualities import (
-    modified_panoptic_quality, panoptic_quality)
+from paddlemetrics.functional.detection.panoptic_qualities import modified_panoptic_quality, panoptic_quality
 from paddlemetrics.utils.prints import _deprecated_root_import_func
 
 

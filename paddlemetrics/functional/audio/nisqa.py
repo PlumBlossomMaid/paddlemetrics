@@ -9,24 +9,19 @@ import numpy as np
 import paddle
 
 from paddlemetrics.utils import rank_zero_info
-from paddlemetrics.utils.imports import (_LIBROSA_AVAILABLE,
-                                            _REQUESTS_AVAILABLE)
 from paddlemetrics.utils.compat import pack_padded_sequence, pad_packed_sequence
+from paddlemetrics.utils.imports import _LIBROSA_AVAILABLE, _REQUESTS_AVAILABLE
 
 if _LIBROSA_AVAILABLE and _REQUESTS_AVAILABLE:
     import librosa
     import requests
 else:
     librosa, requests = None, None
-__doctest_requires__ = {
-    ("non_intrusive_speech_quality_assessment",): ["librosa", "requests"]
-}
+__doctest_requires__ = {("non_intrusive_speech_quality_assessment",): ["librosa", "requests"]}
 NISQA_DIR = "~/.paddlemetrics/NISQA"
 
 
-def non_intrusive_speech_quality_assessment(
-    preds: paddle.Tensor, fs: int
-) -> paddle.Tensor:
+def non_intrusive_speech_quality_assessment(preds: paddle.Tensor, fs: int) -> paddle.Tensor:
     """`Non-Intrusive Speech Quality Assessment`_ (NISQA v2.0) [1], [2].
 
     .. hint::
@@ -70,9 +65,7 @@ def non_intrusive_speech_quality_assessment(
         )
     model, args = _load_nisqa_model()
     if not isinstance(fs, int) or fs <= 0:
-        raise ValueError(
-            f"Argument `fs` expected to be a positive integer, but got {fs}"
-        )
+        raise ValueError(f"Argument `fs` expected to be a positive integer, but got {fs}")
     model.eval()
     x = preds.reshape([-1, preds.shape[-1]])
     x = _get_librosa_melspec(x.numpy(), fs, args)
@@ -102,9 +95,7 @@ def _load_nisqa_model() -> tuple[paddle.nn.Layer, dict[str, Any]]:
 
 def _download_weights() -> None:
     """Download NISQA model weights."""
-    url = (
-        "https://github.com/gabrielmittag/NISQA/raw/refs/heads/master/weights/nisqa.tar"
-    )
+    url = "https://github.com/gabrielmittag/NISQA/raw/refs/heads/master/weights/nisqa.tar"
     nisqa_dir = os.path.expanduser(NISQA_DIR)
     os.makedirs(nisqa_dir, exist_ok=True)
     saveto = os.path.join(nisqa_dir, "nisqa.tar")
@@ -137,15 +128,11 @@ class _Framewise(paddle.nn.Layer):
         self.model = _AdaptCNN(args)
 
     def forward(self, x: paddle.Tensor, n_wins: paddle.Tensor) -> paddle.Tensor:
-        x_packed = pack_padded_sequence(
-            x, n_wins, batch_first=True, enforce_sorted=False
-        )
+        x_packed = pack_padded_sequence(x, n_wins, batch_first=True, enforce_sorted=False)
         packed_data, batch_sizes, sorted_indices, unsorted_indices = x_packed
         x = self.model(packed_data.unsqueeze(1))
         x = (x, batch_sizes, sorted_indices, unsorted_indices)
-        x, _ = pad_packed_sequence(
-            x, batch_first=True, padding_value=0.0, total_length=int(n_wins.max())
-        )
+        x, _ = pad_packed_sequence(x, batch_first=True, padding_value=0.0, total_length=int(n_wins.max()))
         return x
 
 
@@ -157,9 +144,7 @@ class _AdaptCNN(paddle.nn.Layer):
         self.pool_3 = args["cnn_pool_3"]
         self.dropout = paddle.nn.Dropout2D(p=args["cnn_dropout"])
         cnn_pad = (1, 0) if args["cnn_kernel_size"][0] == 1 else (1, 1)
-        self.conv1 = paddle.nn.Conv2D(
-            1, args["cnn_c_out_1"], args["cnn_kernel_size"], padding=cnn_pad
-        )
+        self.conv1 = paddle.nn.Conv2D(1, args["cnn_c_out_1"], args["cnn_kernel_size"], padding=cnn_pad)
         self.bn1 = paddle.nn.BatchNorm2D(num_features=self.conv1._out_channels)
         self.conv2 = paddle.nn.Conv2D(
             self.conv1._out_channels,
@@ -228,9 +213,7 @@ class _SelfAttention(paddle.nn.Layer):
         super().__init__()
         encoder_layer = _SelfAttentionLayer(args)
         self.norm1 = paddle.nn.LayerNorm(args["td_sa_d_model"])
-        self.linear = paddle.nn.Linear(
-            args["cnn_c_out_3"] * args["cnn_pool_3"][0], args["td_sa_d_model"]
-        )
+        self.linear = paddle.nn.Linear(args["cnn_c_out_3"] * args["cnn_pool_3"][0], args["td_sa_d_model"])
         self.layers = _get_clones(encoder_layer, args["td_sa_num_layers"])
         self._reset_parameters()
 
@@ -239,9 +222,7 @@ class _SelfAttention(paddle.nn.Layer):
             if p.dim() > 1:
                 paddle.nn.initializer.XavierUniform(p)
 
-    def forward(
-        self, src: paddle.Tensor, n_wins: paddle.Tensor
-    ) -> tuple[paddle.Tensor, paddle.Tensor]:
+    def forward(self, src: paddle.Tensor, n_wins: paddle.Tensor) -> tuple[paddle.Tensor, paddle.Tensor]:
         src = self.linear(src)
         output = src.transpose([1, 0, 2])
         output = self.norm1(output)
@@ -253,9 +234,7 @@ class _SelfAttention(paddle.nn.Layer):
 class _SelfAttentionLayer(paddle.nn.Layer):
     def __init__(self, args: dict[str, Any]) -> None:
         super().__init__()
-        self.self_attn = paddle.nn.MultiHeadAttention(
-            args["td_sa_d_model"], args["td_sa_nhead"], args["td_sa_dropout"]
-        )
+        self.self_attn = paddle.nn.MultiHeadAttention(args["td_sa_d_model"], args["td_sa_nhead"], args["td_sa_dropout"])
         self.linear1 = paddle.nn.Linear(args["td_sa_d_model"], args["td_sa_h"])
         self.dropout = paddle.nn.Dropout(args["td_sa_dropout"])
         self.linear2 = paddle.nn.Linear(args["td_sa_h"], args["td_sa_d_model"])
@@ -265,9 +244,7 @@ class _SelfAttentionLayer(paddle.nn.Layer):
         self.dropout2 = paddle.nn.Dropout(args["td_sa_dropout"])
         self.activation = paddle.nn.functional.relu
 
-    def forward(
-        self, src: paddle.Tensor, n_wins: paddle.Tensor
-    ) -> tuple[paddle.Tensor, paddle.Tensor]:
+    def forward(self, src: paddle.Tensor, n_wins: paddle.Tensor) -> tuple[paddle.Tensor, paddle.Tensor]:
         mask = paddle.arange(src.shape[0])[None, :] < n_wins[:, None]
         src2 = self.self_attn(src, src, src, key_padding_mask=~mask)[0]
         src = src + self.dropout1(src2)
@@ -290,9 +267,7 @@ class _Pooling(paddle.nn.Layer):
 class _PoolAttFF(paddle.nn.Layer):
     def __init__(self, args: dict[str, Any]) -> None:
         super().__init__()
-        self.linear1 = paddle.nn.Linear(
-            args["td_sa_d_model"], args["pool_att_h"]
-        )
+        self.linear1 = paddle.nn.Linear(args["td_sa_d_model"], args["pool_att_h"])
         self.linear2 = paddle.nn.Linear(args["pool_att_h"], 1)
         self.linear3 = paddle.nn.Linear(args["td_sa_d_model"], 1)
         self.activation = paddle.nn.functional.relu
@@ -324,9 +299,7 @@ def _get_librosa_melspec(y: np.ndarray, sr: int, args: dict[str, Any]) -> np.nda
     hop_length = int(sr * args["ms_hop_length"])
     win_length = int(sr * args["ms_win_length"])
     with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore", message="Empty filters detected in mel frequency basis"
-        )
+        warnings.filterwarnings("ignore", message="Empty filters detected in mel frequency basis")
         melspec = librosa.feature.melspectrogram(
             y=y,
             sr=sr,
@@ -344,14 +317,10 @@ def _get_librosa_melspec(y: np.ndarray, sr: int, args: dict[str, Any]) -> np.nda
             htk=False,
             norm="slaney",
         )
-    return np.stack(
-        [librosa.amplitude_to_db(m, ref=1.0, amin=0.0001, top_db=80.0) for m in melspec]
-    )
+    return np.stack([librosa.amplitude_to_db(m, ref=1.0, amin=0.0001, top_db=80.0) for m in melspec])
 
 
-def _segment_specs(
-    x: paddle.Tensor, args: dict[str, Any]
-) -> tuple[paddle.Tensor, paddle.Tensor]:
+def _segment_specs(x: paddle.Tensor, args: dict[str, Any]) -> tuple[paddle.Tensor, paddle.Tensor]:
     """Segment mel spectrogram into overlapping windows.
 
     Args:
@@ -377,9 +346,7 @@ def _segment_specs(
     x = x[:, ::seg_hop]
     n_wins = math.ceil(n_wins / seg_hop)
     if max_length < n_wins:
-        raise RuntimeError(
-            "Maximum number of mel spectrogram windows exceeded. Use shorter audio."
-        )
+        raise RuntimeError("Maximum number of mel spectrogram windows exceeded. Use shorter audio.")
     x_padded = paddle.zeros([x.shape[0], max_length, x.shape[2], x.shape[3]])
     x_padded[:, :n_wins] = x
     return x_padded, paddle.to_tensor(n_wins)

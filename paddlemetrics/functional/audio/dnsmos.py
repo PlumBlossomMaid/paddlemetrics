@@ -6,9 +6,7 @@ import numpy as np
 import paddle
 
 from paddlemetrics.utils import rank_zero_info, rank_zero_warn
-from paddlemetrics.utils.imports import (_LIBROSA_AVAILABLE,
-                                            _ONNXRUNTIME_AVAILABLE,
-                                            _REQUESTS_AVAILABLE)
+from paddlemetrics.utils.imports import _LIBROSA_AVAILABLE, _ONNXRUNTIME_AVAILABLE, _REQUESTS_AVAILABLE
 
 if _LIBROSA_AVAILABLE and _ONNXRUNTIME_AVAILABLE and _REQUESTS_AVAILABLE:
     import librosa
@@ -21,8 +19,7 @@ else:
     class InferenceSession:
         """Dummy InferenceSession."""
 
-        def __init__(self, **kwargs: dict[str, Any]) -> None:
-            ...
+        def __init__(self, **kwargs: dict[str, Any]) -> None: ...
 
 
 __doctest_requires__ = {
@@ -66,9 +63,7 @@ def _prepare_dnsmos(dnsmos_dir: str) -> None:
             f.write(myfile.content)
 
 
-def _load_session(
-    path: str, device: paddle.device, num_threads: Optional[int] = None
-) -> InferenceSession:
+def _load_session(path: str, device: paddle.device, num_threads: Optional[int] = None) -> InferenceSession:
     """Load onnxruntime session.
 
     Args:
@@ -88,9 +83,7 @@ def _load_session(
         opts.inter_op_num_threads = num_threads
         opts.intra_op_num_threads = num_threads
     if device.type == "cpu":
-        infs = InferenceSession(
-            path, providers=["CPUExecutionProvider"], sess_options=opts
-        )
+        infs = InferenceSession(path, providers=["CPUExecutionProvider"], sess_options=opts)
     elif "CUDAExecutionProvider" in ort.get_available_providers():
         providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
         provider_options = [{"device_id": device.index}, {}]
@@ -110,9 +103,7 @@ def _load_session(
             sess_options=opts,
         )
     else:
-        infs = InferenceSession(
-            path, providers=["CPUExecutionProvider"], sess_options=opts
-        )
+        infs = InferenceSession(path, providers=["CPUExecutionProvider"], sess_options=opts)
     return infs
 
 
@@ -241,9 +232,7 @@ def deep_noise_suppression_mean_opinion_score(
         device,
         num_threads,
     )
-    p808_onnx_sess = _load_session_function(
-        f"{DNSMOS_DIR}/DNSMOS/model_v8.onnx", device, num_threads
-    )
+    p808_onnx_sess = _load_session_function(f"{DNSMOS_DIR}/DNSMOS/model_v8.onnx", device, num_threads)
     desired_fs = SAMPLING_RATE
     if fs != desired_fs:
         audio = librosa.resample(preds.cpu().numpy(), orig_sr=fs, target_sr=desired_fs)
@@ -265,24 +254,16 @@ def deep_noise_suppression_mean_opinion_score(
         shape = audio_seg.shape
         audio_seg = audio_seg.reshape((-1, shape[-1]))
         input_features = np.array(audio_seg).astype("float32")
-        p808_input_features = np.array(
-            _audio_melspec(audio=audio_seg[..., :-160])
-        ).astype("float32")
+        p808_input_features = np.array(_audio_melspec(audio=audio_seg[..., :-160])).astype("float32")
         if device.type != "cpu" and (
             "CUDAExecutionProvider" in ort.get_available_providers()
             or "CoreMLExecutionProvider" in ort.get_available_providers()
         ):
             try:
-                input_features = ort.OrtValue.ortvalue_from_numpy(
-                    input_features, device.type, device.index
-                )
-                p808_input_features = ort.OrtValue.ortvalue_from_numpy(
-                    p808_input_features, device.type, device.index
-                )
+                input_features = ort.OrtValue.ortvalue_from_numpy(input_features, device.type, device.index)
+                p808_input_features = ort.OrtValue.ortvalue_from_numpy(p808_input_features, device.type, device.index)
             except Exception as e:
-                rank_zero_warn(
-                    f"Failed to use GPU for DNSMOS, reverting to CPU. Error: {e}"
-                )
+                rank_zero_warn(f"Failed to use GPU for DNSMOS, reverting to CPU. Error: {e}")
         oi = {"input_1": input_features}
         p808_oi = {"input_1": p808_input_features}
         mos_np = np.concatenate(

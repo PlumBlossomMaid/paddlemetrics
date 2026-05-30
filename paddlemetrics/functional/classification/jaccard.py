@@ -1,11 +1,11 @@
 from typing import Optional
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.functional.classification.confusion_matrix import (
-    _binary_confusion_matrix_arg_validation, _binary_confusion_matrix_format,
+    _binary_confusion_matrix_arg_validation,
+    _binary_confusion_matrix_format,
     _binary_confusion_matrix_tensor_validation,
     _binary_confusion_matrix_update,
     _multiclass_confusion_matrix_arg_validation,
@@ -15,7 +15,8 @@ from paddlemetrics.functional.classification.confusion_matrix import (
     _multilabel_confusion_matrix_arg_validation,
     _multilabel_confusion_matrix_format,
     _multilabel_confusion_matrix_tensor_validation,
-    _multilabel_confusion_matrix_update)
+    _multilabel_confusion_matrix_update,
+)
 from paddlemetrics.utils.compute import _safe_divide
 from paddlemetrics.utils.enums import ClassificationTask
 
@@ -49,9 +50,7 @@ def _jaccard_index_reduce(
     """
     allowed_average = ["binary", "micro", "macro", "weighted", "none", None]
     if average not in allowed_average:
-        raise ValueError(
-            f"The `average` has to be one of {allowed_average}, got {average}."
-        )
+        raise ValueError(f"The `average` has to be one of {allowed_average}, got {average}.")
     confmat = confmat.float()
     if average == "binary":
         return _safe_divide(
@@ -59,9 +58,7 @@ def _jaccard_index_reduce(
             confmat[0, 1] + confmat[1, 0] + confmat[1, 1],
             zero_division=zero_division,
         )
-    ignore_index_cond = (
-        ignore_index is not None and 0 <= ignore_index < confmat.shape[0]
-    )
+    ignore_index_cond = ignore_index is not None and 0 <= ignore_index < confmat.shape[0]
     multilabel = confmat.ndim == 3
     if multilabel:
         num = confmat[:, 1, 1]
@@ -76,9 +73,7 @@ def _jaccard_index_reduce(
     if average is None or average == "none" or average == "micro":
         return jaccard
     if average == "weighted":
-        weights = (
-            confmat[:, 1, 1] + confmat[:, 1, 0] if confmat.ndim == 3 else confmat.sum(1)
-        )
+        weights = confmat[:, 1, 1] + confmat[:, 1, 0] if confmat.ndim == 3 else confmat.sum(1)
     else:
         weights = paddle.ones_like(jaccard)
         if ignore_index_cond:
@@ -143,9 +138,7 @@ def binary_jaccard_index(
     if validate_args:
         _binary_confusion_matrix_arg_validation(threshold, ignore_index)
         _binary_confusion_matrix_tensor_validation(preds, target, ignore_index)
-    preds, target = _binary_confusion_matrix_format(
-        preds, target, threshold, ignore_index
-    )
+    preds, target = _binary_confusion_matrix_format(preds, target, threshold, ignore_index)
     confmat = _binary_confusion_matrix_update(preds, target)
     return _jaccard_index_reduce(confmat, average="binary", zero_division=zero_division)
 
@@ -158,9 +151,7 @@ def _multiclass_jaccard_index_arg_validation(
     _multiclass_confusion_matrix_arg_validation(num_classes, ignore_index)
     allowed_average = "micro", "macro", "weighted", "none", None
     if average not in allowed_average:
-        raise ValueError(
-            f"Expected argument `average` to be one of {allowed_average}, but got {average}."
-        )
+        raise ValueError(f"Expected argument `average` to be one of {allowed_average}, but got {average}.")
 
 
 def multiclass_jaccard_index(
@@ -229,14 +220,10 @@ def multiclass_jaccard_index(
     """
     if validate_args:
         _multiclass_jaccard_index_arg_validation(num_classes, ignore_index, average)
-        _multiclass_confusion_matrix_tensor_validation(
-            preds, target, num_classes, ignore_index
-        )
+        _multiclass_confusion_matrix_tensor_validation(preds, target, num_classes, ignore_index)
     preds, target = _multiclass_confusion_matrix_format(preds, target, ignore_index)
     confmat = _multiclass_confusion_matrix_update(preds, target, num_classes)
-    return _jaccard_index_reduce(
-        confmat, average=average, ignore_index=ignore_index, zero_division=zero_division
-    )
+    return _jaccard_index_reduce(confmat, average=average, ignore_index=ignore_index, zero_division=zero_division)
 
 
 def _multilabel_jaccard_index_arg_validation(
@@ -248,9 +235,7 @@ def _multilabel_jaccard_index_arg_validation(
     _multilabel_confusion_matrix_arg_validation(num_labels, threshold, ignore_index)
     allowed_average = "micro", "macro", "weighted", "none", None
     if average not in allowed_average:
-        raise ValueError(
-            f"Expected argument `average` to be one of {allowed_average}, but got {average}."
-        )
+        raise ValueError(f"Expected argument `average` to be one of {allowed_average}, but got {average}.")
 
 
 def multilabel_jaccard_index(
@@ -318,16 +303,10 @@ def multilabel_jaccard_index(
     """
     if validate_args:
         _multilabel_jaccard_index_arg_validation(num_labels, threshold, ignore_index)
-        _multilabel_confusion_matrix_tensor_validation(
-            preds, target, num_labels, ignore_index
-        )
-    preds, target = _multilabel_confusion_matrix_format(
-        preds, target, num_labels, threshold, ignore_index
-    )
+        _multilabel_confusion_matrix_tensor_validation(preds, target, num_labels, ignore_index)
+    preds, target = _multilabel_confusion_matrix_format(preds, target, num_labels, threshold, ignore_index)
     confmat = _multilabel_confusion_matrix_update(preds, target, num_labels)
-    return _jaccard_index_reduce(
-        confmat, average=average, ignore_index=ignore_index, zero_division=zero_division
-    )
+    return _jaccard_index_reduce(confmat, average=average, ignore_index=ignore_index, zero_division=zero_division)
 
 
 def jaccard_index(
@@ -368,14 +347,10 @@ def jaccard_index(
     """
     task = ClassificationTask.from_str(task)
     if task == ClassificationTask.BINARY:
-        return binary_jaccard_index(
-            preds, target, threshold, ignore_index, validate_args, zero_division
-        )
+        return binary_jaccard_index(preds, target, threshold, ignore_index, validate_args, zero_division)
     if task == ClassificationTask.MULTICLASS:
         if not isinstance(num_classes, int):
-            raise ValueError(
-                f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-            )
+            raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
         return multiclass_jaccard_index(
             preds,
             target,
@@ -387,9 +362,7 @@ def jaccard_index(
         )
     if task == ClassificationTask.MULTILABEL:
         if not isinstance(num_labels, int):
-            raise ValueError(
-                f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-            )
+            raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
         return multilabel_jaccard_index(
             preds,
             target,

@@ -5,9 +5,7 @@ import paddle
 from paddlemetrics.utils.checks import _check_retrieval_functional_inputs
 
 
-def retrieval_hit_rate(
-    preds: paddle.Tensor, target: paddle.Tensor, top_k: Optional[int] = None
-) -> paddle.Tensor:
+def retrieval_hit_rate(preds: paddle.Tensor, target: paddle.Tensor, top_k: Optional[int] = None) -> paddle.Tensor:
     """Compute the hit rate for information retrieval.
 
     The hit rate is 1.0 if there is at least one relevant document among all the top `k` retrieved documents.

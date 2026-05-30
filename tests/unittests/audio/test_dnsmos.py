@@ -5,15 +5,12 @@ from typing import Any, Optional
 import numpy as np
 import paddle
 import pytest
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
 
 from paddlemetrics.audio.dnsmos import DeepNoiseSuppressionMeanOpinionScore
-from paddlemetrics.functional.audio.dnsmos import (
-    DNSMOS_DIR, _load_session, deep_noise_suppression_mean_opinion_score)
-from paddlemetrics.utils.imports import (_LIBROSA_AVAILABLE,
-                                            _ONNXRUNTIME_AVAILABLE,
-                                            _REQUESTS_AVAILABLE)
+from paddlemetrics.functional.audio.dnsmos import DNSMOS_DIR, _load_session, deep_noise_suppression_mean_opinion_score
+from paddlemetrics.utils.imports import _LIBROSA_AVAILABLE, _ONNXRUNTIME_AVAILABLE, _REQUESTS_AVAILABLE
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
 
 if _LIBROSA_AVAILABLE and _ONNXRUNTIME_AVAILABLE and _REQUESTS_AVAILABLE:
     import librosa
@@ -24,8 +21,7 @@ else:
     class InferenceSession:
         """Dummy InferenceSession."""
 
-        def __init__(self, **kwargs: dict[str, Any]) -> None:
-            ...
+        def __init__(self, **kwargs: dict[str, Any]) -> None: ...
 
 
 SAMPLING_RATE = 16000
@@ -40,9 +36,7 @@ class _ComputeScore:
         self.onnx_sess = ort.InferenceSession(os.path.expanduser(primary_model_path))
         self.p808_onnx_sess = ort.InferenceSession(os.path.expanduser(p808_model_path))
 
-    def _audio_melspec(
-        self, audio, n_mels=120, frame_size=320, hop_length=160, sr=16000, to_db=True
-    ):
+    def _audio_melspec(self, audio, n_mels=120, frame_size=320, hop_length=160, sr=16000, to_db=True):
         mel_spec = librosa.feature.melspectrogram(
             y=audio, sr=sr, n_fft=frame_size + 1, hop_length=hop_length, n_mels=n_mels
         )
@@ -66,11 +60,7 @@ class _ComputeScore:
 
     def __call__(self, aud, input_fs, is_personalized) -> dict[str, Any]:
         fs = SAMPLING_RATE
-        audio = (
-            librosa.resample(aud, orig_sr=input_fs, target_sr=fs)
-            if input_fs != fs
-            else aud
-        )
+        audio = librosa.resample(aud, orig_sr=input_fs, target_sr=fs) if input_fs != fs else aud
         actual_audio_len = len(audio)
         len_samples = int(INPUT_LENGTH * fs)
         while len(audio) < len_samples:
@@ -85,22 +75,18 @@ class _ComputeScore:
         predicted_mos_ovr_seg = []
         predicted_p808_mos = []
         for idx in range(num_hops):
-            audio_seg = audio[
-                int(idx * hop_len_samples) : int((idx + INPUT_LENGTH) * hop_len_samples)
-            ]
+            audio_seg = audio[int(idx * hop_len_samples) : int((idx + INPUT_LENGTH) * hop_len_samples)]
             if len(audio_seg) < len_samples:
                 continue
             input_features = np.array(audio_seg).astype("float32")[np.newaxis, :]
-            p808_input_features = np.array(
-                self._audio_melspec(audio=audio_seg[:-160])
-            ).astype("float32")[np.newaxis, :, :]
+            p808_input_features = np.array(self._audio_melspec(audio=audio_seg[:-160])).astype("float32")[
+                np.newaxis, :, :
+            ]
             oi = {"input_1": input_features}
             p808_oi = {"input_1": p808_input_features}
             p808_mos = self.p808_onnx_sess.run(None, p808_oi)[0][0][0]
             mos_sig_raw, mos_bak_raw, mos_ovr_raw = self.onnx_sess.run(None, oi)[0][0]
-            mos_sig, mos_bak, mos_ovr = self._get_polyfit_val(
-                mos_sig_raw, mos_bak_raw, mos_ovr_raw, is_personalized
-            )
+            mos_sig, mos_bak, mos_ovr = self._get_polyfit_val(mos_sig_raw, mos_bak_raw, mos_ovr_raw, is_personalized)
             predicted_mos_sig_seg_raw.append(mos_sig_raw)
             predicted_mos_bak_seg_raw.append(mos_bak_raw)
             predicted_mos_ovr_seg_raw.append(mos_ovr_raw)
@@ -169,9 +155,9 @@ preds = paddle.rand(2, 2, 8000)
     ("preds", "fs", "personalized"),
     [
         (preds, 8000, False),
-        (preds, 8000),
+        (preds, 8000, True),
         (preds, 16000, False),
-        (preds, 16000),
+        (preds, 16000, True),
     ],
 )
 class TestDNSMOS(MetricTester):
@@ -180,9 +166,7 @@ class TestDNSMOS(MetricTester):
     atol = 0.005
 
     @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
-    def test_dnsmos(
-        self, preds: paddle.Tensor, fs: int, personalized: bool, ddp: bool, device=None
-    ):
+    def test_dnsmos(self, preds: paddle.Tensor, fs: int, personalized: bool, ddp: bool, device=None):
         """Test class implementation of metric."""
         self.run_class_metric_test(
             ddp,
@@ -225,9 +209,7 @@ class TestDNSMOS(MetricTester):
             metric_args={"fs": fs, "personalized": personalized, "device": device},
         )
 
-    def test_dnsmos_functional(
-        self, preds: paddle.Tensor, fs: int, personalized: bool, device="cpu"
-    ):
+    def test_dnsmos_functional(self, preds: paddle.Tensor, fs: int, personalized: bool, device="cpu"):
         """Test functional implementation of metric."""
         self.run_functional_metric_test(
             preds=preds,

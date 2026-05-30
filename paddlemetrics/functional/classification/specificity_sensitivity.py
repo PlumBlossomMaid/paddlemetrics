@@ -2,7 +2,6 @@ import warnings
 from typing import List, Optional, Union
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.functional.classification.precision_recall_curve import (
@@ -17,9 +16,13 @@ from paddlemetrics.functional.classification.precision_recall_curve import (
     _multilabel_precision_recall_curve_arg_validation,
     _multilabel_precision_recall_curve_format,
     _multilabel_precision_recall_curve_tensor_validation,
-    _multilabel_precision_recall_curve_update)
+    _multilabel_precision_recall_curve_update,
+)
 from paddlemetrics.functional.classification.roc import (
-    _binary_roc_compute, _multiclass_roc_compute, _multilabel_roc_compute)
+    _binary_roc_compute,
+    _multiclass_roc_compute,
+    _multilabel_roc_compute,
+)
 from paddlemetrics.utils.enums import ClassificationTask
 
 
@@ -36,12 +39,8 @@ def _specificity_at_sensitivity(
 ) -> tuple[paddle.Tensor, paddle.Tensor]:
     indices = sensitivity >= min_sensitivity
     if not indices.any():
-        max_spec = paddle.tensor(
-            0.0, device=specificity.device, dtype=specificity.dtype
-        )
-        best_threshold = paddle.tensor(
-            1000000.0, device=thresholds.device, dtype=thresholds.dtype
-        )
+        max_spec = paddle.tensor(0.0, device=specificity.device, dtype=specificity.dtype)
+        best_threshold = paddle.tensor(1000000.0, device=thresholds.device, dtype=thresholds.dtype)
     else:
         specificity, sensitivity, thresholds = (
             specificity[indices],
@@ -73,9 +72,7 @@ def _binary_specificity_at_sensitivity_compute(
 ) -> tuple[paddle.Tensor, paddle.Tensor]:
     fpr, sensitivity, thresholds = _binary_roc_compute(state, thresholds, pos_label)
     specificity = _convert_fpr_to_specificity(fpr)
-    return _specificity_at_sensitivity(
-        specificity, sensitivity, thresholds, min_sensitivity
-    )
+    return _specificity_at_sensitivity(specificity, sensitivity, thresholds, min_sensitivity)
 
 
 def binary_specificity_at_sensitivity(
@@ -144,17 +141,11 @@ def binary_specificity_at_sensitivity(
 
     """
     if validate_args:
-        _binary_specificity_at_sensitivity_arg_validation(
-            min_sensitivity, thresholds, ignore_index
-        )
+        _binary_specificity_at_sensitivity_arg_validation(min_sensitivity, thresholds, ignore_index)
         _binary_precision_recall_curve_tensor_validation(preds, target, ignore_index)
-    preds, target, thresholds = _binary_precision_recall_curve_format(
-        preds, target, thresholds, ignore_index
-    )
+    preds, target, thresholds = _binary_precision_recall_curve_format(preds, target, thresholds, ignore_index)
     state = _binary_precision_recall_curve_update(preds, target, thresholds)
-    return _binary_specificity_at_sensitivity_compute(
-        state, thresholds, min_sensitivity
-    )
+    return _binary_specificity_at_sensitivity_compute(state, thresholds, min_sensitivity)
 
 
 def _multiclass_specificity_at_sensitivity_arg_validation(
@@ -163,9 +154,7 @@ def _multiclass_specificity_at_sensitivity_arg_validation(
     thresholds: Optional[Union[int, list[float], paddle.Tensor]] = None,
     ignore_index: Optional[int] = None,
 ) -> None:
-    _multiclass_precision_recall_curve_arg_validation(
-        num_classes, thresholds, ignore_index
-    )
+    _multiclass_precision_recall_curve_arg_validation(num_classes, thresholds, ignore_index)
     if not isinstance(min_sensitivity, float) and not 0 <= min_sensitivity <= 1:
         raise ValueError(
             f"Expected argument `min_sensitivity` to be an float in the [0,1] range, but got {min_sensitivity}"
@@ -178,14 +167,11 @@ def _multiclass_specificity_at_sensitivity_compute(
     thresholds: Optional[paddle.Tensor],
     min_sensitivity: float,
 ) -> tuple[paddle.Tensor, paddle.Tensor]:
-    fpr, sensitivity, thresholds = _multiclass_roc_compute(
-        state, num_classes, thresholds
-    )
+    fpr, sensitivity, thresholds = _multiclass_roc_compute(state, num_classes, thresholds)
     specificity = [_convert_fpr_to_specificity(fpr_) for fpr_ in fpr]
     if isinstance(state, paddle.Tensor):
         res = [
-            _specificity_at_sensitivity(sp, sn, thresholds, min_sensitivity)
-            for sp, sn in zip(specificity, sensitivity)
+            _specificity_at_sensitivity(sp, sn, thresholds, min_sensitivity) for sp, sn in zip(specificity, sensitivity)
         ]
     else:
         res = [
@@ -268,21 +254,13 @@ def multiclass_specificity_at_sensitivity(
 
     """
     if validate_args:
-        _multiclass_specificity_at_sensitivity_arg_validation(
-            num_classes, min_sensitivity, thresholds, ignore_index
-        )
-        _multiclass_precision_recall_curve_tensor_validation(
-            preds, target, num_classes, ignore_index
-        )
+        _multiclass_specificity_at_sensitivity_arg_validation(num_classes, min_sensitivity, thresholds, ignore_index)
+        _multiclass_precision_recall_curve_tensor_validation(preds, target, num_classes, ignore_index)
     preds, target, thresholds = _multiclass_precision_recall_curve_format(
         preds, target, num_classes, thresholds, ignore_index
     )
-    state = _multiclass_precision_recall_curve_update(
-        preds, target, num_classes, thresholds
-    )
-    return _multiclass_specificity_at_sensitivity_compute(
-        state, num_classes, thresholds, min_sensitivity
-    )
+    state = _multiclass_precision_recall_curve_update(preds, target, num_classes, thresholds)
+    return _multiclass_specificity_at_sensitivity_compute(state, num_classes, thresholds, min_sensitivity)
 
 
 def _multilabel_specificity_at_sensitivity_arg_validation(
@@ -291,9 +269,7 @@ def _multilabel_specificity_at_sensitivity_arg_validation(
     thresholds: Optional[Union[int, list[float], paddle.Tensor]] = None,
     ignore_index: Optional[int] = None,
 ) -> None:
-    _multilabel_precision_recall_curve_arg_validation(
-        num_labels, thresholds, ignore_index
-    )
+    _multilabel_precision_recall_curve_arg_validation(num_labels, thresholds, ignore_index)
     if not isinstance(min_sensitivity, float) and not 0 <= min_sensitivity <= 1:
         raise ValueError(
             f"Expected argument `min_sensitivity` to be an float in the [0,1] range, but got {min_sensitivity}"
@@ -307,14 +283,11 @@ def _multilabel_specificity_at_sensitivity_compute(
     ignore_index: Optional[int],
     min_sensitivity: float,
 ) -> tuple[paddle.Tensor, paddle.Tensor]:
-    fpr, sensitivity, thresholds = _multilabel_roc_compute(
-        state, num_labels, thresholds, ignore_index
-    )
+    fpr, sensitivity, thresholds = _multilabel_roc_compute(state, num_labels, thresholds, ignore_index)
     specificity = [_convert_fpr_to_specificity(fpr_) for fpr_ in fpr]
     if isinstance(state, paddle.Tensor):
         res = [
-            _specificity_at_sensitivity(sp, sn, thresholds, min_sensitivity)
-            for sp, sn in zip(specificity, sensitivity)
+            _specificity_at_sensitivity(sp, sn, thresholds, min_sensitivity) for sp, sn in zip(specificity, sensitivity)
         ]
     else:
         res = [
@@ -401,21 +374,13 @@ def multilabel_specificity_at_sensitivity(
 
     """
     if validate_args:
-        _multilabel_specificity_at_sensitivity_arg_validation(
-            num_labels, min_sensitivity, thresholds, ignore_index
-        )
-        _multilabel_precision_recall_curve_tensor_validation(
-            preds, target, num_labels, ignore_index
-        )
+        _multilabel_specificity_at_sensitivity_arg_validation(num_labels, min_sensitivity, thresholds, ignore_index)
+        _multilabel_precision_recall_curve_tensor_validation(preds, target, num_labels, ignore_index)
     preds, target, thresholds = _multilabel_precision_recall_curve_format(
         preds, target, num_labels, thresholds, ignore_index
     )
-    state = _multilabel_precision_recall_curve_update(
-        preds, target, num_labels, thresholds
-    )
-    return _multilabel_specificity_at_sensitivity_compute(
-        state, num_labels, thresholds, ignore_index, min_sensitivity
-    )
+    state = _multilabel_precision_recall_curve_update(preds, target, num_labels, thresholds)
+    return _multilabel_specificity_at_sensitivity_compute(state, num_labels, thresholds, ignore_index, min_sensitivity)
 
 
 def specicity_at_sensitivity(
@@ -493,9 +458,7 @@ def specificity_at_sensitivity(
         )
     if task == ClassificationTask.MULTICLASS:
         if not isinstance(num_classes, int):
-            raise ValueError(
-                f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-            )
+            raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
         return multiclass_specificity_at_sensitivity(
             preds,
             target,
@@ -507,9 +470,7 @@ def specificity_at_sensitivity(
         )
     if task == ClassificationTask.MULTILABEL:
         if not isinstance(num_labels, int):
-            raise ValueError(
-                f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-            )
+            raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
         return multilabel_specificity_at_sensitivity(
             preds,
             target,

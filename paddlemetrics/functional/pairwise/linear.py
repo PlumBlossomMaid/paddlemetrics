@@ -1,11 +1,9 @@
 from typing import Optional
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
-from paddlemetrics.functional.pairwise.helpers import (_check_input,
-                                                      _reduce_distance_matrix)
+from paddlemetrics.functional.pairwise.helpers import _check_input, _reduce_distance_matrix
 from paddlemetrics.utils.compute import _safe_matmul
 
 

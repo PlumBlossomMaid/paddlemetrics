@@ -2,15 +2,14 @@ from functools import partial
 from typing import NamedTuple
 
 import paddle
-from paddle import Tensor
 import pytest
 import sewar
+from paddle import Tensor
+
+from paddlemetrics.functional import root_mean_squared_error_using_sliding_window
+from paddlemetrics.image import RootMeanSquaredErrorUsingSlidingWindow
 from unittests import BATCH_SIZE, NUM_BATCHES
 from unittests._helpers.testers import MetricTester
-
-from paddlemetrics.functional import \
-    root_mean_squared_error_using_sliding_window
-from paddlemetrics.image import RootMeanSquaredErrorUsingSlidingWindow
 
 
 class _InputWindowSized(NamedTuple):
@@ -28,9 +27,7 @@ for size, channel, window_size, dtype in [
 ]:
     preds = paddle.rand(NUM_BATCHES, BATCH_SIZE, channel, size, size, dtype=dtype)
     target = paddle.rand(NUM_BATCHES, BATCH_SIZE, channel, size, size, dtype=dtype)
-    _inputs.append(
-        _InputWindowSized(preds=preds, target=target, window_size=window_size)
-    )
+    _inputs.append(_InputWindowSized(preds=preds, target=target, window_size=window_size))
 
 
 def _reference_sewar_rmse_sw(preds, target, window_size):

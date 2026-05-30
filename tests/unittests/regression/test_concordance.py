@@ -4,12 +4,12 @@ import numpy as np
 import paddle
 import pytest
 from scipy.stats import pearsonr
-from unittests import BATCH_SIZE, EXTRA_DIM, NUM_BATCHES, _Input
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
 
 from paddlemetrics.functional.regression.concordance import concordance_corrcoef
 from paddlemetrics.regression.concordance import ConcordanceCorrCoef
+from unittests import BATCH_SIZE, EXTRA_DIM, NUM_BATCHES, _Input
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
 
 seed_all(42)
 _single_target_inputs1 = _Input(
@@ -44,13 +44,7 @@ def _reference_scipy_concordance(preds, target):
         std_pred = np.std(preds)
         std_gt = np.std(target)
         pearson = pearsonr(target, preds)[0]
-    return (
-        2.0
-        * pearson
-        * std_pred
-        * std_gt
-        / (std_pred**2 + std_gt**2 + (mean_pred - mean_gt) ** 2)
-    )
+    return 2.0 * pearson * std_pred * std_gt / (std_pred**2 + std_gt**2 + (mean_pred - mean_gt) ** 2)
 
 
 @pytest.mark.parametrize(
@@ -82,9 +76,7 @@ class TestConcordanceCorrCoef(MetricTester):
 
     def test_concordance_corrcoef_functional(self, preds, target):
         """Test functional implementation of metric."""
-        self.run_functional_metric_test(
-            preds, target, concordance_corrcoef, _reference_scipy_concordance
-        )
+        self.run_functional_metric_test(preds, target, concordance_corrcoef, _reference_scipy_concordance)
 
     def test_concordance_corrcoef_differentiability(self, preds, target):
         """Test the differentiability of the metric, according to its `is_differentiable` attribute."""
@@ -131,9 +123,7 @@ def test_error_on_different_shape():
     ):
         metric(paddle.randn(100), paddle.randn(50))
     metric = ConcordanceCorrCoef(num_outputs=5)
-    with pytest.raises(
-        ValueError, match="Expected both predictions and target to be either 1- or 2-.*"
-    ):
+    with pytest.raises(ValueError, match="Expected both predictions and target to be either 1- or 2-.*"):
         metric(paddle.randn(100, 2, 5), paddle.randn(100, 2, 5))
     metric = ConcordanceCorrCoef(num_outputs=2)
     with pytest.raises(

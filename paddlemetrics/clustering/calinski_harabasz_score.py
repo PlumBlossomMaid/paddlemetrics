@@ -3,8 +3,7 @@ from typing import Any, List, Optional, Union
 
 import paddle
 
-from paddlemetrics.functional.clustering.calinski_harabasz_score import \
-    calinski_harabasz_score
+from paddlemetrics.functional.clustering.calinski_harabasz_score import calinski_harabasz_score
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.data import dim_zero_cat
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
@@ -72,9 +71,7 @@ class CalinskiHarabaszScore(Metric):
 
     def compute(self) -> paddle.Tensor:
         """Compute the Calinski Harabasz Score over all data and labels."""
-        return calinski_harabasz_score(
-            dim_zero_cat(self.data), dim_zero_cat(self.labels)
-        )
+        return calinski_harabasz_score(dim_zero_cat(self.data), dim_zero_cat(self.labels))
 
     def plot(
         self,

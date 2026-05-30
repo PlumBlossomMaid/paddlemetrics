@@ -3,9 +3,7 @@ from typing import Optional
 import paddle
 
 
-def _check_shape_and_type_consistency(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> None:
+def _check_shape_and_type_consistency(preds: paddle.Tensor, target: paddle.Tensor) -> None:
     """Check shape and type consistency of input vectors.
 
     Args:
@@ -41,13 +39,9 @@ def _check_shape_and_type_consistency(
             f"Input tensors `preds` and `target` are expected to have equaling first two dimensions, [batch_size, seq_len], but got {preds.shape[:2]} and {target.shape}."
         )
     if not preds.is_floating_point():
-        raise TypeError(
-            f"Input tensor `preds` is expected to be of floating point type but got {preds.dtype}."
-        )
+        raise TypeError(f"Input tensor `preds` is expected to be of floating point type but got {preds.dtype}.")
     if target.dtype != paddle.int64:
-        raise TypeError(
-            f"Input tensor `target` is expected to be of a type {paddle.int64} but got {target.dtype}."
-        )
+        raise TypeError(f"Input tensor `target` is expected to be of a type {paddle.int64} but got {target.dtype}.")
 
 
 def _perplexity_update(
@@ -71,15 +65,11 @@ def _perplexity_update(
 
     """
     _check_shape_and_type_consistency(preds, target)
-    probs = paddle.nn.functional.softmax(
-        preds.reshape(-1, preds.shape[-1]), axis=1
-    )
+    probs = paddle.nn.functional.softmax(preds.reshape(-1, preds.shape[-1]), axis=1)
     target = target.reshape(-1)
     if ignore_index is not None:
         mask = target.ne(ignore_index)
-        target = paddle.where(
-            target != ignore_index, target, paddle.tensor(0, device=target.place)
-        )
+        target = paddle.where(target != ignore_index, target, paddle.tensor(0, device=target.place))
     else:
         mask = paddle.ones_like(target, dtype=paddle.bool)
     probs = probs[paddle.arange(target.size), target][mask]
@@ -101,9 +91,7 @@ def _perplexity_compute(total: paddle.Tensor, count: paddle.Tensor) -> paddle.Te
     return paddle.exp(total / count)
 
 
-def perplexity(
-    preds: paddle.Tensor, target: paddle.Tensor, ignore_index: Optional[int] = None
-) -> paddle.Tensor:
+def perplexity(preds: paddle.Tensor, target: paddle.Tensor, ignore_index: Optional[int] = None) -> paddle.Tensor:
     """Perplexity measures how well a language model predicts a text sample.
 
     This metric is calculated as the average number of bits per word a model needs to represent the sample.

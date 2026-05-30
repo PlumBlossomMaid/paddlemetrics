@@ -3,12 +3,11 @@ from functools import partial
 
 import paddle
 import pytest
-from unittests.text._helpers import TextTester
-from unittests.text._inputs import (
-    _inputs_multiple_references, _inputs_single_sentence_multiple_references)
 
 from paddlemetrics.functional.text.chrf import chrf_score
 from paddlemetrics.text.chrf import CHRFScore
+from unittests.text._helpers import TextTester
+from unittests.text._inputs import _inputs_multiple_references, _inputs_single_sentence_multiple_references
 
 
 def _reference_sacrebleu_chrf(
@@ -39,11 +38,11 @@ def _reference_sacrebleu_chrf(
     ("char_order", "word_order", "lowercase", "whitespace"),
     [
         (6, 2, False, False),
-        (6, 2, False),
-        (4, 2, False),
-        (6, 0, False),
-        (6, 0),
-        (4, 0, False),
+        (6, 2, False, False),
+        (4, 2, False, False),
+        (6, 0, False, False),
+        (6, 0, False, False),
+        (4, 0, False, False),
     ],
 )
 @pytest.mark.parametrize(
@@ -54,9 +53,7 @@ class TestCHRFScore(TextTester):
     """Test class for `CHRFScore` metric."""
 
     @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
-    def test_chrf_score_class(
-        self, ddp, preds, targets, char_order, word_order, lowercase, whitespace
-    ):
+    def test_chrf_score_class(self, ddp, preds, targets, char_order, word_order, lowercase, whitespace):
         """Test class implementation of metric."""
         metric_args = {
             "n_char_order": char_order,
@@ -80,9 +77,7 @@ class TestCHRFScore(TextTester):
             metric_args=metric_args,
         )
 
-    def test_chrf_score_functional(
-        self, preds, targets, char_order, word_order, lowercase, whitespace
-    ):
+    def test_chrf_score_functional(self, preds, targets, char_order, word_order, lowercase, whitespace):
         """Test functional implementation of metric."""
         metric_args = {
             "n_char_order": char_order,
@@ -105,9 +100,7 @@ class TestCHRFScore(TextTester):
             metric_args=metric_args,
         )
 
-    def test_chrf_score_differentiability(
-        self, preds, targets, char_order, word_order, lowercase, whitespace
-    ):
+    def test_chrf_score_differentiability(self, preds, targets, char_order, word_order, lowercase, whitespace):
         """Test the differentiability of the metric, according to its `is_differentiable` attribute."""
         metric_args = {
             "n_char_order": char_order,
@@ -143,9 +136,7 @@ def test_chrf_return_sentence_level_score_functional():
     """Test that chrf can return sentence level scores."""
     preds = _inputs_single_sentence_multiple_references.preds
     targets = _inputs_single_sentence_multiple_references.target
-    _, chrf_sentence_score = chrf_score(
-        preds, targets, return_sentence_level_score=True
-    )
+    _, chrf_sentence_score = chrf_score(preds, targets, return_sentence_level_score=True)
     isinstance(chrf_sentence_score, paddle.Tensor)
 
 

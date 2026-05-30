@@ -3,8 +3,7 @@ from typing import Any, List, Optional, Union
 
 import paddle
 
-from paddlemetrics.functional.regression.spearman import (
-    _spearman_corrcoef_compute, _spearman_corrcoef_update)
+from paddlemetrics.functional.regression.spearman import _spearman_corrcoef_compute, _spearman_corrcoef_update
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils import rank_zero_warn
 from paddlemetrics.utils.data import dim_zero_cat
@@ -71,18 +70,14 @@ class SpearmanCorrCoef(Metric):
             "Metric `SpearmanCorrcoef` will save all targets and predictions in the buffer. For large datasets, this may lead to large memory footprint."
         )
         if not isinstance(num_outputs, int) and num_outputs < 1:
-            raise ValueError(
-                f"Expected argument `num_outputs` to be an int larger than 0, but got {num_outputs}"
-            )
+            raise ValueError(f"Expected argument `num_outputs` to be an int larger than 0, but got {num_outputs}")
         self.num_outputs = num_outputs
         self.add_state("preds", default=[], dist_reduce_fx="cat")
         self.add_state("target", default=[], dist_reduce_fx="cat")
 
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update state with predictions and targets."""
-        preds, target = _spearman_corrcoef_update(
-            preds, target, num_outputs=self.num_outputs
-        )
+        preds, target = _spearman_corrcoef_update(preds, target, num_outputs=self.num_outputs)
         self.preds.append(preds.to(self.dtype))
         self.target.append(target.to(self.dtype))
 

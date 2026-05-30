@@ -5,19 +5,23 @@ import paddle
 import pytest
 from scipy.special import expit as sigmoid
 from sklearn.metrics import confusion_matrix as sk_confusion_matrix
+
+from paddlemetrics.classification.specificity import (
+    BinarySpecificity,
+    MulticlassSpecificity,
+    MultilabelSpecificity,
+    Specificity,
+)
+from paddlemetrics.functional.classification.specificity import (
+    binary_specificity,
+    multiclass_specificity,
+    multilabel_specificity,
+)
+from paddlemetrics.metric import Metric
 from unittests import NUM_CLASSES, THRESHOLD
 from unittests._helpers import seed_all
 from unittests._helpers.testers import MetricTester, inject_ignore_index
-from unittests.classification._inputs import (_binary_cases, _multiclass_cases,
-                                              _multilabel_cases)
-
-from paddlemetrics.classification.specificity import (BinarySpecificity,
-                                                     MulticlassSpecificity,
-                                                     MultilabelSpecificity,
-                                                     Specificity)
-from paddlemetrics.functional.classification.specificity import (
-    binary_specificity, multiclass_specificity, multilabel_specificity)
-from paddlemetrics.metric import Metric
+from unittests.classification._inputs import _binary_cases, _multiclass_cases, _multilabel_cases
 
 seed_all(42)
 
@@ -48,9 +52,7 @@ def _reference_specificity_binary(preds, target, ignore_index, multidim_average)
             idx = target == ignore_index
             target = target[~idx]
             preds = preds[~idx]
-        tn, fp, _, _ = sk_confusion_matrix(
-            y_true=target, y_pred=preds, labels=[0, 1]
-        ).ravel()
+        tn, fp, _, _ = sk_confusion_matrix(y_true=target, y_pred=preds, labels=[0, 1]).ravel()
         return _calc_specificity(tn, fp)
     res = []
     for pred, true in zip(preds, target):
@@ -60,9 +62,7 @@ def _reference_specificity_binary(preds, target, ignore_index, multidim_average)
             idx = true == ignore_index
             true = true[~idx]
             pred = pred[~idx]
-        tn, fp, _, _ = sk_confusion_matrix(
-            y_true=true, y_pred=pred, labels=[0, 1]
-        ).ravel()
+        tn, fp, _, _ = sk_confusion_matrix(y_true=true, y_pred=pred, labels=[0, 1]).ravel()
         res.append(_calc_specificity(tn, fp))
     return np.stack(res)
 
@@ -102,9 +102,7 @@ class TestBinarySpecificity(MetricTester):
 
     @pytest.mark.parametrize("ignore_index", [None, -1])
     @pytest.mark.parametrize("multidim_average", ["global", "samplewise"])
-    def test_binary_specificity_functional(
-        self, inputs, ignore_index, multidim_average
-    ):
+    def test_binary_specificity_functional(self, inputs, ignore_index, multidim_average):
         """Test functional implementation of metric."""
         preds, target = inputs
         if ignore_index == -1:
@@ -142,14 +140,8 @@ class TestBinarySpecificity(MetricTester):
     def test_binary_specificity_dtype_cpu(self, inputs, dtype):
         """Test dtype support of the metric on CPU."""
         preds, target = inputs
-        if (
-            not True
-            and (preds < 0).any()
-            and dtype == paddle.float16
-        ):
-            pytest.xfail(
-                reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1"
-            )
+        if not True and (preds < 0).any() and dtype == paddle.float16:
+            pytest.xfail(reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1")
         self.run_precision_test_cpu(
             preds=preds,
             target=target,
@@ -181,9 +173,7 @@ def _reference_specificity_multiclass_global(preds, target, ignore_index, averag
         idx = target == ignore_index
         target = target[~idx]
         preds = preds[~idx]
-    confmat = sk_confusion_matrix(
-        y_true=target, y_pred=preds, labels=list(range(NUM_CLASSES))
-    )
+    confmat = sk_confusion_matrix(y_true=target, y_pred=preds, labels=list(range(NUM_CLASSES)))
     tp = np.diag(confmat)
     fp = confmat.sum(0) - tp
     fn = confmat.sum(1) - tp
@@ -192,11 +182,7 @@ def _reference_specificity_multiclass_global(preds, target, ignore_index, averag
         return _calc_specificity(tn.sum(), fp.sum())
     res = _calc_specificity(tn, fp)
     if average == "macro":
-        res = res[
-            np.bincount(preds, minlength=NUM_CLASSES)
-            + np.bincount(target, minlength=NUM_CLASSES)
-            != 0.0
-        ]
+        res = res[np.bincount(preds, minlength=NUM_CLASSES) + np.bincount(target, minlength=NUM_CLASSES) != 0.0]
         return res.mean(0)
     if average == "weighted":
         w = tp + fn
@@ -217,9 +203,7 @@ def _reference_specificity_multiclass_local(preds, target, ignore_index, average
             idx = true == ignore_index
             true = true[~idx]
             pred = pred[~idx]
-        confmat = sk_confusion_matrix(
-            y_true=true, y_pred=pred, labels=list(range(NUM_CLASSES))
-        )
+        confmat = sk_confusion_matrix(y_true=true, y_pred=pred, labels=list(range(NUM_CLASSES)))
         tp = np.diag(confmat)
         fp = confmat.sum(0) - tp
         fn = confmat.sum(1) - tp
@@ -228,11 +212,7 @@ def _reference_specificity_multiclass_local(preds, target, ignore_index, average
             res.append(_calc_specificity(tn.sum(), fp.sum()))
         r = _calc_specificity(tn, fp)
         if average == "macro":
-            r = r[
-                np.bincount(pred, minlength=NUM_CLASSES)
-                + np.bincount(true, minlength=NUM_CLASSES)
-                != 0.0
-            ]
+            r = r[np.bincount(pred, minlength=NUM_CLASSES) + np.bincount(true, minlength=NUM_CLASSES) != 0.0]
             res.append(r.mean(0) if len(r) > 0 else 0.0)
         elif average == "weighted":
             w = tp + fn
@@ -242,15 +222,11 @@ def _reference_specificity_multiclass_local(preds, target, ignore_index, average
     return np.stack(res, 0)
 
 
-def _reference_specificity_multiclass(
-    preds, target, ignore_index, multidim_average, average
-):
+def _reference_specificity_multiclass(preds, target, ignore_index, multidim_average, average):
     if preds.ndim == target.ndim + 1:
         preds = paddle.argmax(preds, 1)
     if multidim_average == "global":
-        return _reference_specificity_multiclass_global(
-            preds, target, ignore_index, average
-        )
+        return _reference_specificity_multiclass_global(preds, target, ignore_index, average)
     return _reference_specificity_multiclass_local(preds, target, ignore_index, average)
 
 
@@ -262,9 +238,7 @@ class TestMulticlassSpecificity(MetricTester):
     @pytest.mark.parametrize("multidim_average", ["global", "samplewise"])
     @pytest.mark.parametrize("average", ["micro", "macro", None])
     @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
-    def test_multiclass_specificity(
-        self, ddp, inputs, ignore_index, multidim_average, average
-    ):
+    def test_multiclass_specificity(self, ddp, inputs, ignore_index, multidim_average, average):
         """Test class implementation of metric."""
         preds, target = inputs
         if ignore_index == -1:
@@ -295,9 +269,7 @@ class TestMulticlassSpecificity(MetricTester):
     @pytest.mark.parametrize("ignore_index", [None, 0, -1])
     @pytest.mark.parametrize("multidim_average", ["global", "samplewise"])
     @pytest.mark.parametrize("average", ["micro", "macro", None])
-    def test_multiclass_specificity_functional(
-        self, inputs, ignore_index, multidim_average, average
-    ):
+    def test_multiclass_specificity_functional(self, inputs, ignore_index, multidim_average, average):
         """Test functional implementation of metric."""
         preds, target = inputs
         if ignore_index == -1:
@@ -337,14 +309,8 @@ class TestMulticlassSpecificity(MetricTester):
     def test_multiclass_specificity_dtype_cpu(self, inputs, dtype):
         """Test dtype support of the metric on CPU."""
         preds, target = inputs
-        if (
-            not True
-            and (preds < 0).any()
-            and dtype == paddle.float16
-        ):
-            pytest.xfail(
-                reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1"
-            )
+        if not True and (preds < 0).any() and dtype == paddle.float16:
+            pytest.xfail(reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1")
         self.run_precision_test_cpu(
             preds=preds,
             target=target,
@@ -372,9 +338,7 @@ class TestMulticlassSpecificity(MetricTester):
 _mc_k_target = paddle.tensor([0, 1, 2])
 _mc_k_preds = paddle.tensor([[0.35, 0.4, 0.25], [0.1, 0.5, 0.4], [0.2, 0.1, 0.7]])
 _mc_k_target2 = paddle.tensor([0, 1, 2, 0])
-_mc_k_preds2 = paddle.tensor(
-    [[0.1, 0.2, 0.7], [0.4, 0.4, 0.2], [0.3, 0.3, 0.4], [0.3, 0.3, 0.4]]
-)
+_mc_k_preds2 = paddle.tensor([[0.1, 0.2, 0.7], [0.4, 0.4, 0.2], [0.3, 0.3, 0.4], [0.3, 0.3, 0.4]])
 
 
 @pytest.mark.parametrize(
@@ -406,13 +370,9 @@ def test_top_k(
     """A simple test to check that top_k works as expected."""
     class_metric = MulticlassSpecificity(top_k=k, average=average, num_classes=3)
     class_metric.update(preds, target)
+    assert paddle.allclose(x=class_metric.compute(), y=expected_spec, atol=0.0001, rtol=0.0001).item()
     assert paddle.allclose(
-        x=class_metric.compute(), y=expected_spec, atol=0.0001, rtol=0.0001
-    ).item()
-    assert paddle.allclose(
-        x=multiclass_specificity(
-            preds, target, top_k=k, average=average, num_classes=3
-        ),
+        x=multiclass_specificity(preds, target, top_k=k, average=average, num_classes=3),
         y=expected_spec,
         atol=0.0001,
         rtol=0.0001,
@@ -477,9 +437,7 @@ def _reference_specificity_multilabel_local(preds, target, ignore_index, average
     return None
 
 
-def _reference_specificity_multilabel(
-    preds, target, ignore_index, multidim_average, average
-):
+def _reference_specificity_multilabel(preds, target, ignore_index, multidim_average, average):
     preds = preds.numpy()
     target = target.numpy()
     if np.issubdtype(preds.dtype, np.floating):
@@ -489,9 +447,7 @@ def _reference_specificity_multilabel(
     preds = preds.reshape(*preds.shape[:2], -1)
     target = target.reshape(*target.shape[:2], -1)
     if multidim_average == "global":
-        return _reference_specificity_multilabel_global(
-            preds, target, ignore_index, average
-        )
+        return _reference_specificity_multilabel_global(preds, target, ignore_index, average)
     return _reference_specificity_multilabel_local(preds, target, ignore_index, average)
 
 
@@ -503,9 +459,7 @@ class TestMultilabelSpecificity(MetricTester):
     @pytest.mark.parametrize("ignore_index", [None, -1])
     @pytest.mark.parametrize("multidim_average", ["global", "samplewise"])
     @pytest.mark.parametrize("average", ["micro", "macro", None])
-    def test_multilabel_specificity(
-        self, ddp, inputs, ignore_index, multidim_average, average
-    ):
+    def test_multilabel_specificity(self, ddp, inputs, ignore_index, multidim_average, average):
         """Test class implementation of metric."""
         preds, target = inputs
         if ignore_index == -1:
@@ -537,9 +491,7 @@ class TestMultilabelSpecificity(MetricTester):
     @pytest.mark.parametrize("ignore_index", [None, -1])
     @pytest.mark.parametrize("multidim_average", ["global", "samplewise"])
     @pytest.mark.parametrize("average", ["micro", "macro", None])
-    def test_multilabel_specificity_functional(
-        self, inputs, ignore_index, multidim_average, average
-    ):
+    def test_multilabel_specificity_functional(self, inputs, ignore_index, multidim_average, average):
         """Test functional implementation of metric."""
         preds, target = inputs
         if ignore_index == -1:
@@ -580,14 +532,8 @@ class TestMultilabelSpecificity(MetricTester):
     def test_multilabel_specificity_dtype_cpu(self, inputs, dtype):
         """Test dtype support of the metric on CPU."""
         preds, target = inputs
-        if (
-            not True
-            and (preds < 0).any()
-            and dtype == paddle.float16
-        ):
-            pytest.xfail(
-                reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1"
-            )
+        if not True and (preds < 0).any() and dtype == paddle.float16:
+            pytest.xfail(reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1")
         self.run_precision_test_cpu(
             preds=preds,
             target=target,

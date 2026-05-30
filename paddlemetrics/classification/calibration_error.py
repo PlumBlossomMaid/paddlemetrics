@@ -8,10 +8,14 @@ from paddlemetrics.classification.base import _ClassificationTaskWrapper
 from paddlemetrics.functional.classification.calibration_error import (
     _binary_calibration_error_arg_validation,
     _binary_calibration_error_tensor_validation,
-    _binary_calibration_error_update, _binary_confusion_matrix_format,
-    _ce_compute, _multiclass_calibration_error_arg_validation,
+    _binary_calibration_error_update,
+    _binary_confusion_matrix_format,
+    _ce_compute,
+    _multiclass_calibration_error_arg_validation,
     _multiclass_calibration_error_tensor_validation,
-    _multiclass_calibration_error_update, _multiclass_confusion_matrix_format)
+    _multiclass_calibration_error_update,
+    _multiclass_confusion_matrix_format,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.data import dim_zero_cat
 from paddlemetrics.utils.enums import ClassificationTaskNoMultilabel
@@ -115,9 +119,7 @@ class BinaryCalibrationError(Metric):
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update metric states with predictions and targets."""
         if self.validate_args:
-            _binary_calibration_error_tensor_validation(
-                preds, target, self.ignore_index
-            )
+            _binary_calibration_error_tensor_validation(preds, target, self.ignore_index)
         preds, target = _binary_confusion_matrix_format(
             preds,
             target,
@@ -265,9 +267,7 @@ class MulticlassCalibrationError(Metric):
     ) -> None:
         super().__init__(**kwargs)
         if validate_args:
-            _multiclass_calibration_error_arg_validation(
-                num_classes, n_bins, norm, ignore_index
-            )
+            _multiclass_calibration_error_arg_validation(num_classes, n_bins, norm, ignore_index)
         self.validate_args = validate_args
         self.num_classes = num_classes
         self.n_bins = n_bins
@@ -279,9 +279,7 @@ class MulticlassCalibrationError(Metric):
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update metric states with predictions and targets."""
         if self.validate_args:
-            _multiclass_calibration_error_tensor_validation(
-                preds, target, self.num_classes, self.ignore_index
-            )
+            _multiclass_calibration_error_tensor_validation(preds, target, self.num_classes, self.ignore_index)
         preds, target = _multiclass_confusion_matrix_format(
             preds, target, ignore_index=self.ignore_index, convert_to_labels=False
         )
@@ -392,8 +390,6 @@ class CalibrationError(_ClassificationTaskWrapper):
             return BinaryCalibrationError(**kwargs)
         if task == ClassificationTaskNoMultilabel.MULTICLASS:
             if not isinstance(num_classes, int):
-                raise ValueError(
-                    f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-                )
+                raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
             return MulticlassCalibrationError(num_classes, **kwargs)
         raise ValueError(f"Not handled value: {task}")

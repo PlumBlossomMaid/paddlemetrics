@@ -2,17 +2,12 @@ import os
 from typing import Callable, Optional
 
 import paddle
+
 from unittests import _PATH_ALL_TESTS
 
-_SAMPLE_AUDIO_SPEECH = os.path.join(
-    _PATH_ALL_TESTS, "_data", "audio", "audio_speech.wav"
-)
-_SAMPLE_AUDIO_SPEECH_BAB_DB = os.path.join(
-    _PATH_ALL_TESTS, "_data", "audio", "audio_speech_bab_0dB.wav"
-)
-_SAMPLE_NUMPY_ISSUE_895 = os.path.join(
-    _PATH_ALL_TESTS, "_data", "audio", "issue_895.npz"
-)
+_SAMPLE_AUDIO_SPEECH = os.path.join(_PATH_ALL_TESTS, "_data", "audio", "audio_speech.wav")
+_SAMPLE_AUDIO_SPEECH_BAB_DB = os.path.join(_PATH_ALL_TESTS, "_data", "audio", "audio_speech_bab_0dB.wav")
+_SAMPLE_NUMPY_ISSUE_895 = os.path.join(_PATH_ALL_TESTS, "_data", "audio", "issue_895.npz")
 
 
 def _average_metric_wrapper(

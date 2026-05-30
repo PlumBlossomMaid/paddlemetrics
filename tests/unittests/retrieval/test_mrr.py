@@ -1,4 +1,3 @@
-import sys
 
 from typing import Callable, Optional, Union
 
@@ -7,26 +6,26 @@ import paddle
 import pytest
 from sklearn.metrics import label_ranking_average_precision_score
 from typing_extensions import Literal
+
+from paddlemetrics.functional.retrieval.reciprocal_rank import retrieval_reciprocal_rank
+from paddlemetrics.retrieval.reciprocal_rank import RetrievalMRR
 from unittests._helpers import seed_all
 from unittests.retrieval.helpers import (
-    RetrievalMetricTester, _concat_tests, _custom_aggregate_fn,
+    RetrievalMetricTester,
+    _concat_tests,
+    _custom_aggregate_fn,
     _default_metric_class_input_arguments,
     _default_metric_class_input_arguments_ignore_index,
     _default_metric_functional_input_arguments,
     _errors_test_class_metric_parameters_default,
     _errors_test_class_metric_parameters_no_pos_target,
-    _errors_test_functional_metric_parameters_default)
-
-from paddlemetrics.functional.retrieval.reciprocal_rank import \
-    retrieval_reciprocal_rank
-from paddlemetrics.retrieval.reciprocal_rank import RetrievalMRR
+    _errors_test_functional_metric_parameters_default,
+)
 
 seed_all(42)
 
 
-def _reciprocal_rank_at_k(
-    target: np.ndarray, preds: np.ndarray, top_k: Optional[int] = None
-):
+def _reciprocal_rank_at_k(target: np.ndarray, preds: np.ndarray, top_k: Optional[int] = None):
     """Adaptation of `sklearn.metrics.label_ranking_average_precision_score`.
 
     Since the original sklearn metric works as RR only when the number of positive targets is exactly 1, here we remove
@@ -43,11 +42,9 @@ def _reciprocal_rank_at_k(
         preds = preds[ind]
     indexes = preds[target.astype(bool)]
     if len(indexes) > 0:
-        target[preds != indexes._max(-1, keepdims=True)[0]] = 0
+        target[preds != indexes.max(-1, keepdims=True)] = 0
     if target.sum() > 0:
-        return label_ranking_average_precision_score(
-            np.expand_dims(target, axis=0), np.expand_dims(preds, axis=0)
-        )
+        return label_ranking_average_precision_score(np.expand_dims(target, axis=0), np.expand_dims(preds, axis=0))
     return 0.0
 
 
@@ -58,9 +55,7 @@ class TestMRR(RetrievalMetricTester):
     @pytest.mark.parametrize("empty_target_action", ["skip", "neg", "pos"])
     @pytest.mark.parametrize("ignore_index", [None, 1])
     @pytest.mark.parametrize("top_k", [None, 1, 4, 10])
-    @pytest.mark.parametrize(
-        "aggregation", ["mean", "median", "max", "min", _custom_aggregate_fn]
-    )
+    @pytest.mark.parametrize("aggregation", ["mean", "median", "max", "min", _custom_aggregate_fn])
     @pytest.mark.parametrize(**_default_metric_class_input_arguments)
     def test_class_metric(
         self,
@@ -121,9 +116,7 @@ class TestMRR(RetrievalMetricTester):
 
     @pytest.mark.parametrize(**_default_metric_functional_input_arguments)
     @pytest.mark.parametrize("top_k", [None, 1, 4, 10])
-    def test_functional_metric(
-        self, preds: paddle.Tensor, target: paddle.Tensor, top_k: int
-    ):
+    def test_functional_metric(self, preds: paddle.Tensor, target: paddle.Tensor, top_k: int):
         """Test functional implementation of metric."""
         self.run_functional_metric_test(
             preds=preds,
@@ -135,9 +128,7 @@ class TestMRR(RetrievalMetricTester):
         )
 
     @pytest.mark.parametrize(**_default_metric_class_input_arguments)
-    def test_precision_cpu(
-        self, indexes: paddle.Tensor, preds: paddle.Tensor, target: paddle.Tensor
-    ):
+    def test_precision_cpu(self, indexes: paddle.Tensor, preds: paddle.Tensor, target: paddle.Tensor):
         """Test dtype support of the metric on CPU."""
         self.run_precision_test_cpu(
             indexes=indexes,
@@ -148,9 +139,7 @@ class TestMRR(RetrievalMetricTester):
         )
 
     @pytest.mark.parametrize(**_default_metric_class_input_arguments)
-    def test_precision_gpu(
-        self, indexes: paddle.Tensor, preds: paddle.Tensor, target: paddle.Tensor
-    ):
+    def test_precision_gpu(self, indexes: paddle.Tensor, preds: paddle.Tensor, target: paddle.Tensor):
         """Test dtype support of the metric on GPU."""
         self.run_precision_test_gpu(
             indexes=indexes,

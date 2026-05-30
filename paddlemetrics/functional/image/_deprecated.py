@@ -5,17 +5,16 @@ import paddle
 from typing_extensions import Literal
 
 from paddlemetrics.functional.image.d_lambda import spectral_distortion_index
-from paddlemetrics.functional.image.ergas import \
-    error_relative_global_dimensionless_synthesis
+from paddlemetrics.functional.image.ergas import error_relative_global_dimensionless_synthesis
 from paddlemetrics.functional.image.gradients import image_gradients
 from paddlemetrics.functional.image.psnr import peak_signal_noise_ratio
 from paddlemetrics.functional.image.rase import relative_average_spectral_error
-from paddlemetrics.functional.image.rmse_sw import \
-    root_mean_squared_error_using_sliding_window
+from paddlemetrics.functional.image.rmse_sw import root_mean_squared_error_using_sliding_window
 from paddlemetrics.functional.image.sam import spectral_angle_mapper
 from paddlemetrics.functional.image.ssim import (
     multiscale_structural_similarity_index_measure,
-    structural_similarity_index_measure)
+    structural_similarity_index_measure,
+)
 from paddlemetrics.functional.image.tv import total_variation
 from paddlemetrics.functional.image.uqi import universal_image_quality_index
 from paddlemetrics.utils.prints import _deprecated_root_import_func
@@ -37,9 +36,7 @@ def _spectral_distortion_index(
 
     """
     _deprecated_root_import_func("spectral_distortion_index", "image")
-    return spectral_distortion_index(
-        preds=preds, target=target, p=p, reduction=reduction
-    )
+    return spectral_distortion_index(preds=preds, target=target, p=p, reduction=reduction)
 
 
 def _error_relative_global_dimensionless_synthesis(
@@ -57,12 +54,8 @@ def _error_relative_global_dimensionless_synthesis(
     tensor(10.)
 
     """
-    _deprecated_root_import_func(
-        "error_relative_global_dimensionless_synthesis", "image"
-    )
-    return error_relative_global_dimensionless_synthesis(
-        preds=preds, target=target, ratio=ratio, reduction=reduction
-    )
+    _deprecated_root_import_func("error_relative_global_dimensionless_synthesis", "image")
+    return error_relative_global_dimensionless_synthesis(preds=preds, target=target, ratio=ratio, reduction=reduction)
 
 
 def _image_gradients(img: paddle.Tensor) -> tuple[paddle.Tensor, paddle.Tensor]:
@@ -107,7 +100,8 @@ def _peak_signal_noise_ratio(
         target=target,
         data_range=data_range,
         base=base,
-        reduction=reduction, axis=dim,
+        reduction=reduction,
+        axis=dim,
     )
 
 
@@ -124,9 +118,7 @@ def _relative_average_spectral_error(
 
     """
     _deprecated_root_import_func("relative_average_spectral_error", "image")
-    return relative_average_spectral_error(
-        preds=preds, target=target, window_size=window_size
-    )
+    return relative_average_spectral_error(preds=preds, target=target, window_size=window_size)
 
 
 def _root_mean_squared_error_using_sliding_window(
@@ -144,9 +136,7 @@ def _root_mean_squared_error_using_sliding_window(
     tensor(0.4158)
 
     """
-    _deprecated_root_import_func(
-        "root_mean_squared_error_using_sliding_window", "image"
-    )
+    _deprecated_root_import_func("root_mean_squared_error_using_sliding_window", "image")
     return root_mean_squared_error_using_sliding_window(
         preds=preds,
         target=target,
@@ -195,9 +185,7 @@ def _multiscale_structural_similarity_index_measure(
     tensor(0.9628)
 
     """
-    _deprecated_root_import_func(
-        "multiscale_structural_similarity_index_measure", "image"
-    )
+    _deprecated_root_import_func("multiscale_structural_similarity_index_measure", "image")
     return multiscale_structural_similarity_index_measure(
         preds=preds,
         target=target,
@@ -251,9 +239,7 @@ def _structural_similarity_index_measure(
     )
 
 
-def _total_variation(
-    img: paddle.Tensor, reduction: Literal["mean", "sum", "none", None] = "sum"
-) -> paddle.Tensor:
+def _total_variation(img: paddle.Tensor, reduction: Literal["mean", "sum", "none", None] = "sum") -> paddle.Tensor:
     """Wrapper for deprecated import.
 
     >>> from paddle import rand
@@ -271,9 +257,7 @@ def _universal_image_quality_index(
     target: paddle.Tensor,
     kernel_size: Sequence[int] = (11, 11),
     sigma: Sequence[float] = (1.5, 1.5),
-    reduction: Optional[
-        Literal["elementwise_mean", "sum", "none"]
-    ] = "elementwise_mean",
+    reduction: Optional[Literal["elementwise_mean", "sum", "none"]] = "elementwise_mean",
 ) -> paddle.Tensor:
     """Wrapper for deprecated import.
 

@@ -35,9 +35,7 @@ def _explained_variance_compute(
     sum_squared_error: paddle.Tensor,
     sum_target: paddle.Tensor,
     sum_squared_target: paddle.Tensor,
-    multioutput: Literal[
-        "raw_values", "uniform_average", "variance_weighted"
-    ] = "uniform_average",
+    multioutput: Literal["raw_values", "uniform_average", "variance_weighted"] = "uniform_average",
 ) -> paddle.Tensor:
     """Compute Explained Variance.
 
@@ -83,9 +81,7 @@ def _explained_variance_compute(
 def explained_variance(
     preds: paddle.Tensor,
     target: paddle.Tensor,
-    multioutput: Literal[
-        "raw_values", "uniform_average", "variance_weighted"
-    ] = "uniform_average",
+    multioutput: Literal["raw_values", "uniform_average", "variance_weighted"] = "uniform_average",
 ) -> Union[paddle.Tensor, Sequence[paddle.Tensor]]:
     """Compute explained variance.
 
@@ -113,9 +109,7 @@ def explained_variance(
 
     """
     if multioutput not in ALLOWED_MULTIOUTPUT:
-        raise ValueError(
-            f"Invalid input to argument `multioutput`. Choose one of the following: {ALLOWED_MULTIOUTPUT}"
-        )
+        raise ValueError(f"Invalid input to argument `multioutput`. Choose one of the following: {ALLOWED_MULTIOUTPUT}")
     (
         num_obs,
         sum_error,

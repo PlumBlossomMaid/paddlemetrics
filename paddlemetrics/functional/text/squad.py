@@ -11,9 +11,7 @@ SINGLE_PRED_TYPE = dict[str, str]
 PREDS_TYPE = Union[SINGLE_PRED_TYPE, list[SINGLE_PRED_TYPE]]
 SINGLE_TARGET_TYPE = dict[str, Union[str, dict[str, Union[list[str], list[int]]]]]
 TARGETS_TYPE = Union[SINGLE_TARGET_TYPE, list[SINGLE_TARGET_TYPE]]
-UPDATE_METHOD_SINGLE_PRED_TYPE = Union[
-    list[dict[str, Union[str, int]]], str, dict[str, Union[list[str], list[int]]]
-]
+UPDATE_METHOD_SINGLE_PRED_TYPE = Union[list[dict[str, Union[str, int]]], str, dict[str, Union[list[str], list[int]]]]
 SQuAD_FORMAT = {
     "answers": {"answer_start": [1], "text": ["This is a test text"]},
     "context": "This is a test context.",
@@ -64,9 +62,7 @@ def _compute_f1_score(predicted_answer: str, target_answer: str) -> paddle.Tenso
 
 def _compute_exact_match_score(prediction: str, ground_truth: str) -> paddle.Tensor:
     """Compute Exact Match for two sentences."""
-    return paddle.tensor(
-        int(_normalize_text(prediction) == _normalize_text(ground_truth))
-    )
+    return paddle.tensor(int(_normalize_text(prediction) == _normalize_text(ground_truth)))
 
 
 def _metric_max_over_ground_truths(
@@ -105,16 +101,12 @@ SQuAD Format: {SQuAD_FORMAT}"""
                 f"""Expected keys in a 'answers' are 'text'.Please make sure that 'answer' maps to a `SQuAD` format dictionary.
 SQuAD Format: {SQuAD_FORMAT}"""
             )
-    preds_dict = {
-        prediction["id"]: prediction["prediction_text"] for prediction in preds
-    }
+    preds_dict = {prediction["id"]: prediction["prediction_text"] for prediction in preds}
     _fn_answer = lambda tgt: {
         "answers": [{"text": txt} for txt in tgt["answers"]["text"]],
         "id": tgt["id"],
     }
-    targets_dict = [
-        {"paragraphs": [{"qas": [_fn_answer(target) for target in targets]}]}
-    ]
+    targets_dict = [{"paragraphs": [{"qas": [_fn_answer(target) for target in targets]}]}]
     return preds_dict, targets_dict
 
 
@@ -155,24 +147,16 @@ def _squad_update(
             for qa in paragraph["qas"]:
                 total += 1
                 if qa["id"] not in preds:
-                    rank_zero_warn(
-                        f"Unanswered question {qa['id']} will receive score 0."
-                    )
+                    rank_zero_warn(f"Unanswered question {qa['id']} will receive score 0.")
                     continue
                 ground_truths = [x["text"] for x in qa["answers"]]
                 pred = preds[qa["id"]]
-                exact_match += _metric_max_over_ground_truths(
-                    _compute_exact_match_score, pred, ground_truths
-                )
-                f1 += _metric_max_over_ground_truths(
-                    _compute_f1_score, pred, ground_truths
-                )
+                exact_match += _metric_max_over_ground_truths(_compute_exact_match_score, pred, ground_truths)
+                f1 += _metric_max_over_ground_truths(_compute_f1_score, pred, ground_truths)
     return f1, exact_match, total
 
 
-def _squad_compute(
-    f1: paddle.Tensor, exact_match: paddle.Tensor, total: paddle.Tensor
-) -> dict[str, paddle.Tensor]:
+def _squad_compute(f1: paddle.Tensor, exact_match: paddle.Tensor, total: paddle.Tensor) -> dict[str, paddle.Tensor]:
     """Aggregate the F1 Score and Exact match for the batch.
 
     Return:

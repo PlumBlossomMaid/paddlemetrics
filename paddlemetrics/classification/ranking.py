@@ -2,14 +2,16 @@ from collections.abc import Sequence
 from typing import Any, Optional, Union
 
 import paddle
-from paddle import Tensor
 
 from paddlemetrics.functional.classification.ranking import (
     _multilabel_confusion_matrix_arg_validation,
-    _multilabel_confusion_matrix_format, _multilabel_coverage_error_update,
+    _multilabel_confusion_matrix_format,
+    _multilabel_coverage_error_update,
     _multilabel_ranking_average_precision_update,
-    _multilabel_ranking_loss_update, _multilabel_ranking_tensor_validation,
-    _ranking_reduce)
+    _multilabel_ranking_loss_update,
+    _multilabel_ranking_tensor_validation,
+    _ranking_reduce,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -77,9 +79,7 @@ class MultilabelCoverageError(Metric):
     ) -> None:
         super().__init__(**kwargs)
         if validate_args:
-            _multilabel_confusion_matrix_arg_validation(
-                num_labels, threshold=0.0, ignore_index=ignore_index
-            )
+            _multilabel_confusion_matrix_arg_validation(num_labels, threshold=0.0, ignore_index=ignore_index)
         self.validate_args = validate_args
         self.num_labels = num_labels
         self.ignore_index = ignore_index
@@ -89,9 +89,7 @@ class MultilabelCoverageError(Metric):
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update metric states."""
         if self.validate_args:
-            _multilabel_ranking_tensor_validation(
-                preds, target, self.num_labels, self.ignore_index
-            )
+            _multilabel_ranking_tensor_validation(preds, target, self.num_labels, self.ignore_index)
         preds, target = _multilabel_confusion_matrix_format(
             preds,
             target,
@@ -102,26 +100,18 @@ class MultilabelCoverageError(Metric):
         )
         measure, num_elements = _multilabel_coverage_error_update(preds, target)
         if not isinstance(self.measure, paddle.Tensor):
-            raise TypeError(
-                f"Expected 'self.measure' to be of type Tensor, but got {type(self.measure)}."
-            )
+            raise TypeError(f"Expected 'self.measure' to be of type Tensor, but got {type(self.measure)}.")
         if not isinstance(self.total, paddle.Tensor):
-            raise TypeError(
-                f"Expected 'self.total' to be of type Tensor, but got {type(self.total)}."
-            )
+            raise TypeError(f"Expected 'self.total' to be of type Tensor, but got {type(self.total)}.")
         self.measure += measure
         self.total += num_elements
 
     def compute(self) -> paddle.Tensor:
         """Compute metric."""
         if not isinstance(self.measure, paddle.Tensor):
-            raise TypeError(
-                f"Expected 'self.measure' to be of type Tensor, but got {type(self.measure)}."
-            )
+            raise TypeError(f"Expected 'self.measure' to be of type Tensor, but got {type(self.measure)}.")
         if not isinstance(self.total, paddle.Tensor):
-            raise TypeError(
-                f"Expected 'self.total' to be of type Tensor, but got {type(self.total)}."
-            )
+            raise TypeError(f"Expected 'self.total' to be of type Tensor, but got {type(self.total)}.")
         return _ranking_reduce(self.measure, int(self.total.item()))
 
     def plot(
@@ -224,9 +214,7 @@ class MultilabelRankingAveragePrecision(Metric):
     ) -> None:
         super().__init__(**kwargs)
         if validate_args:
-            _multilabel_confusion_matrix_arg_validation(
-                num_labels, threshold=0.0, ignore_index=ignore_index
-            )
+            _multilabel_confusion_matrix_arg_validation(num_labels, threshold=0.0, ignore_index=ignore_index)
         self.validate_args = validate_args
         self.num_labels = num_labels
         self.ignore_index = ignore_index
@@ -236,9 +224,7 @@ class MultilabelRankingAveragePrecision(Metric):
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update metric states."""
         if self.validate_args:
-            _multilabel_ranking_tensor_validation(
-                preds, target, self.num_labels, self.ignore_index
-            )
+            _multilabel_ranking_tensor_validation(preds, target, self.num_labels, self.ignore_index)
         preds, target = _multilabel_confusion_matrix_format(
             preds,
             target,
@@ -248,29 +234,19 @@ class MultilabelRankingAveragePrecision(Metric):
             should_threshold=False,
         )
         if not isinstance(self.measure, paddle.Tensor):
-            raise TypeError(
-                f"Expected 'self.measure' to be of type Tensor, but got {type(self.measure)}."
-            )
+            raise TypeError(f"Expected 'self.measure' to be of type Tensor, but got {type(self.measure)}.")
         if not isinstance(self.total, paddle.Tensor):
-            raise TypeError(
-                f"Expected 'self.total' to be of type Tensor, but got {type(self.total)}."
-            )
-        measure, num_elements = _multilabel_ranking_average_precision_update(
-            preds, target
-        )
+            raise TypeError(f"Expected 'self.total' to be of type Tensor, but got {type(self.total)}.")
+        measure, num_elements = _multilabel_ranking_average_precision_update(preds, target)
         self.measure += measure
         self.total += num_elements
 
     def compute(self) -> paddle.Tensor:
         """Compute metric."""
         if not isinstance(self.measure, paddle.Tensor):
-            raise TypeError(
-                f"Expected 'self.measure' to be of type Tensor, but got {type(self.measure)}."
-            )
+            raise TypeError(f"Expected 'self.measure' to be of type Tensor, but got {type(self.measure)}.")
         if not isinstance(self.total, paddle.Tensor):
-            raise TypeError(
-                f"Expected 'self.total' to be of type Tensor, but got {type(self.total)}."
-            )
+            raise TypeError(f"Expected 'self.total' to be of type Tensor, but got {type(self.total)}.")
         return _ranking_reduce(self.measure, int(self.total.item()))
 
     def plot(
@@ -375,9 +351,7 @@ class MultilabelRankingLoss(Metric):
     ) -> None:
         super().__init__(**kwargs)
         if validate_args:
-            _multilabel_confusion_matrix_arg_validation(
-                num_labels, threshold=0.0, ignore_index=ignore_index
-            )
+            _multilabel_confusion_matrix_arg_validation(num_labels, threshold=0.0, ignore_index=ignore_index)
         self.validate_args = validate_args
         self.num_labels = num_labels
         self.ignore_index = ignore_index
@@ -387,9 +361,7 @@ class MultilabelRankingLoss(Metric):
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update metric states."""
         if self.validate_args:
-            _multilabel_ranking_tensor_validation(
-                preds, target, self.num_labels, self.ignore_index
-            )
+            _multilabel_ranking_tensor_validation(preds, target, self.num_labels, self.ignore_index)
         preds, target = _multilabel_confusion_matrix_format(
             preds,
             target,
@@ -399,13 +371,9 @@ class MultilabelRankingLoss(Metric):
             should_threshold=False,
         )
         if not isinstance(self.measure, paddle.Tensor):
-            raise TypeError(
-                f"Expected 'self.measure' to be of type Tensor, but got {type(self.measure)}."
-            )
+            raise TypeError(f"Expected 'self.measure' to be of type Tensor, but got {type(self.measure)}.")
         if not isinstance(self.total, paddle.Tensor):
-            raise TypeError(
-                f"Expected 'self.total' to be of type Tensor, but got {type(self.total)}."
-            )
+            raise TypeError(f"Expected 'self.total' to be of type Tensor, but got {type(self.total)}.")
         measure, num_elements = _multilabel_ranking_loss_update(preds, target)
         self.measure += measure
         self.total += num_elements
@@ -413,13 +381,9 @@ class MultilabelRankingLoss(Metric):
     def compute(self) -> paddle.Tensor:
         """Compute metric."""
         if not isinstance(self.measure, paddle.Tensor):
-            raise TypeError(
-                f"Expected 'self.measure' to be of type Tensor, but got {type(self.measure)}."
-            )
+            raise TypeError(f"Expected 'self.measure' to be of type Tensor, but got {type(self.measure)}.")
         if not isinstance(self.total, paddle.Tensor):
-            raise TypeError(
-                f"Expected 'self.total' to be of type Tensor, but got {type(self.total)}."
-            )
+            raise TypeError(f"Expected 'self.total' to be of type Tensor, but got {type(self.total)}.")
         return _ranking_reduce(self.measure, int(self.total.item()))
 
     def plot(

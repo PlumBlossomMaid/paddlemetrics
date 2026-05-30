@@ -3,36 +3,28 @@ from math import ceil, pi
 from typing import Optional
 
 import paddle
-from paddle import Tensor
 
 from paddlemetrics.utils import rank_zero_warn
-from paddlemetrics.utils.imports import _GAMMATONE_AVAILABLE
-                                            
 from paddlemetrics.utils.filtering import lfilter
+from paddlemetrics.utils.imports import _GAMMATONE_AVAILABLE
 
 if not _GAMMATONE_AVAILABLE:
     __doctest_skip__ = ["speech_reverberation_modulation_energy_ratio"]
 
 
 @lru_cache(maxsize=100)
-def _calc_erbs(
-    low_freq: float, fs: int, n_filters: int, device: paddle.device
-) -> paddle.Tensor:
+def _calc_erbs(low_freq: float, fs: int, n_filters: int, device: paddle.device) -> paddle.Tensor:
     from gammatone.filters import centre_freqs
 
     ear_q = 9.26449
     min_bw = 24.7
     order = 1
-    erbs = (
-        (centre_freqs(fs, n_filters, low_freq) / ear_q) ** order + min_bw**order
-    ) ** (1 / order)
+    erbs = ((centre_freqs(fs, n_filters, low_freq) / ear_q) ** order + min_bw**order) ** (1 / order)
     return paddle.to_tensor(erbs)
 
 
 @lru_cache(maxsize=100)
-def _make_erb_filters(
-    fs: int, num_freqs: int, cutoff: float, device: paddle.device
-) -> paddle.Tensor:
+def _make_erb_filters(fs: int, num_freqs: int, cutoff: float, device: paddle.device) -> paddle.Tensor:
     from gammatone.filters import centre_freqs, make_erb_filters
 
     cfs = centre_freqs(fs, num_freqs, cutoff)
@@ -54,18 +46,12 @@ def _compute_modulation_filterbank_and_cutoffs(
         w0 = paddle.tan(x=w0 / 2)
         b0 = w0 / q
         b = paddle.to_tensor([b0, 0, -b0], dtype=paddle.float64)
-        a = paddle.to_tensor(
-            [1 + b0 + w0**2, 2 * w0**2 - 2, 1 - b0 + w0**2], dtype=paddle.float64
-        )
+        a = paddle.to_tensor([1 + b0 + w0**2, 2 * w0**2 - 2, 1 - b0 + w0**2], dtype=paddle.float64)
         return paddle.stack([b, a], axis=0)
 
-    mfb = paddle.stack(
-        [_make_modulation_filter(w0, q) for w0 in 2 * pi * cfs / fs], axis=0
-    )
+    mfb = paddle.stack([_make_modulation_filter(w0, q) for w0 in 2 * pi * cfs / fs], axis=0)
 
-    def _calc_cutoffs(
-        cfs: paddle.Tensor, fs: float, q: int
-    ) -> tuple[paddle.Tensor, paddle.Tensor]:
+    def _calc_cutoffs(cfs: paddle.Tensor, fs: float, q: int) -> tuple[paddle.Tensor, paddle.Tensor]:
         w0 = 2 * pi * cfs / fs
         b0 = paddle.tan(x=w0 / 2) / q
         ll = cfs - b0 * fs / (2 * pi)
@@ -134,22 +120,14 @@ def _normalize_energy(energy: paddle.Tensor, drange: float = 30.0) -> paddle.Ten
         drange: dynamic range in dB
 
     """
-    peak_energy = (
-        paddle.mean(energy, axis=1, keepdim=True).max(keepdim=True, axis=2),
-        paddle.mean(energy, axis=1, keepdim=True).argmax(keepdim=True, axis=2),
-    )[0].values
-    peak_energy = (
-        peak_energy.max(keepdim=True, axis=3),
-        peak_energy.argmax(keepdim=True, axis=3),
-    )[0].values
+    peak_energy = paddle.mean(energy, axis=1, keepdim=True).max(keepdim=True, axis=2)[0]
+    peak_energy = peak_energy.max(keepdim=True, axis=3)[0]
     min_energy = peak_energy * 10.0 ** (-drange / 10.0)
     energy = paddle.where(energy < min_energy, min_energy, energy)
     return paddle.where(energy > peak_energy, peak_energy, energy)
 
 
-def _cal_srmr_score(
-    bw: paddle.Tensor, avg_energy: paddle.Tensor, cutoffs: paddle.Tensor
-) -> paddle.Tensor:
+def _cal_srmr_score(bw: paddle.Tensor, avg_energy: paddle.Tensor, cutoffs: paddle.Tensor) -> paddle.Tensor:
     """Calculate srmr score."""
     if cutoffs[4] <= bw and cutoffs[5] > bw:
         kstar = 5
@@ -239,10 +217,7 @@ def speech_reverberation_modulation_energy_ratio(
     num_batch, time = preds.shape
     if not paddle.is_floating_point(preds):
         preds = preds.astype(paddle.float64) / paddle.finfo(preds.dtype).max
-    max_vals = (
-        preds.abs().max(keepdim=True, axis=-1),
-        preds.abs().argmax(keepdim=True, axis=-1),
-    )[0].values
+    max_vals = preds.abs().max(keepdim=True, axis=-1)[0]
     val_norm = paddle.where(
         max_vals > 1,
         max_vals,
@@ -257,24 +232,18 @@ def speech_reverberation_modulation_energy_ratio(
         temp = []
         preds_np = preds.detach().cpu().numpy()
         for b in range(num_batch):
-            gt_env_b = fft_gtgram(
-                preds_np[b], fs, 0.01, 0.0025, n_cochlear_filters, low_freq
-            )
+            gt_env_b = fft_gtgram(preds_np[b], fs, 0.01, 0.0025, n_cochlear_filters, low_freq)
             temp.append(paddle.to_tensor(gt_env_b))
         gt_env = paddle.stack(temp, axis=0)
     else:
-        fcoefs = _make_erb_filters(
-            fs, n_cochlear_filters, low_freq, device=preds.place
-        )
+        fcoefs = _make_erb_filters(fs, n_cochlear_filters, low_freq, device=preds.place)
         gt_env = paddle.abs(_hilbert(_erb_filterbank(preds, fcoefs)))
         mfs = fs
     w_length = ceil(w_length_s * mfs)
     w_inc = ceil(w_inc_s * mfs)
     if max_cf is None:
         max_cf = 30 if norm else 128
-    _, mf, cutoffs, _ = _compute_modulation_filterbank_and_cutoffs(
-        min_cf, max_cf, n=8, fs=mfs, q=2, device=preds.place
-    )
+    _, mf, cutoffs, _ = _compute_modulation_filterbank_and_cutoffs(min_cf, max_cf, n=8, fs=mfs, q=2, device=preds.place)
     num_frames = int(1 + (time - w_length) // w_inc)
     w = paddle.hamming_window(w_length + 1, dtype=paddle.float64)[:-1]
     mod_out = lfilter(
@@ -285,16 +254,12 @@ def speech_reverberation_modulation_energy_ratio(
         batching=True,
     )
     padding = [0, max(ceil(time / w_inc) * w_inc - time, w_length - time)]
-    mod_out_pad = paddle.nn.functional.pad(
-        mod_out, pad=padding, mode="constant", value=0
-    )
+    mod_out_pad = paddle.nn.functional.pad(mod_out, pad=padding, mode="constant", value=0)
     mod_out_frame = mod_out_pad.unfold(axis=-1, size=w_length, step=w_inc)
     energy = ((mod_out_frame[..., :num_frames, :] * w) ** 2).sum(axis=-1)
     if norm:
         energy = _normalize_energy(energy)
-    erbs = paddle.flip(
-        x=_calc_erbs(low_freq, fs, n_cochlear_filters, device=preds.place), axis=0
-    )
+    erbs = paddle.flip(x=_calc_erbs(low_freq, fs, n_cochlear_filters, device=preds.place), axis=0)
     avg_energy = paddle.mean(energy, axis=-1)
     total_energy = paddle.sum(avg_energy.reshape([num_batch, -1]), axis=-1)
     ac_energy = paddle.sum(avg_energy, axis=2)
@@ -332,25 +297,17 @@ def _srmr_arg_validate(
 
     """
     if not (isinstance(fs, int) and fs > 0):
-        raise ValueError(
-            f"Expected argument `fs` to be an int larger than 0, but got {fs}"
-        )
+        raise ValueError(f"Expected argument `fs` to be an int larger than 0, but got {fs}")
     if not (isinstance(n_cochlear_filters, int) and n_cochlear_filters > 0):
         raise ValueError(
             f"Expected argument `n_cochlear_filters` to be an int larger than 0, but got {n_cochlear_filters}"
         )
     if not (isinstance(low_freq, (float, int)) and low_freq > 0):
-        raise ValueError(
-            f"Expected argument `low_freq` to be a float larger than 0, but got {low_freq}"
-        )
+        raise ValueError(f"Expected argument `low_freq` to be a float larger than 0, but got {low_freq}")
     if not (isinstance(min_cf, (float, int)) and min_cf > 0):
-        raise ValueError(
-            f"Expected argument `min_cf` to be a float larger than 0, but got {min_cf}"
-        )
+        raise ValueError(f"Expected argument `min_cf` to be a float larger than 0, but got {min_cf}")
     if max_cf is not None and not (isinstance(max_cf, (float, int)) and max_cf > 0):
-        raise ValueError(
-            f"Expected argument `max_cf` to be a float larger than 0, but got {max_cf}"
-        )
+        raise ValueError(f"Expected argument `max_cf` to be a float larger than 0, but got {max_cf}")
     if not isinstance(norm, bool):
         raise ValueError("Expected argument `norm` to be a bool value")
     if not isinstance(fast, bool):

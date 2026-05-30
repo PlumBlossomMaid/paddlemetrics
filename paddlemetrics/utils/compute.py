@@ -1,4 +1,5 @@
 """Compute utilities for paddlemetrics."""
+
 from typing import Optional, Union
 
 import paddle
@@ -68,9 +69,7 @@ def _adjust_weights_safe_divide(
     return _safe_divide(weights * score, weights.sum(-1, keepdim=True).expand_as(score)).sum(-1)
 
 
-def _auc_format_inputs(
-    x: paddle.Tensor, y: paddle.Tensor
-) -> tuple[paddle.Tensor, paddle.Tensor]:
+def _auc_format_inputs(x: paddle.Tensor, y: paddle.Tensor) -> tuple[paddle.Tensor, paddle.Tensor]:
     """Check that auc input is correct."""
     x = x.squeeze() if x.ndim > 1 else x
     y = y.squeeze() if y.ndim > 1 else y
@@ -85,18 +84,14 @@ def _auc_format_inputs(
     return x, y
 
 
-def _auc_compute_without_check(
-    x: paddle.Tensor, y: paddle.Tensor, direction: float, axis: int = -1
-) -> paddle.Tensor:
+def _auc_compute_without_check(x: paddle.Tensor, y: paddle.Tensor, direction: float, axis: int = -1) -> paddle.Tensor:
     """Compute area under the curve using the trapezoidal rule."""
     with paddle.no_grad():
         auc_score = paddle.trapezoid(y=y, x=x, axis=axis) * direction
     return auc_score
 
 
-def _auc_compute(
-    x: paddle.Tensor, y: paddle.Tensor, reorder: bool = False
-) -> paddle.Tensor:
+def _auc_compute(x: paddle.Tensor, y: paddle.Tensor, reorder: bool = False) -> paddle.Tensor:
     """Compute area under the curve using the trapezoidal rule."""
     with paddle.no_grad():
         if reorder:
@@ -108,9 +103,7 @@ def _auc_compute(
             if (dx <= 0).all():
                 direction = -1.0
             else:
-                raise ValueError(
-                    "The `x` tensor is neither increasing or decreasing. Try setting reorder=True."
-                )
+                raise ValueError("The `x` tensor is neither increasing or decreasing. Try setting reorder=True.")
         else:
             direction = 1.0
         return _auc_compute_without_check(x, y, direction)

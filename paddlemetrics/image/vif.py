@@ -63,13 +63,9 @@ class VisualInformationFidelity(Metric):
     ) -> None:
         super().__init__(**kwargs)
         if not isinstance(sigma_n_sq, (float, int)) or sigma_n_sq < 0:
-            raise ValueError(
-                f"Argument `sigma_n_sq` is expected to be a positive float or int, but got {sigma_n_sq}"
-            )
+            raise ValueError(f"Argument `sigma_n_sq` is expected to be a positive float or int, but got {sigma_n_sq}")
         if reduction not in ("mean", "none"):
-            raise ValueError(
-                f"Argument `reduction` must be 'mean' or 'none', but got {reduction}"
-            )
+            raise ValueError(f"Argument `reduction` must be 'mean' or 'none', but got {reduction}")
         self.sigma_n_sq = sigma_n_sq
         self.reduction = reduction
         self.add_state("vif_score", default=[], dist_reduce_fx=None)
@@ -78,13 +74,10 @@ class VisualInformationFidelity(Metric):
         """Update state with predictions and targets."""
         channels = preds.size(1)
         vif_per_channel = [
-            _vif_per_channel(preds[:, i, :, :], target[:, i, :, :], self.sigma_n_sq)
-            for i in range(channels)
+            _vif_per_channel(preds[:, i, :, :], target[:, i, :, :], self.sigma_n_sq) for i in range(channels)
         ]
         vif_per_channel = (
-            paddle.mean(paddle.stack(vif_per_channel), 0)
-            if channels > 1
-            else paddle.concat(vif_per_channel)
+            paddle.mean(paddle.stack(vif_per_channel), 0) if channels > 1 else paddle.concat(vif_per_channel)
         )
         self.vif_score.append(vif_per_channel)
 

@@ -6,10 +6,11 @@ from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.functional.classification.group_fairness import (
-    _binary_groups_stat_scores, _compute_binary_demographic_parity,
-    _compute_binary_equal_opportunity)
-from paddlemetrics.functional.classification.stat_scores import \
-    _binary_stat_scores_arg_validation
+    _binary_groups_stat_scores,
+    _compute_binary_demographic_parity,
+    _compute_binary_equal_opportunity,
+)
+from paddlemetrics.functional.classification.stat_scores import _binary_stat_scores_arg_validation
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils import rank_zero_warn
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
@@ -36,9 +37,7 @@ class _AbstractGroupStatScores(Metric):
 
     def _update_states(
         self,
-        group_stats: list[
-            tuple[paddle.Tensor, paddle.Tensor, paddle.Tensor, paddle.Tensor]
-        ],
+        group_stats: list[tuple[paddle.Tensor, paddle.Tensor, paddle.Tensor, paddle.Tensor]],
     ) -> None:
         for group, stats in enumerate(group_stats):
             tp, fp, tn, fn = stats
@@ -112,18 +111,14 @@ class BinaryGroupStatRates(_AbstractGroupStatScores):
         if validate_args:
             _binary_stat_scores_arg_validation(threshold, "global", ignore_index)
         if not isinstance(num_groups, int) and num_groups < 2:
-            raise ValueError(
-                f"Expected argument `num_groups` to be an int larger than 1, but got {num_groups}"
-            )
+            raise ValueError(f"Expected argument `num_groups` to be an int larger than 1, but got {num_groups}")
         self.num_groups = num_groups
         self.threshold = threshold
         self.ignore_index = ignore_index
         self.validate_args = validate_args
         self._create_states(self.num_groups)
 
-    def update(
-        self, preds: paddle.Tensor, target: paddle.Tensor, groups: paddle.Tensor
-    ) -> None:
+    def update(self, preds: paddle.Tensor, target: paddle.Tensor, groups: paddle.Tensor) -> None:
         """Update state with predictions, target and group identifiers.
 
         Args:
@@ -227,9 +222,7 @@ class BinaryFairness(_AbstractGroupStatScores):
         if validate_args:
             _binary_stat_scores_arg_validation(threshold, "global", ignore_index)
         if not isinstance(num_groups, int) and num_groups < 2:
-            raise ValueError(
-                f"Expected argument `num_groups` to be an int larger than 1, but got {num_groups}"
-            )
+            raise ValueError(f"Expected argument `num_groups` to be an int larger than 1, but got {num_groups}")
         self.num_groups = num_groups
         self.task = task
         self.threshold = threshold
@@ -237,9 +230,7 @@ class BinaryFairness(_AbstractGroupStatScores):
         self.validate_args = validate_args
         self._create_states(self.num_groups)
 
-    def update(
-        self, preds: paddle.Tensor, target: paddle.Tensor, groups: paddle.Tensor
-    ) -> None:
+    def update(self, preds: paddle.Tensor, target: paddle.Tensor, groups: paddle.Tensor) -> None:
         """Update state with predictions, groups, and target.
 
         Args:
@@ -269,16 +260,12 @@ class BinaryFairness(_AbstractGroupStatScores):
     def compute(self) -> dict[str, paddle.Tensor]:
         """Compute fairness criteria based on inputs passed in to ``update`` previously."""
         if self.task == "demographic_parity":
-            return _compute_binary_demographic_parity(
-                self.tp, self.fp, self.tn, self.fn
-            )
+            return _compute_binary_demographic_parity(self.tp, self.fp, self.tn, self.fn)
         if self.task == "equal_opportunity":
             return _compute_binary_equal_opportunity(self.tp, self.fp, self.tn, self.fn)
         if self.task == "all":
             return {
-                **_compute_binary_demographic_parity(
-                    self.tp, self.fp, self.tn, self.fn
-                ),
+                **_compute_binary_demographic_parity(self.tp, self.fp, self.tn, self.fn),
                 **_compute_binary_equal_opportunity(self.tp, self.fp, self.tn, self.fn),
             }
         return None

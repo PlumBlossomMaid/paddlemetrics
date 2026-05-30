@@ -5,13 +5,13 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import paddle
-from paddle import Tensor
 import pytest
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
+from paddle import Tensor
 
 from paddlemetrics.functional.multimodal.lve import lip_vertex_error
 from paddlemetrics.multimodal.lve import LipVertexError
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
 
 seed_all(42)
 
@@ -38,9 +38,7 @@ def _reference_lip_vertex_error(vertices_pred, vertices_gt, mouth_map):
     min_frames = min(vertices_pred.shape[0], vertices_gt.shape[0])
     vertices_pred = vertices_pred[:min_frames].numpy()
     vertices_gt = vertices_gt[:min_frames].numpy()
-    l2_dis_mouth_max = np.array(
-        [np.square(vertices_gt[:, v, :] - vertices_pred[:, v, :]) for v in mouth_map]
-    )
+    l2_dis_mouth_max = np.array([np.square(vertices_gt[:, v, :] - vertices_pred[:, v, :]) for v in mouth_map])
     l2_dis_mouth_max = np.transpose(l2_dis_mouth_max, (1, 0, 2))
     l2_dis_mouth_max = np.sum(l2_dis_mouth_max, axis=2)
     l2_dis_mouth_max = np.max(l2_dis_mouth_max, axis=1)
@@ -115,9 +113,7 @@ class TestLipVertexError(MetricTester):
     def test_error_on_invalid_mouth_indices(self):
         """Test that an error is raised if mouth_map contains invalid indices."""
         metric = LipVertexError(mouth_map=[98, 99, 100])
-        with pytest.raises(
-            ValueError, match="mouth_map contains invalid vertex indices.*"
-        ):
+        with pytest.raises(ValueError, match="mouth_map contains invalid vertex indices.*"):
             metric(paddle.randn(10, 50, 3), paddle.randn(10, 50, 3))
 
     def test_different_sequence_lengths(self):

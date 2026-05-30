@@ -16,11 +16,14 @@ from paddlemetrics.functional.classification.precision_recall_curve import (
     _multilabel_precision_recall_curve_arg_validation,
     _multilabel_precision_recall_curve_format,
     _multilabel_precision_recall_curve_tensor_validation,
-    _multilabel_precision_recall_curve_update)
+    _multilabel_precision_recall_curve_update,
+)
 from paddlemetrics.functional.classification.roc import (
-    _binary_roc_compute, _multiclass_roc_compute, _multilabel_roc_compute)
-from paddlemetrics.utils.compute import (_auc_compute_without_check,
-                                            _safe_divide)
+    _binary_roc_compute,
+    _multiclass_roc_compute,
+    _multilabel_roc_compute,
+)
+from paddlemetrics.utils.compute import _auc_compute_without_check, _safe_divide
 from paddlemetrics.utils.data import _bincount
 from paddlemetrics.utils.enums import ClassificationTask
 from paddlemetrics.utils.prints import rank_zero_warn
@@ -37,12 +40,7 @@ def _reduce_auroc(
     if isinstance(fpr, paddle.Tensor) and isinstance(tpr, paddle.Tensor):
         res = _auc_compute_without_check(fpr, tpr, direction=direction, axis=1)
     else:
-        res = paddle.stack(
-            [
-                _auc_compute_without_check(x, y, direction=direction)
-                for x, y in zip(fpr, tpr)
-            ]
-        )
+        res = paddle.stack([_auc_compute_without_check(x, y, direction=direction) for x, y in zip(fpr, tpr)])
     if average is None or average == "none":
         return res
     if paddle.isnan(res).any():
@@ -56,9 +54,7 @@ def _reduce_auroc(
     if average == "weighted" and weights is not None:
         weights = _safe_divide(weights[idx], weights[idx].sum())
         return (res[idx] * weights).sum()
-    raise ValueError(
-        "Received an incompatible combinations of inputs to make reduction."
-    )
+    raise ValueError("Received an incompatible combinations of inputs to make reduction.")
 
 
 def _binary_auroc_arg_validation(
@@ -68,9 +64,7 @@ def _binary_auroc_arg_validation(
 ) -> None:
     _binary_precision_recall_curve_arg_validation(thresholds, ignore_index)
     if max_fpr is not None and not isinstance(max_fpr, float) and 0 < max_fpr <= 1:
-        raise ValueError(
-            f"Arguments `max_fpr` should be a float in range (0, 1], but got: {max_fpr}"
-        )
+        raise ValueError(f"Arguments `max_fpr` should be a float in range (0, 1], but got: {max_fpr}")
 
 
 def _binary_auroc_compute(
@@ -160,9 +154,7 @@ def binary_auroc(
     if validate_args:
         _binary_auroc_arg_validation(max_fpr, thresholds, ignore_index)
         _binary_precision_recall_curve_tensor_validation(preds, target, ignore_index)
-    preds, target, thresholds = _binary_precision_recall_curve_format(
-        preds, target, thresholds, ignore_index
-    )
+    preds, target, thresholds = _binary_precision_recall_curve_format(preds, target, thresholds, ignore_index)
     state = _binary_precision_recall_curve_update(preds, target, thresholds)
     return _binary_auroc_compute(state, thresholds, max_fpr)
 
@@ -173,14 +165,10 @@ def _multiclass_auroc_arg_validation(
     thresholds: Optional[Union[int, list[float], paddle.Tensor]] = None,
     ignore_index: Optional[int] = None,
 ) -> None:
-    _multiclass_precision_recall_curve_arg_validation(
-        num_classes, thresholds, ignore_index
-    )
+    _multiclass_precision_recall_curve_arg_validation(num_classes, thresholds, ignore_index)
     allowed_average = "macro", "weighted", "none", None
     if average not in allowed_average:
-        raise ValueError(
-            f"Expected argument `average` to be one of {allowed_average} but got {average}"
-        )
+        raise ValueError(f"Expected argument `average` to be one of {allowed_average} but got {average}")
 
 
 def _multiclass_auroc_compute(
@@ -194,9 +182,7 @@ def _multiclass_auroc_compute(
         fpr,
         tpr,
         average,
-        weights=_bincount(state[1], minlength=num_classes).float()
-        if thresholds is None
-        else state[0][:, 1, :].sum(-1),
+        weights=_bincount(state[1], minlength=num_classes).float() if thresholds is None else state[0][:, 1, :].sum(-1),
     )
 
 
@@ -280,15 +266,11 @@ def multiclass_auroc(
     """
     if validate_args:
         _multiclass_auroc_arg_validation(num_classes, average, thresholds, ignore_index)
-        _multiclass_precision_recall_curve_tensor_validation(
-            preds, target, num_classes, ignore_index
-        )
+        _multiclass_precision_recall_curve_tensor_validation(preds, target, num_classes, ignore_index)
     preds, target, thresholds = _multiclass_precision_recall_curve_format(
         preds, target, num_classes, thresholds, ignore_index
     )
-    state = _multiclass_precision_recall_curve_update(
-        preds, target, num_classes, thresholds
-    )
+    state = _multiclass_precision_recall_curve_update(preds, target, num_classes, thresholds)
     return _multiclass_auroc_compute(state, num_classes, average, thresholds)
 
 
@@ -298,14 +280,10 @@ def _multilabel_auroc_arg_validation(
     thresholds: Optional[Union[int, list[float], paddle.Tensor]] = None,
     ignore_index: Optional[int] = None,
 ) -> None:
-    _multilabel_precision_recall_curve_arg_validation(
-        num_labels, thresholds, ignore_index
-    )
+    _multilabel_precision_recall_curve_arg_validation(num_labels, thresholds, ignore_index)
     allowed_average = "micro", "macro", "weighted", "none", None
     if average not in allowed_average:
-        raise ValueError(
-            f"Expected argument `average` to be one of {allowed_average} but got {average}"
-        )
+        raise ValueError(f"Expected argument `average` to be one of {allowed_average} but got {average}")
 
 
 def _multilabel_auroc_compute(
@@ -330,9 +308,7 @@ def _multilabel_auroc_compute(
         fpr,
         tpr,
         average,
-        weights=(state[1] == 1).sum(dim=0).float()
-        if thresholds is None
-        else state[0][:, 1, :].sum(-1),
+        weights=(state[1] == 1).sum(dim=0).float() if thresholds is None else state[0][:, 1, :].sum(-1),
     )
 
 
@@ -420,18 +396,12 @@ def multilabel_auroc(
     """
     if validate_args:
         _multilabel_auroc_arg_validation(num_labels, average, thresholds, ignore_index)
-        _multilabel_precision_recall_curve_tensor_validation(
-            preds, target, num_labels, ignore_index
-        )
+        _multilabel_precision_recall_curve_tensor_validation(preds, target, num_labels, ignore_index)
     preds, target, thresholds = _multilabel_precision_recall_curve_format(
         preds, target, num_labels, thresholds, ignore_index
     )
-    state = _multilabel_precision_recall_curve_update(
-        preds, target, num_labels, thresholds
-    )
-    return _multilabel_auroc_compute(
-        state, num_labels, average, thresholds, ignore_index
-    )
+    state = _multilabel_precision_recall_curve_update(preds, target, num_labels, thresholds)
+    return _multilabel_auroc_compute(state, num_labels, average, thresholds, ignore_index)
 
 
 def auroc(
@@ -477,23 +447,13 @@ def auroc(
     """
     task = ClassificationTask.from_str(task)
     if task == ClassificationTask.BINARY:
-        return binary_auroc(
-            preds, target, max_fpr, thresholds, ignore_index, validate_args
-        )
+        return binary_auroc(preds, target, max_fpr, thresholds, ignore_index, validate_args)
     if task == ClassificationTask.MULTICLASS:
         if not isinstance(num_classes, int):
-            raise ValueError(
-                f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-            )
-        return multiclass_auroc(
-            preds, target, num_classes, average, thresholds, ignore_index, validate_args
-        )
+            raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
+        return multiclass_auroc(preds, target, num_classes, average, thresholds, ignore_index, validate_args)
     if task == ClassificationTask.MULTILABEL:
         if not isinstance(num_labels, int):
-            raise ValueError(
-                f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-            )
-        return multilabel_auroc(
-            preds, target, num_labels, average, thresholds, ignore_index, validate_args
-        )
+            raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
+        return multilabel_auroc(preds, target, num_labels, average, thresholds, ignore_index, validate_args)
     return None

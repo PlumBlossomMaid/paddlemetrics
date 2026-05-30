@@ -4,17 +4,21 @@ import paddle
 import pytest
 from lightning_utilities.core.imports import RequirementCache
 from monai.metrics.generalized_dice import compute_generalized_dice
+
+from paddlemetrics.functional.segmentation.generalized_dice import generalized_dice_score
+from paddlemetrics.segmentation.generalized_dice import GeneralizedDiceScore
 from unittests import NUM_CLASSES
 from unittests._helpers import seed_all
 from unittests._helpers.testers import MetricTester
-from unittests.segmentation.inputs import (_index_input_1, _index_input_2,
-                                           _mixed_input_1, _mixed_input_2,
-                                           _mixed_logits_input,
-                                           _one_hot_input_1, _one_hot_input_2)
-
-from paddlemetrics.functional.segmentation.generalized_dice import \
-    generalized_dice_score
-from paddlemetrics.segmentation.generalized_dice import GeneralizedDiceScore
+from unittests.segmentation.inputs import (
+    _index_input_1,
+    _index_input_2,
+    _mixed_input_1,
+    _mixed_input_2,
+    _mixed_logits_input,
+    _one_hot_input_1,
+    _one_hot_input_2,
+)
 
 seed_all(42)
 
@@ -28,37 +32,21 @@ def _reference_generalized_dice(
 ):
     """Calculate reference metric for generalized dice metric."""
     if input_format == "index":
-        preds = paddle.nn.functional.one_hot(preds, num_classes=NUM_CLASSES).moveaxis(
-            -1, 1
-        )
-        target = paddle.nn.functional.one_hot(target, num_classes=NUM_CLASSES).moveaxis(
-            -1, 1
-        )
+        preds = paddle.nn.functional.one_hot(preds, num_classes=NUM_CLASSES).moveaxis(-1, 1)
+        target = paddle.nn.functional.one_hot(target, num_classes=NUM_CLASSES).moveaxis(-1, 1)
     elif input_format == "mixed":
         if preds.dim() == target.dim() + 1:
             if paddle.is_floating_point(preds):
                 preds = preds.argmax(dim=1)
-                preds = paddle.nn.functional.one_hot(
-                    preds, num_classes=NUM_CLASSES
-                ).moveaxis(-1, 1)
-            target = paddle.nn.functional.one_hot(
-                target, num_classes=NUM_CLASSES
-            ).moveaxis(-1, 1)
+                preds = paddle.nn.functional.one_hot(preds, num_classes=NUM_CLASSES).moveaxis(-1, 1)
+            target = paddle.nn.functional.one_hot(target, num_classes=NUM_CLASSES).moveaxis(-1, 1)
         elif preds.dim() + 1 == target.dim():
             if paddle.is_floating_point(target):
                 target = target.argmax(dim=1)
-                target = paddle.nn.functional.one_hot(
-                    target, num_classes=NUM_CLASSES
-                ).moveaxis(-1, 1)
-            preds = paddle.nn.functional.one_hot(
-                preds, num_classes=NUM_CLASSES
-            ).moveaxis(-1, 1)
-    monai_extra_arg = (
-        {"sum_over_classes": True} if RequirementCache("monai>=1.4.0") else {}
-    )
-    val = compute_generalized_dice(
-        preds, target, include_background=include_background, **monai_extra_arg
-    )
+                target = paddle.nn.functional.one_hot(target, num_classes=NUM_CLASSES).moveaxis(-1, 1)
+            preds = paddle.nn.functional.one_hot(preds, num_classes=NUM_CLASSES).moveaxis(-1, 1)
+    monai_extra_arg = {"sum_over_classes": True} if RequirementCache("monai>=1.4.0") else {}
+    val = compute_generalized_dice(preds, target, include_background=include_background, **monai_extra_arg)
     if reduce:
         val = val.mean()
     return val.squeeze()
@@ -81,9 +69,7 @@ class TestGeneralizedDiceScore(MetricTester):
     """Test class for `GeneralizedDiceScore` metric."""
 
     @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
-    def test_generalized_dice_class(
-        self, preds, target, input_format, include_background, ddp
-    ):
+    def test_generalized_dice_class(self, preds, target, input_format, include_background, ddp):
         """Test class implementation of metric."""
         self.run_class_metric_test(
             ddp=ddp,
@@ -103,9 +89,7 @@ class TestGeneralizedDiceScore(MetricTester):
             },
         )
 
-    def test_generalized_dice_functional(
-        self, preds, target, input_format, include_background
-    ):
+    def test_generalized_dice_functional(self, preds, target, input_format, include_background):
         """Test functional implementation of metric."""
         self.run_functional_metric_test(
             preds=preds,

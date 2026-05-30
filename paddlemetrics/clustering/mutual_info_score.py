@@ -3,8 +3,7 @@ from typing import Any, List, Optional, Union
 
 import paddle
 
-from paddlemetrics.functional.clustering.mutual_info_score import \
-    mutual_info_score
+from paddlemetrics.functional.clustering.mutual_info_score import mutual_info_score
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.data import dim_zero_cat
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE

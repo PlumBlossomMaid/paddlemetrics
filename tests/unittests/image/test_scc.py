@@ -4,12 +4,12 @@ import numpy as np
 import paddle
 import pytest
 from sewar.full_ref import scc as sewar_scc
-from unittests import BATCH_SIZE, NUM_BATCHES, _Input
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
 
 from paddlemetrics.functional.image import spatial_correlation_coefficient
 from paddlemetrics.image import SpatialCorrelationCoefficient
+from unittests import BATCH_SIZE, NUM_BATCHES, _Input
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
 
 seed_all(42)
 _inputs = [
@@ -29,8 +29,7 @@ def _reference_sewar_scc(preds, target, hp_filter, window_size, reduction):
     preds = preds.cpu().numpy()
     target = target.cpu().numpy()
     scc = [
-        sewar_scc(GT=target[batch], P=preds[batch], win=hp_filter, ws=window_size)
-        for batch in range(preds.shape[0])
+        sewar_scc(GT=target[batch], P=preds[batch], win=hp_filter, ws=window_size) for batch in range(preds.shape[0])
     ]
     if reduction == "mean":
         return np.mean(scc)
@@ -42,9 +41,7 @@ def _reference_sewar_scc(preds, target, hp_filter, window_size, reduction):
 def _reference_sewar_scc_simple(preds, target):
     """Reference implementation of SCC from sewar."""
     hp_filter = np.array([[-1, -1, -1], [-1, 8, -1], [-1, -1, -1]])
-    return _reference_sewar_scc(
-        preds, target, hp_filter, window_size=8, reduction="mean"
-    )
+    return _reference_sewar_scc(preds, target, hp_filter, window_size=8, reduction="mean")
 
 
 @pytest.mark.parametrize(("preds", "target"), [(i.preds, i.target) for i in _inputs])

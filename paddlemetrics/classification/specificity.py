@@ -5,11 +5,8 @@ import paddle
 from typing_extensions import Literal
 
 from paddlemetrics.classification.base import _ClassificationTaskWrapper
-from paddlemetrics.classification.stat_scores import (BinaryStatScores,
-                                                     MulticlassStatScores,
-                                                     MultilabelStatScores)
-from paddlemetrics.functional.classification.specificity import \
-    _specificity_reduce
+from paddlemetrics.classification.stat_scores import BinaryStatScores, MulticlassStatScores, MultilabelStatScores
+from paddlemetrics.functional.classification.specificity import _specificity_reduce
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.enums import ClassificationTask
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
@@ -96,9 +93,7 @@ class BinarySpecificity(BinaryStatScores):
     def compute(self) -> paddle.Tensor:
         """Compute metric."""
         tp, fp, tn, fn = self._final_state()
-        return _specificity_reduce(
-            tp, fp, tn, fn, average="binary", multidim_average=self.multidim_average
-        )
+        return _specificity_reduce(tp, fp, tn, fn, average="binary", multidim_average=self.multidim_average)
 
     def plot(
         self,
@@ -252,9 +247,7 @@ class MulticlassSpecificity(MulticlassStatScores):
     def compute(self) -> paddle.Tensor:
         """Compute metric."""
         tp, fp, tn, fn = self._final_state()
-        return _specificity_reduce(
-            tp, fp, tn, fn, average=self.average, multidim_average=self.multidim_average
-        )
+        return _specificity_reduce(tp, fp, tn, fn, average=self.average, multidim_average=self.multidim_average)
 
     def plot(
         self,
@@ -514,18 +507,12 @@ class Specificity(_ClassificationTaskWrapper):
             return BinarySpecificity(threshold, **kwargs)
         if task == ClassificationTask.MULTICLASS:
             if not isinstance(num_classes, int):
-                raise ValueError(
-                    f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-                )
+                raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
             if not isinstance(top_k, int):
-                raise ValueError(
-                    f"`top_k` is expected to be `int` but `{type(top_k)} was passed.`"
-                )
+                raise ValueError(f"`top_k` is expected to be `int` but `{type(top_k)} was passed.`")
             return MulticlassSpecificity(num_classes, top_k, average, **kwargs)
         if task == ClassificationTask.MULTILABEL:
             if not isinstance(num_labels, int):
-                raise ValueError(
-                    f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-                )
+                raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
             return MultilabelSpecificity(num_labels, threshold, average, **kwargs)
         raise ValueError(f"Task {task} not supported!")

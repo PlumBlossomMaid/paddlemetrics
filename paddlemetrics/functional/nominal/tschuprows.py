@@ -4,12 +4,15 @@ from typing import Optional
 import paddle
 from typing_extensions import Literal
 
-from paddlemetrics.functional.classification.confusion_matrix import \
-    _multiclass_confusion_matrix_update
+from paddlemetrics.functional.classification.confusion_matrix import _multiclass_confusion_matrix_update
 from paddlemetrics.functional.nominal.utils import (
-    _compute_bias_corrected_values, _compute_chi_squared,
-    _drop_empty_rows_and_cols, _handle_nan_in_data, _nominal_input_validation,
-    _unable_to_use_bias_correction_warning)
+    _compute_bias_corrected_values,
+    _compute_chi_squared,
+    _drop_empty_rows_and_cols,
+    _handle_nan_in_data,
+    _nominal_input_validation,
+    _unable_to_use_bias_correction_warning,
+)
 
 
 def _tschuprows_t_update(
@@ -38,9 +41,7 @@ def _tschuprows_t_update(
     return _multiclass_confusion_matrix_update(preds, target, num_classes)
 
 
-def _tschuprows_t_compute(
-    confmat: paddle.Tensor, bias_correction: bool
-) -> paddle.Tensor:
+def _tschuprows_t_compute(confmat: paddle.Tensor, bias_correction: bool) -> paddle.Tensor:
     """Compute Tschuprow's T statistic based on a pre-computed confusion matrix.
 
     Args:
@@ -66,15 +67,12 @@ def _tschuprows_t_compute(
             _unable_to_use_bias_correction_warning(metric_name="Tschuprow's T")
             return paddle.tensor(float("nan"), device=confmat.place)
         tschuprows_t_value = paddle.sqrt(
-            phi_squared_corrected
-            / paddle.sqrt((rows_corrected - 1) * (cols_corrected - 1))
+            phi_squared_corrected / paddle.sqrt((rows_corrected - 1) * (cols_corrected - 1))
         )
     else:
         n_rows_tensor = paddle.tensor(num_rows, device=phi_squared.place)
         n_cols_tensor = paddle.tensor(num_cols, device=phi_squared.place)
-        tschuprows_t_value = paddle.sqrt(
-            phi_squared / paddle.sqrt((n_rows_tensor - 1) * (n_cols_tensor - 1))
-        )
+        tschuprows_t_value = paddle.sqrt(phi_squared / paddle.sqrt((n_rows_tensor - 1) * (n_cols_tensor - 1)))
     return tschuprows_t_value.clamp(0.0, 1.0)
 
 
@@ -131,9 +129,7 @@ def tschuprows_t(
     """
     _nominal_input_validation(nan_strategy, nan_replace_value)
     num_classes = len(paddle.concat([preds, target]).unique())
-    confmat = _tschuprows_t_update(
-        preds, target, num_classes, nan_strategy, nan_replace_value
-    )
+    confmat = _tschuprows_t_update(preds, target, num_classes, nan_strategy, nan_replace_value)
     return _tschuprows_t_compute(confmat, bias_correction)
 
 
@@ -175,16 +171,12 @@ def tschuprows_t_matrix(
     """
     _nominal_input_validation(nan_strategy, nan_replace_value)
     num_variables = matrix.shape[1]
-    tschuprows_t_matrix_value = paddle.ones(
-        num_variables, num_variables, device=matrix.device
-    )
+    tschuprows_t_matrix_value = paddle.ones(num_variables, num_variables, device=matrix.device)
     for i, j in itertools.combinations(range(num_variables), 2):
         x, y = matrix[:, i], matrix[:, j]
         num_classes = len(paddle.concat([x, y]).unique())
-        confmat = _tschuprows_t_update(
-            x, y, num_classes, nan_strategy, nan_replace_value
+        confmat = _tschuprows_t_update(x, y, num_classes, nan_strategy, nan_replace_value)
+        tschuprows_t_matrix_value[i, j] = tschuprows_t_matrix_value[j, i] = _tschuprows_t_compute(
+            confmat, bias_correction
         )
-        tschuprows_t_matrix_value[i, j] = tschuprows_t_matrix_value[
-            j, i
-        ] = _tschuprows_t_compute(confmat, bias_correction)
     return tschuprows_t_matrix_value

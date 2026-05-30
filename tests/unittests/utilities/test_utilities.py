@@ -1,25 +1,19 @@
 import sys
 
-import sys
-
 import numpy as np
 import paddle
 import pytest
-from lightning_utilities.test.warning import no_warning_call
 from unittests._helpers import _IS_WINDOWS
 
 from paddlemetrics.regression import MeanSquaredError, PearsonCorrCoef
-from paddlemetrics.utils import (check_forward_full_state_property,
-                                    rank_zero_debug, rank_zero_info,
-                                    rank_zero_warn)
+from paddlemetrics.utils import check_forward_full_state_property, rank_zero_debug, rank_zero_info, rank_zero_warn
 from paddlemetrics.utils.checks import _allclose_recursive
-from paddlemetrics.utils.data import (_bincount, _cumsum, _flatten,
-                                         _flatten_dict, select_topk,
-                                         to_categorical, to_onehot)
+from paddlemetrics.utils.data import _bincount, _flatten, _flatten_dict, select_topk, to_categorical, to_onehot
 from paddlemetrics.utils.distributed import class_reduce, reduce
-from paddlemetrics.utils.exceptions import TorchMetricsUserWarning
-from paddlemetrics.utils.imports import (True,
-                                            False)
+from paddlemetrics.utils.exceptions import PaddleMetricsUserWarning as TorchMetricsUserWarning
+from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
+
+_PLOTTING_AVAILABLE = _MATPLOTLIB_AVAILABLE
 
 
 def test_prints():
@@ -32,12 +26,8 @@ def test_prints():
 def test_reduce():
     """Test that reduction function works as expected and also raises error on wrong input."""
     start_tensor = paddle.rand(50, 40, 30)
-    assert paddle.allclose(
-        x=reduce(start_tensor, "elementwise_mean"), y=paddle.mean(start_tensor)
-    ).item()
-    assert paddle.allclose(
-        x=reduce(start_tensor, "sum"), y=paddle.sum(start_tensor)
-    ).item()
+    assert paddle.allclose(x=reduce(start_tensor, "elementwise_mean"), y=paddle.mean(start_tensor)).item()
+    assert paddle.allclose(x=reduce(start_tensor, "sum"), y=paddle.sum(start_tensor)).item()
     assert paddle.allclose(x=reduce(start_tensor, "none"), y=start_tensor).item()
     with pytest.raises(ValueError, match="Reduction parameter unknown."):
         reduce(start_tensor, "error_reduction")
@@ -52,16 +42,12 @@ def test_class_reduce():
         x=class_reduce(num, denom, weights, "micro"),
         y=paddle.sum(num) / paddle.sum(denom),
     ).item()
-    assert paddle.allclose(
-        x=class_reduce(num, denom, weights, "macro"), y=paddle.mean(num / denom)
-    ).item()
+    assert paddle.allclose(x=class_reduce(num, denom, weights, "macro"), y=paddle.mean(num / denom)).item()
     assert paddle.allclose(
         x=class_reduce(num, denom, weights, "weighted"),
         y=paddle.sum(num / denom * (weights / paddle.sum(weights))),
     ).item()
-    assert paddle.allclose(
-        x=class_reduce(num, denom, weights, "none"), y=num / denom
-    ).item()
+    assert paddle.allclose(x=class_reduce(num, denom, weights, "none"), y=num / denom).item()
 
 
 def test_onehot():
@@ -126,9 +112,7 @@ def test_bincount(use_deterministic_algorithms):
     assert paddle.allclose(x=res1, y=res3).item()
 
 
-@pytest.mark.parametrize(
-    ("metric_class", "expected"), [(MeanSquaredError, False), (PearsonCorrCoef)]
-)
+@pytest.mark.parametrize(("metric_class", "expected"), [(MeanSquaredError, False), (PearsonCorrCoef, True)])
 def test_check_full_state_update_fn(capsys, metric_class, expected):
     """Test that the check function works as it should."""
     check_forward_full_state_property(
@@ -197,19 +181,18 @@ def test_cumsum_still_not_supported(use_deterministic_algorithms):
 @pytest.mark.skipif(not paddle.cuda.is_available(), reason="test requires GPU")
 def test_custom_cumsum(use_deterministic_algorithms):
     """Test custom cumsum implementation."""
-    device = (
-        paddle.device("cuda:1")
-        if paddle.cuda.device_count() > 1
-        else paddle.device("cuda:0")
-    )
+    device = paddle.device("cuda:1") if paddle.cuda.device_count() > 1 else paddle.device("cuda:0")
     x = paddle.arange(100).float().to(device)
-    with (
-        pytest.warns(
+    if sys.platform != "win32":
+        with pytest.warns(
             TorchMetricsUserWarning,
             match="You are trying to use a metric in deterministic mode on GPU that.*",
-        )
-        if sys.platform != "win32"
-        and False
+        ):
+            x = paddle.arange(100).float().to(device)
+    else:
+        x = paddle.arange(100).float().to(device)
+
+
 def _reference_topk(x, dim, k):
     x = x.cpu().numpy()
     one_hot = np.zeros((x.shape[0], x.shape[1]), dtype=int)
@@ -235,9 +218,7 @@ def test_custom_topk(dtype, k, dim):
     assert paddle.allclose(x=top_k, y=paddle.from_numpy(ref).to(paddle.int32)).item()
 
 
-@pytest.mark.skipif(
-    True, reason="Top-k does not support cpu + half precision"
-)
+@pytest.mark.skipif(True, reason="Top-k does not support cpu + half precision")
 def test_half_precision_top_k_cpu_raises_error():
     """Test that half precision topk raises error on cpu.
 

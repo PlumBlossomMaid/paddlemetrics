@@ -5,10 +5,13 @@ import paddle
 from paddle import Tensor
 
 from paddlemetrics import Metric
-from paddlemetrics.functional.text.squad import (PREDS_TYPE, TARGETS_TYPE,
-                                                _squad_compute,
-                                                _squad_input_check,
-                                                _squad_update)
+from paddlemetrics.functional.text.squad import (
+    PREDS_TYPE,
+    TARGETS_TYPE,
+    _squad_compute,
+    _squad_input_check,
+    _squad_update,
+)
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
 

@@ -1,6 +1,6 @@
 """Tests for MetricCollection."""
+
 import paddle
-import pytest
 
 from paddlemetrics import Accuracy, MetricCollection, Precision, Recall
 
@@ -17,11 +17,13 @@ def _assert_scalar_close(actual, expected, atol=1e-6):
 
 class TestMetricCollection:
     def test_basic_list(self):
-        metrics = MetricCollection([
-            Accuracy(task="binary"),
-            Precision(task="binary"),
-            Recall(task="binary"),
-        ])
+        metrics = MetricCollection(
+            [
+                Accuracy(task="binary"),
+                Precision(task="binary"),
+                Recall(task="binary"),
+            ]
+        )
         preds = paddle.to_tensor([0.9, 0.2, 0.8, 0.1])
         target = paddle.to_tensor([1, 0, 1, 0])
         results = metrics(preds, target)
@@ -29,10 +31,12 @@ class TestMetricCollection:
         assert len(results) == 3
 
     def test_basic_dict(self):
-        metrics = MetricCollection({
-            "acc": Accuracy(task="binary"),
-            "prec": Precision(task="binary"),
-        })
+        metrics = MetricCollection(
+            {
+                "acc": Accuracy(task="binary"),
+                "prec": Precision(task="binary"),
+            }
+        )
         preds = paddle.to_tensor([0.9, 0.2, 0.8, 0.1])
         target = paddle.to_tensor([1, 0, 1, 0])
         results = metrics(preds, target)

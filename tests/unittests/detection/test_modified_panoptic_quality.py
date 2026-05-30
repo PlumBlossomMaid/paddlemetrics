@@ -3,12 +3,12 @@ from typing import Any
 import numpy as np
 import paddle
 import pytest
-from unittests import _Input
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
 
 from paddlemetrics.detection import ModifiedPanopticQuality
 from paddlemetrics.functional.detection import modified_panoptic_quality
+from unittests import _Input
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
 
 seed_all(42)
 _INPUTS_0 = _Input(
@@ -36,12 +36,8 @@ _INPUTS_0 = _Input(
     .repeat(2, 1, 1, 1, 1),
 )
 _INPUTS_1 = _Input(
-    preds=paddle.tensor([[0, 0], [0, 1], [6, 0], [7, 0], [0, 2], [1, 0]])
-    .reshape((1, 1, 6, 2))
-    .repeat(2, 1, 1, 1),
-    target=paddle.tensor([[0, 1], [0, 0], [6, 0], [7, 0], [6, 0], [255, 0]])
-    .reshape((1, 1, 6, 2))
-    .repeat(2, 1, 1, 1),
+    preds=paddle.tensor([[0, 0], [0, 1], [6, 0], [7, 0], [0, 2], [1, 0]]).reshape((1, 1, 6, 2)).repeat(2, 1, 1, 1),
+    target=paddle.tensor([[0, 1], [0, 0], [6, 0], [7, 0], [6, 0], [255, 0]]).reshape((1, 1, 6, 2)).repeat(2, 1, 1, 1),
 )
 _ARGS_0 = {"things": {0, 1}, "stuffs": {6, 7}}
 _ARGS_1 = {"things": {2}, "stuffs": {3}, "allow_unknown_preds_category": True}
@@ -100,9 +96,7 @@ class TestModifiedPanopticQuality(MetricTester):
 
 def test_empty_metric():
     """Test empty metric."""
-    with pytest.raises(
-        ValueError, match="At least one of `things` and `stuffs` must be non-empty"
-    ):
+    with pytest.raises(ValueError, match="At least one of `things` and `stuffs` must be non-empty"):
         metric = ModifiedPanopticQuality(things=[], stuffs=[])
     metric = ModifiedPanopticQuality(things=[0], stuffs=[])
     assert paddle.isnan(metric.compute())
@@ -110,29 +104,21 @@ def test_empty_metric():
 
 def test_error_on_wrong_input():
     """Test class input validation."""
-    with pytest.raises(
-        TypeError, match="Expected argument `stuffs` to contain `int` categories.*"
-    ):
+    with pytest.raises(TypeError, match="Expected argument `stuffs` to contain `int` categories.*"):
         ModifiedPanopticQuality(things={0}, stuffs={"sky"})
     with pytest.raises(
         ValueError,
         match="Expected arguments `things` and `stuffs` to have distinct keys.*",
     ):
         ModifiedPanopticQuality(things={0}, stuffs={0})
-    metric = ModifiedPanopticQuality(
-        things={0, 1, 3}, stuffs={2, 8}, allow_unknown_preds_category=True
-    )
+    metric = ModifiedPanopticQuality(things={0, 1, 3}, stuffs={2, 8}, allow_unknown_preds_category=True)
     valid_images = paddle.randint(low=0, high=9, shape=(8, 64, 64, 2))
     metric.update(valid_images, valid_images)
     valid_point_clouds = paddle.randint(low=0, high=9, shape=(1, 100, 2))
     metric.update(valid_point_clouds, valid_point_clouds)
-    with pytest.raises(
-        TypeError, match="Expected argument `preds` to be of type `paddle.Tensor`.*"
-    ):
+    with pytest.raises(TypeError, match="Expected argument `preds` to be of type `paddle.Tensor`.*"):
         metric.update([], valid_images)
-    with pytest.raises(
-        TypeError, match="Expected argument `target` to be of type `paddle.Tensor`.*"
-    ):
+    with pytest.raises(TypeError, match="Expected argument `target` to be of type `paddle.Tensor`.*"):
         metric.update(valid_images, [])
     preds = paddle.randint(low=0, high=9, shape=(2, 400, 300, 2))
     target = paddle.randint(low=0, high=9, shape=(2, 30, 40, 2))
@@ -153,9 +139,7 @@ def test_error_on_wrong_input():
         match="Expected argument `preds` to have exactly 2 channels in the last dimension.*",
     ):
         metric.update(preds, preds)
-    metric = ModifiedPanopticQuality(
-        things=[0], stuffs=[1], allow_unknown_preds_category=False
-    )
+    metric = ModifiedPanopticQuality(things=[0], stuffs=[1], allow_unknown_preds_category=False)
     preds = paddle.randint(low=0, high=1, shape=(1, 100, 2))
     preds[0, 0, 0] = 2
     with pytest.raises(ValueError, match="Unknown categories found.*"):
@@ -164,16 +148,8 @@ def test_error_on_wrong_input():
 
 def test_extreme_values():
     """Test that the metric returns expected values in trivial cases."""
-    assert (
-        modified_panoptic_quality(_INPUTS_0.target[0], _INPUTS_0.target[0], **_ARGS_0)
-        == 1.0
-    )
-    assert (
-        modified_panoptic_quality(
-            _INPUTS_0.target[0], _INPUTS_0.target[0] + 1, **_ARGS_0
-        )
-        == 0.0
-    )
+    assert modified_panoptic_quality(_INPUTS_0.target[0], _INPUTS_0.target[0], **_ARGS_0) == 1.0
+    assert modified_panoptic_quality(_INPUTS_0.target[0], _INPUTS_0.target[0] + 1, **_ARGS_0) == 0.0
 
 
 @pytest.mark.parametrize(

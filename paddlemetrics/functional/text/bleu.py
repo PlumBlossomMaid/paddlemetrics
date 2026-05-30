@@ -3,7 +3,6 @@ from collections.abc import Sequence
 from typing import Callable, Optional, Union
 
 import paddle
-from paddle import Tensor
 
 
 def _count_ngram(ngram_input_list: Sequence[str], n_gram: int) -> Counter:
@@ -62,12 +61,8 @@ def _bleu_score_update(
         tokenizer: A function that turns sentence into list of words
 
     """
-    target_: Sequence[Sequence[Sequence[str]]] = [
-        [(tokenizer(line) if line else []) for line in t] for t in target
-    ]
-    preds_: Sequence[Sequence[str]] = [
-        (tokenizer(line) if line else []) for line in preds
-    ]
+    target_: Sequence[Sequence[Sequence[str]]] = [[(tokenizer(line) if line else []) for line in t] for t in target]
+    preds_: Sequence[Sequence[str]] = [(tokenizer(line) if line else []) for line in preds]
     for pred, targets in zip(preds_, target_):
         preds_len += len(pred)
         target_len_list = [len(tgt) for tgt in targets]
@@ -117,14 +112,10 @@ def _bleu_score_compute(
         precision_scores[0] = numerator[0] / denominator[0]
     else:
         precision_scores = numerator / denominator
-    log_precision_scores = paddle.tensor(weights, device=device) * paddle.log(
-        precision_scores
-    )
+    log_precision_scores = paddle.tensor(weights, device=device) * paddle.log(precision_scores)
     geometric_mean = paddle.exp(paddle.sum(log_precision_scores))
     brevity_penalty = (
-        paddle.tensor(1.0, device=device)
-        if preds_len > target_len
-        else paddle.exp(1 - target_len / preds_len)
+        paddle.tensor(1.0, device=device) if preds_len > target_len else paddle.exp(1 - target_len / preds_len)
     )
     return brevity_penalty * geometric_mean
 
@@ -174,9 +165,7 @@ def bleu_score(
     if len(preds_) != len(target_):
         raise ValueError(f"Corpus has different size {len(preds_)} != {len(target_)}")
     if weights is not None and len(weights) != n_gram:
-        raise ValueError(
-            f"List of weights has different weights than `n_gram`: {len(weights)} != {n_gram}"
-        )
+        raise ValueError(f"List of weights has different weights than `n_gram`: {len(weights)} != {n_gram}")
     if weights is None:
         weights = [1.0 / n_gram] * n_gram
     numerator = paddle.zeros(n_gram)
@@ -193,6 +182,4 @@ def bleu_score(
         n_gram,
         _tokenize_fn,
     )
-    return _bleu_score_compute(
-        preds_len, target_len, numerator, denominator, n_gram, weights, smooth
-    )
+    return _bleu_score_compute(preds_len, target_len, numerator, denominator, n_gram, weights, smooth)

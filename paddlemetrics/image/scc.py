@@ -3,8 +3,7 @@ from typing import Any, Optional
 import paddle
 from paddle import Tensor
 
-from paddlemetrics.functional.image.scc import \
-    _scc_per_channel_compute as _scc_compute
+from paddlemetrics.functional.image.scc import _scc_per_channel_compute as _scc_compute
 from paddlemetrics.functional.image.scc import _scc_update
 from paddlemetrics.metric import Metric
 
@@ -43,12 +42,7 @@ class SpatialCorrelationCoefficient(Metric):
     scc_score: Tensor
     total: Tensor
 
-    def __init__(
-        self,
-        high_pass_filter: Optional[paddle.Tensor] = None,
-        window_size: int = 8,
-        **kwargs: Any
-    ) -> None:
+    def __init__(self, high_pass_filter: Optional[paddle.Tensor] = None, window_size: int = 8, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         if high_pass_filter is None:
             high_pass_filter = paddle.tensor([[-1, -1, -1], [-1, 8, -1], [-1, -1, -1]])
@@ -69,9 +63,7 @@ class SpatialCorrelationCoefficient(Metric):
             )
             for i in range(preds.size(1))
         ]
-        self.scc_score += paddle.sum(
-            paddle.mean(paddle.concat(scc_per_channel, axis=1), axis=[1, 2, 3])
-        )
+        self.scc_score += paddle.sum(paddle.mean(paddle.concat(scc_per_channel, axis=1), axis=[1, 2, 3]))
         self.total += preds.size(0)
 
     def compute(self) -> paddle.Tensor:

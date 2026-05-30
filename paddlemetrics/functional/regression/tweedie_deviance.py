@@ -37,28 +37,20 @@ def _tweedie_deviance_score_update(
         deviance_score = 2 * (_safe_xlogy(targets, targets / preds) + preds - targets)
     elif power == 2:
         if paddle.any(preds <= 0) or paddle.any(targets <= 0):
-            raise ValueError(
-                f"For power={power}, both 'preds' and 'targets' have to be strictly positive."
-            )
+            raise ValueError(f"For power={power}, both 'preds' and 'targets' have to be strictly positive.")
         deviance_score = 2 * (paddle.log(preds / targets) + targets / preds - 1)
     else:
         if power < 0:
             if paddle.any(preds <= 0):
-                raise ValueError(
-                    f"For power={power}, 'preds' has to be strictly positive."
-                )
+                raise ValueError(f"For power={power}, 'preds' has to be strictly positive.")
         elif 1 < power < 2:
             if paddle.any(preds <= 0) or paddle.any(targets < 0):
                 raise ValueError(
                     f"For power={power}, 'targets' has to be strictly positive and 'preds' cannot be negative."
                 )
         elif paddle.any(preds <= 0) or paddle.any(targets <= 0):
-            raise ValueError(
-                f"For power={power}, both 'preds' and 'targets' have to be strictly positive."
-            )
-        term_1 = paddle.pow(paddle.max(targets, zero_tensor), 2 - power) / (
-            (1 - power) * (2 - power)
-        )
+            raise ValueError(f"For power={power}, both 'preds' and 'targets' have to be strictly positive.")
+        term_1 = paddle.pow(paddle.max(targets, zero_tensor), 2 - power) / ((1 - power) * (2 - power))
         term_2 = targets * paddle.pow(preds, 1 - power) / (1 - power)
         term_3 = paddle.pow(preds, 2 - power) / (2 - power)
         deviance_score = 2 * (term_1 - term_2 + term_3)
@@ -87,9 +79,7 @@ def _tweedie_deviance_score_compute(
     return sum_deviance_score / num_observations
 
 
-def tweedie_deviance_score(
-    preds: paddle.Tensor, targets: paddle.Tensor, power: float = 0.0
-) -> paddle.Tensor:
+def tweedie_deviance_score(preds: paddle.Tensor, targets: paddle.Tensor, power: float = 0.0) -> paddle.Tensor:
     """Compute the `Tweedie Deviance Score`_.
 
     .. math::
@@ -125,7 +115,5 @@ def tweedie_deviance_score(
         tensor(1.2083)
 
     """
-    sum_deviance_score, num_observations = _tweedie_deviance_score_update(
-        preds, targets, power=power
-    )
+    sum_deviance_score, num_observations = _tweedie_deviance_score_update(preds, targets, power=power)
     return _tweedie_deviance_score_compute(sum_deviance_score, num_observations)

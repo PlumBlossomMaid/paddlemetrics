@@ -6,12 +6,18 @@ from typing_extensions import Literal
 
 from paddlemetrics.classification.base import _ClassificationTaskWrapper
 from paddlemetrics.classification.precision_recall_curve import (
-    BinaryPrecisionRecallCurve, MulticlassPrecisionRecallCurve,
-    MultilabelPrecisionRecallCurve)
+    BinaryPrecisionRecallCurve,
+    MulticlassPrecisionRecallCurve,
+    MultilabelPrecisionRecallCurve,
+)
 from paddlemetrics.functional.classification.auroc import (
-    _binary_auroc_arg_validation, _binary_auroc_compute,
-    _multiclass_auroc_arg_validation, _multiclass_auroc_compute,
-    _multilabel_auroc_arg_validation, _multilabel_auroc_compute)
+    _binary_auroc_arg_validation,
+    _binary_auroc_compute,
+    _multiclass_auroc_arg_validation,
+    _multiclass_auroc_compute,
+    _multilabel_auroc_arg_validation,
+    _multilabel_auroc_compute,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.data import dim_zero_cat
 from paddlemetrics.utils.enums import ClassificationTask
@@ -111,11 +117,7 @@ class BinaryAUROC(BinaryPrecisionRecallCurve):
 
     def compute(self) -> paddle.Tensor:
         """Compute metric."""
-        state = (
-            (dim_zero_cat(self.preds), dim_zero_cat(self.target))
-            if self.thresholds is None
-            else self.confmat
-        )
+        state = (dim_zero_cat(self.preds), dim_zero_cat(self.target)) if self.thresholds is None else self.confmat
         return _binary_auroc_compute(state, self.thresholds, self.max_fpr)
 
     def plot(
@@ -267,22 +269,14 @@ class MulticlassAUROC(MulticlassPrecisionRecallCurve):
             **kwargs,
         )
         if validate_args:
-            _multiclass_auroc_arg_validation(
-                num_classes, average, thresholds, ignore_index
-            )
+            _multiclass_auroc_arg_validation(num_classes, average, thresholds, ignore_index)
         self.average = average
         self.validate_args = validate_args
 
     def compute(self) -> paddle.Tensor:
         """Compute metric."""
-        state = (
-            (dim_zero_cat(self.preds), dim_zero_cat(self.target))
-            if self.thresholds is None
-            else self.confmat
-        )
-        return _multiclass_auroc_compute(
-            state, self.num_classes, self.average, self.thresholds
-        )
+        state = (dim_zero_cat(self.preds), dim_zero_cat(self.target)) if self.thresholds is None else self.confmat
+        return _multiclass_auroc_compute(state, self.num_classes, self.average, self.thresholds)
 
     def plot(
         self,
@@ -431,22 +425,14 @@ class MultilabelAUROC(MultilabelPrecisionRecallCurve):
             **kwargs,
         )
         if validate_args:
-            _multilabel_auroc_arg_validation(
-                num_labels, average, thresholds, ignore_index
-            )
+            _multilabel_auroc_arg_validation(num_labels, average, thresholds, ignore_index)
         self.average = average
         self.validate_args = validate_args
 
     def compute(self) -> paddle.Tensor:
         """Compute metric."""
-        state = (
-            (dim_zero_cat(self.preds), dim_zero_cat(self.target))
-            if self.thresholds is None
-            else self.confmat
-        )
-        return _multilabel_auroc_compute(
-            state, self.num_labels, self.average, self.thresholds, self.ignore_index
-        )
+        state = (dim_zero_cat(self.preds), dim_zero_cat(self.target)) if self.thresholds is None else self.confmat
+        return _multilabel_auroc_compute(state, self.num_labels, self.average, self.thresholds, self.ignore_index)
 
     def plot(
         self,
@@ -551,15 +537,11 @@ class AUROC(_ClassificationTaskWrapper):
             return BinaryAUROC(max_fpr, **kwargs)
         if task == ClassificationTask.MULTICLASS:
             if not isinstance(num_classes, int):
-                raise ValueError(
-                    f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-                )
+                raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
             return MulticlassAUROC(num_classes, average, **kwargs)
         if task == ClassificationTask.MULTILABEL:
             if not isinstance(num_labels, int):
-                raise ValueError(
-                    f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-                )
+                raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
             return MultilabelAUROC(num_labels, average, **kwargs)
         raise ValueError(f"Task {task} not supported!")
 

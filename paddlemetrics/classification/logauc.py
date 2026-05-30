@@ -4,10 +4,8 @@ import paddle
 from typing_extensions import Literal
 
 from paddlemetrics.classification.base import _ClassificationTaskWrapper
-from paddlemetrics.classification.roc import (BinaryROC, MulticlassROC,
-                                             MultilabelROC)
-from paddlemetrics.functional.classification.logauc import (
-    _binary_logauc_compute, _reduce_logauc, _validate_fpr_range)
+from paddlemetrics.classification.roc import BinaryROC, MulticlassROC, MultilabelROC
+from paddlemetrics.functional.classification.logauc import _binary_logauc_compute, _reduce_logauc, _validate_fpr_range
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.enums import ClassificationTask
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
@@ -500,14 +498,10 @@ class LogAUC(_ClassificationTaskWrapper):
             return BinaryLogAUC(**kwargs)
         if task == ClassificationTask.MULTICLASS:
             if not isinstance(num_classes, int):
-                raise ValueError(
-                    f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-                )
+                raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
             return MulticlassLogAUC(num_classes, **kwargs)
         if task == ClassificationTask.MULTILABEL:
             if not isinstance(num_labels, int):
-                raise ValueError(
-                    f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-                )
+                raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
             return MultilabelLogAUC(num_labels, **kwargs)
         raise ValueError(f"Task {task} not supported!")

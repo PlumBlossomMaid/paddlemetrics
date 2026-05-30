@@ -37,12 +37,10 @@ def retrieval_reciprocal_rank(
     preds, target = _check_retrieval_functional_inputs(preds, target)
     top_k = top_k or preds.shape[-1]
     if not isinstance(top_k, int) and top_k <= 0:
-        raise ValueError(
-            f"Argument ``top_k`` has to be a positive integer or None, but got {top_k}."
-        )
+        raise ValueError(f"Argument ``top_k`` has to be a positive integer or None, but got {top_k}.")
     target = paddle.where(preds > 0, target, paddle.zeros_like(target))
     target = target[preds.topk(min(top_k, preds.shape[-1]), sorted=True, axis=-1)[1]]
     if not target.sum():
         return paddle.tensor(0.0, device=preds.place)
-    position = paddle.nonzero(target).view(-1)
+    position = paddle.nonzero(target).reshape(-1)
     return 1.0 / (position[0] + 1.0)

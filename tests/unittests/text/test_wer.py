@@ -1,12 +1,11 @@
 from typing import Union
 
 import pytest
-from unittests.text._helpers import TextTester
-from unittests.text._inputs import (_inputs_error_rate_batch_size_1,
-                                    _inputs_error_rate_batch_size_2)
 
 from paddlemetrics.functional.text.wer import word_error_rate
 from paddlemetrics.text.wer import WordErrorRate
+from unittests.text._helpers import TextTester
+from unittests.text._inputs import _inputs_error_rate_batch_size_1, _inputs_error_rate_batch_size_2
 
 
 def _reference_jiwer_wer(preds: Union[str, list[str]], target: Union[str, list[str]]):

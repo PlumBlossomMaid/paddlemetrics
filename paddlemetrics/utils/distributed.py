@@ -1,14 +1,12 @@
 """Distributed utilities for paddlemetrics."""
+
 from typing import Any, List, Optional
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 
-def reduce(
-    x: paddle.Tensor, reduction: Optional[Literal["elementwise_mean", "sum", "none"]]
-) -> paddle.Tensor:
+def reduce(x: paddle.Tensor, reduction: Optional[Literal["elementwise_mean", "sum", "none"]]) -> paddle.Tensor:
     """Reduces a given tensor by a given reduction method.
 
     Args:
@@ -45,11 +43,7 @@ def class_reduce(
         ValueError: If ``class_reduction`` is not a valid option.
     """
     valid_reduction = ("micro", "macro", "weighted", "none", None)
-    fraction = (
-        paddle.sum(num) / paddle.sum(denom)
-        if class_reduction == "micro"
-        else num / denom
-    )
+    fraction = paddle.sum(num) / paddle.sum(denom) if class_reduction == "micro" else num / denom
     # Replace NaN with 0
     fraction = paddle.where(paddle.isnan(fraction), paddle.zeros_like(fraction), fraction)
     if class_reduction == "micro":
@@ -60,26 +54,18 @@ def class_reduce(
         return paddle.sum(fraction * (weights.cast("float32") / paddle.sum(weights)))
     if class_reduction == "none" or class_reduction is None:
         return fraction
-    raise ValueError(
-        f"Reduction parameter {class_reduction} unknown. Choose between: {valid_reduction}"
-    )
+    raise ValueError(f"Reduction parameter {class_reduction} unknown. Choose between: {valid_reduction}")
 
 
-def _simple_gather_all_tensors(
-    result: paddle.Tensor, group: Any, world_size: int
-) -> List[paddle.Tensor]:
+def _simple_gather_all_tensors(result: paddle.Tensor, group: Any, world_size: int) -> List[paddle.Tensor]:
     with paddle.no_grad():
         gathered_result = [paddle.zeros_like(result) for _ in range(world_size)]
-        paddle.distributed.all_gather(
-            tensor_list=gathered_result, tensor=result, group=group
-        )
+        paddle.distributed.all_gather(tensor_list=gathered_result, tensor=result, group=group)
     gathered_result[paddle.distributed.get_rank(group)] = result
     return gathered_result
 
 
-def gather_all_tensors(
-    result: paddle.Tensor, group: Optional[Any] = None
-) -> List[paddle.Tensor]:
+def gather_all_tensors(result: paddle.Tensor, group: Optional[Any] = None) -> List[paddle.Tensor]:
     """Gather all tensors from several ddp processes onto a list that is broadcast to all processes.
 
     Works on tensors that have the same number of dimensions, but where each dimension may differ.
@@ -101,9 +87,7 @@ def gather_all_tensors(
         return _simple_gather_all_tensors(result, group, world_size)
     local_size = paddle.to_tensor(result.shape, dtype="int64")
     local_sizes = [paddle.zeros_like(local_size) for _ in range(world_size)]
-    paddle.distributed.all_gather(
-        tensor_list=local_sizes, tensor=local_size, group=group
-    )
+    paddle.distributed.all_gather(tensor_list=local_sizes, tensor=local_size, group=group)
     max_size = paddle.stack(local_sizes).max(axis=0)
     all_sizes_equal = all(all(ls == max_size) for ls in local_sizes)
     if all_sizes_equal:
@@ -116,9 +100,7 @@ def gather_all_tensors(
             pad_dims.append(int(val.item()))
         result_padded = paddle.nn.functional.pad(result, pad_dims)
         gathered_result = [paddle.zeros_like(result_padded) for _ in range(world_size)]
-        paddle.distributed.all_gather(
-            tensor_list=gathered_result, tensor=result_padded, group=group
-        )
+        paddle.distributed.all_gather(tensor_list=gathered_result, tensor=result_padded, group=group)
         for idx, item_size in enumerate(local_sizes):
             slice_param = [slice(int(dim_size)) for dim_size in item_size]
             gathered_result[idx] = gathered_result[idx][tuple(slice_param)]

@@ -3,12 +3,11 @@ import itertools
 import paddle
 import pandas as pd
 import pytest
+
+from paddlemetrics.functional.nominal.tschuprows import tschuprows_t, tschuprows_t_matrix
+from paddlemetrics.nominal.tschuprows import TschuprowsT
 from unittests import BATCH_SIZE, NUM_BATCHES, _Input
 from unittests._helpers.testers import MetricTester
-
-from paddlemetrics.functional.nominal.tschuprows import (tschuprows_t,
-                                                        tschuprows_t_matrix)
-from paddlemetrics.nominal.tschuprows import TschuprowsT
 
 NUM_CLASSES = 4
 _input_default = _Input(
@@ -30,18 +29,15 @@ def tschuprows_matrix_input():
                 low=0,
                 high=NUM_CLASSES,
                 shape=(NUM_BATCHES * BATCH_SIZE, 1),
-                dtype=paddle.float32,
-            ),
+            ).cast(paddle.float32),
             paddle.randint(
                 low=0,
                 high=NUM_CLASSES + 2,
                 shape=(NUM_BATCHES * BATCH_SIZE, 1),
-                dtype=paddle.float32,
-            ),
-            paddle.randint(
-                low=0, high=2, shape=(NUM_BATCHES * BATCH_SIZE, 1), dtype=paddle.float32
-            ),
-        ], axis=-1,
+            ).cast(paddle.float32),
+            paddle.randint(low=0, high=2, shape=(NUM_BATCHES * BATCH_SIZE, 1)).cast(paddle.float32),
+        ],
+        axis=-1,
     )
 
 
@@ -63,9 +59,7 @@ def _reference_pd_tschuprows_t_matrix(matrix):
     tschuprows_t_matrix_value = paddle.ones(num_variables, num_variables)
     for i, j in itertools.combinations(range(num_variables), 2):
         x, y = matrix[:, i], matrix[:, j]
-        tschuprows_t_matrix_value[i, j] = tschuprows_t_matrix_value[
-            j, i
-        ] = _reference_pd_tschuprows_t(x, y)
+        tschuprows_t_matrix_value[i, j] = tschuprows_t_matrix_value[j, i] = _reference_pd_tschuprows_t(x, y)
     return tschuprows_t_matrix_value
 
 

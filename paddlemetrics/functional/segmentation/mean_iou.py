@@ -3,8 +3,7 @@ from typing import Optional, Tuple, Union
 import paddle
 from typing_extensions import Literal
 
-from paddlemetrics.functional.segmentation.utils import \
-    _segmentation_inputs_format
+from paddlemetrics.functional.segmentation.utils import _segmentation_inputs_format
 from paddlemetrics.utils.compute import _safe_divide
 
 
@@ -35,21 +34,15 @@ def _mean_iou_validate_args(
 ) -> None:
     """Validate the arguments of the metric."""
     if input_format in ["index"] and num_classes is None:
-        raise ValueError(
-            "Argument `num_classes` must be provided when `input_format` is 'index'."
-        )
+        raise ValueError("Argument `num_classes` must be provided when `input_format` is 'index'.")
     if num_classes is not None and num_classes <= 0:
         raise ValueError(
             f"Expected argument `num_classes` must be `None` or a positive integer, but got {num_classes}."
         )
     if not isinstance(include_background, bool):
-        raise ValueError(
-            f"Expected argument `include_background` must be a boolean, but got {include_background}."
-        )
+        raise ValueError(f"Expected argument `include_background` must be a boolean, but got {include_background}.")
     if not isinstance(per_class, bool):
-        raise ValueError(
-            f"Expected argument `per_class` must be a boolean, but got {per_class}."
-        )
+        raise ValueError(f"Expected argument `per_class` must be a boolean, but got {per_class}.")
     if input_format not in ["one-hot", "index", "mixed"]:
         raise ValueError(
             f"Expected argument `input_format` to be one of 'one-hot', 'index', 'mixed', but got {input_format}."
@@ -65,9 +58,7 @@ def _mean_iou_update(
 ) -> tuple[paddle.Tensor, paddle.Tensor]:
     """Update the intersection and union counts for the mean IoU computation."""
     preds, target = _mean_iou_reshape_args(preds, target, input_format)
-    preds, target = _segmentation_inputs_format(
-        preds, target, include_background, num_classes, input_format
-    )
+    preds, target = _segmentation_inputs_format(preds, target, include_background, num_classes, input_format)
     reduce_axis = list(range(2, preds.ndim))
     intersection = paddle.sum(preds & target, axis=reduce_axis)
     target_sum = paddle.sum(target, axis=reduce_axis)
@@ -141,13 +132,7 @@ def mean_iou(
 
     """
     _mean_iou_validate_args(num_classes, include_background, per_class, input_format)
-    intersection, union = _mean_iou_update(
-        preds, target, num_classes, include_background, input_format
-    )
+    intersection, union = _mean_iou_update(preds, target, num_classes, include_background, input_format)
     scores = _mean_iou_compute(intersection, union, zero_division="nan")
     valid_classes = union > 0
-    return (
-        scores.nan_to_num(-1.0)
-        if per_class
-        else scores.nansum(axis=-1) / valid_classes.sum(dim=-1)
-    )
+    return scores.nan_to_num(-1.0) if per_class else scores.nansum(axis=-1) / valid_classes.sum(dim=-1)

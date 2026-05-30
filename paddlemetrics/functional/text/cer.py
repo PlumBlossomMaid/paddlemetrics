@@ -5,9 +5,7 @@ import paddle
 from paddlemetrics.functional.text.helper import _edit_distance
 
 
-def _cer_update(
-    preds: Union[str, list[str]], target: Union[str, list[str]]
-) -> tuple[paddle.Tensor, paddle.Tensor]:
+def _cer_update(preds: Union[str, list[str]], target: Union[str, list[str]]) -> tuple[paddle.Tensor, paddle.Tensor]:
     """Update the cer score with the current set of references and predictions.
 
     Args:
@@ -47,9 +45,7 @@ def _cer_compute(errors: paddle.Tensor, total: paddle.Tensor) -> paddle.Tensor:
     return errors / total
 
 
-def char_error_rate(
-    preds: Union[str, list[str]], target: Union[str, list[str]]
-) -> paddle.Tensor:
+def char_error_rate(preds: Union[str, list[str]], target: Union[str, list[str]]) -> paddle.Tensor:
     """Compute Character Error Rate used for performance of an automatic speech recognition system.
 
     This value indicates the percentage of characters that were incorrectly predicted. The lower the value, the better

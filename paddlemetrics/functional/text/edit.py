@@ -3,8 +3,7 @@ from typing import Literal, Optional, Union
 
 import paddle
 
-from paddlemetrics.functional.text.helper import \
-    _LevenshteinEditDistance as _LE_distance
+from paddlemetrics.functional.text.helper import _LevenshteinEditDistance as _LE_distance
 
 
 def _edit_distance_update(
@@ -17,21 +16,14 @@ def _edit_distance_update(
     if isinstance(target, str):
         target = [target]
     if not all(isinstance(x, str) for x in preds):
-        raise ValueError(
-            f"Expected all values in argument `preds` to be string type, but got {preds}"
-        )
+        raise ValueError(f"Expected all values in argument `preds` to be string type, but got {preds}")
     if not all(isinstance(x, str) for x in target):
-        raise ValueError(
-            f"Expected all values in argument `target` to be string type, but got {target}"
-        )
+        raise ValueError(f"Expected all values in argument `target` to be string type, but got {target}")
     if len(preds) != len(target):
         raise ValueError(
             f"Expected argument `preds` and `target` to have same length, but got {len(preds)} and {len(target)}"
         )
-    distance = [
-        _LE_distance(t, op_substitute=substitution_cost)(p)[0]
-        for p, t in zip(preds, target)
-    ]
+    distance = [_LE_distance(t, op_substitute=substitution_cost)(p)[0] for p, t in zip(preds, target)]
     return paddle.tensor(distance, dtype=paddle.int32)
 
 
@@ -49,9 +41,7 @@ def _edit_distance_compute(
         return edit_scores.sum()
     if reduction is None or reduction == "none":
         return edit_scores
-    raise ValueError(
-        "Expected argument `reduction` to either be 'sum', 'mean', 'none' or None"
-    )
+    raise ValueError("Expected argument `reduction` to either be 'sum', 'mean', 'none' or None")
 
 
 def edit_distance(
@@ -109,6 +99,4 @@ def edit_distance(
 
     """
     distance = _edit_distance_update(preds, target, substitution_cost)
-    return _edit_distance_compute(
-        distance, num_elements=distance.size, reduction=reduction
-    )
+    return _edit_distance_compute(distance, num_elements=distance.size, reduction=reduction)

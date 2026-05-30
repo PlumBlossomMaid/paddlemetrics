@@ -1,4 +1,3 @@
-import sys
 
 from functools import partial
 
@@ -6,11 +5,11 @@ import numpy as np
 import paddle
 import pytest
 from statsmodels.stats.inter_rater import fleiss_kappa as sk_fleiss_kappa
-from unittests import BATCH_SIZE, NUM_BATCHES, NUM_CLASSES
-from unittests._helpers.testers import MetricTester
 
 from paddlemetrics.functional.nominal.fleiss_kappa import fleiss_kappa
 from paddlemetrics.nominal.fleiss_kappa import FleissKappa
+from unittests import BATCH_SIZE, NUM_BATCHES, NUM_CLASSES
+from unittests._helpers.testers import MetricTester
 
 NUM_RATERS = 20
 NUM_CATEGORIES = NUM_CLASSES
@@ -48,7 +47,7 @@ def _random_counts(high, size):
     """
     x = paddle.randint(low=0, high=high, shape=size)
     x_sum = x.sum(-1)
-    x_total = x_sum._max()
+    x_total = x_sum.amax()
     x[:, :, -1] = x_total - (x_sum - x[:, :, -1])
     return x
 
@@ -57,12 +56,8 @@ def _random_counts(high, size):
     ("preds", "target", "mode"),
     [
         (
-            _random_counts(
-                high=NUM_RATERS, size=(NUM_BATCHES, BATCH_SIZE, NUM_CATEGORIES)
-            ),
-            _random_counts(
-                high=NUM_RATERS, size=(NUM_BATCHES, BATCH_SIZE, NUM_CATEGORIES)
-            ),
+            _random_counts(high=NUM_RATERS, size=(NUM_BATCHES, BATCH_SIZE, NUM_CATEGORIES)),
+            _random_counts(high=NUM_RATERS, size=(NUM_BATCHES, BATCH_SIZE, NUM_CATEGORIES)),
             "counts",
         ),
         (

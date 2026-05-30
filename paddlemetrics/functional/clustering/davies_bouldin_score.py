@@ -1,7 +1,9 @@
 import paddle
 
 from paddlemetrics.functional.clustering.utils import (
-    _validate_intrinsic_cluster_data, _validate_intrinsic_labels_to_samples)
+    _validate_intrinsic_cluster_data,
+    _validate_intrinsic_labels_to_samples,
+)
 
 
 def davies_bouldin_score(data: paddle.Tensor, labels: paddle.Tensor) -> paddle.Tensor:
@@ -36,15 +38,10 @@ def davies_bouldin_score(data: paddle.Tensor, labels: paddle.Tensor) -> paddle.T
         intra_dists[k] = (cluster_k - centroids[k]).pow(2.0).sum(dim=1).sqrt().mean()
     centroid_distances = paddle.cdist(x=centroids, y=centroids)
     cond1 = paddle.allclose(x=intra_dists, y=paddle.zeros_like(intra_dists)).item()
-    cond2 = paddle.allclose(
-        x=centroid_distances, y=paddle.zeros_like(centroid_distances)
-    ).item()
+    cond2 = paddle.allclose(x=centroid_distances, y=paddle.zeros_like(centroid_distances)).item()
     if cond1 or cond2:
         return paddle.tensor(0.0, device=data.device, dtype=paddle.float32)
     centroid_distances[centroid_distances == 0] = float("inf")
     combined_intra_dists = intra_dists.unsqueeze(0) + intra_dists.unsqueeze(1)
-    scores = (
-        (combined_intra_dists / centroid_distances).max(axis=1),
-        (combined_intra_dists / centroid_distances).argmax(axis=1),
-    ).values
+    scores = (combined_intra_dists / centroid_distances).max(axis=1)[0]
     return scores.mean()

@@ -1,18 +1,23 @@
 from typing import Optional
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.functional.classification.stat_scores import (
-    _binary_stat_scores_arg_validation, _binary_stat_scores_format,
-    _binary_stat_scores_tensor_validation, _binary_stat_scores_update,
-    _multiclass_stat_scores_arg_validation, _multiclass_stat_scores_format,
-    _multiclass_stat_scores_tensor_validation, _multiclass_stat_scores_update,
-    _multilabel_stat_scores_arg_validation, _multilabel_stat_scores_format,
-    _multilabel_stat_scores_tensor_validation, _multilabel_stat_scores_update)
-from paddlemetrics.utils.compute import (_adjust_weights_safe_divide,
-                                            _safe_divide)
+    _binary_stat_scores_arg_validation,
+    _binary_stat_scores_format,
+    _binary_stat_scores_tensor_validation,
+    _binary_stat_scores_update,
+    _multiclass_stat_scores_arg_validation,
+    _multiclass_stat_scores_format,
+    _multiclass_stat_scores_tensor_validation,
+    _multiclass_stat_scores_update,
+    _multilabel_stat_scores_arg_validation,
+    _multilabel_stat_scores_format,
+    _multilabel_stat_scores_tensor_validation,
+    _multilabel_stat_scores_update,
+)
+from paddlemetrics.utils.compute import _adjust_weights_safe_divide, _safe_divide
 from paddlemetrics.utils.enums import ClassificationTask
 
 
@@ -60,11 +65,7 @@ def _hamming_distance_reduce(
             tn = tn.sum(dim=0 if multidim_average == "global" else 1)
             return 1 - _safe_divide(tp + tn, tp + tn + fp + fn)
         return 1 - _safe_divide(tp, tp + fn)
-    score = (
-        1 - _safe_divide(tp + tn, tp + tn + fp + fn)
-        if multilabel
-        else 1 - _safe_divide(tp, tp + fn)
-    )
+    score = 1 - _safe_divide(tp + tn, tp + tn + fp + fn) if multilabel else 1 - _safe_divide(tp, tp + fn)
     return _adjust_weights_safe_divide(score, average, multilabel, tp, fp, fn)
 
 
@@ -138,14 +139,10 @@ def binary_hamming_distance(
     """
     if validate_args:
         _binary_stat_scores_arg_validation(threshold, multidim_average, ignore_index)
-        _binary_stat_scores_tensor_validation(
-            preds, target, multidim_average, ignore_index
-        )
+        _binary_stat_scores_tensor_validation(preds, target, multidim_average, ignore_index)
     preds, target = _binary_stat_scores_format(preds, target, threshold, ignore_index)
     tp, fp, tn, fn = _binary_stat_scores_update(preds, target, multidim_average)
-    return _hamming_distance_reduce(
-        tp, fp, tn, fn, average="binary", multidim_average=multidim_average
-    )
+    return _hamming_distance_reduce(tp, fp, tn, fn, average="binary", multidim_average=multidim_average)
 
 
 def multiclass_hamming_distance(
@@ -248,19 +245,13 @@ def multiclass_hamming_distance(
 
     """
     if validate_args:
-        _multiclass_stat_scores_arg_validation(
-            num_classes, top_k, average, multidim_average, ignore_index
-        )
-        _multiclass_stat_scores_tensor_validation(
-            preds, target, num_classes, multidim_average, ignore_index
-        )
+        _multiclass_stat_scores_arg_validation(num_classes, top_k, average, multidim_average, ignore_index)
+        _multiclass_stat_scores_tensor_validation(preds, target, num_classes, multidim_average, ignore_index)
     preds, target = _multiclass_stat_scores_format(preds, target, top_k)
     tp, fp, tn, fn = _multiclass_stat_scores_update(
         preds, target, num_classes, top_k, average, multidim_average, ignore_index
     )
-    return _hamming_distance_reduce(
-        tp, fp, tn, fn, average=average, multidim_average=multidim_average
-    )
+    return _hamming_distance_reduce(tp, fp, tn, fn, average=average, multidim_average=multidim_average)
 
 
 def multilabel_hamming_distance(
@@ -359,15 +350,9 @@ def multilabel_hamming_distance(
 
     """
     if validate_args:
-        _multilabel_stat_scores_arg_validation(
-            num_labels, threshold, average, multidim_average, ignore_index
-        )
-        _multilabel_stat_scores_tensor_validation(
-            preds, target, num_labels, multidim_average, ignore_index
-        )
-    preds, target = _multilabel_stat_scores_format(
-        preds, target, num_labels, threshold, ignore_index
-    )
+        _multilabel_stat_scores_arg_validation(num_labels, threshold, average, multidim_average, ignore_index)
+        _multilabel_stat_scores_tensor_validation(preds, target, num_labels, multidim_average, ignore_index)
+    preds, target = _multilabel_stat_scores_format(preds, target, num_labels, threshold, ignore_index)
     tp, fp, tn, fn = _multilabel_stat_scores_update(preds, target, multidim_average)
     return _hamming_distance_reduce(
         tp,
@@ -420,18 +405,12 @@ def hamming_distance(
     task = ClassificationTask.from_str(task)
     assert multidim_average is not None
     if task == ClassificationTask.BINARY:
-        return binary_hamming_distance(
-            preds, target, threshold, multidim_average, ignore_index, validate_args
-        )
+        return binary_hamming_distance(preds, target, threshold, multidim_average, ignore_index, validate_args)
     if task == ClassificationTask.MULTICLASS:
         if not isinstance(num_classes, int):
-            raise ValueError(
-                f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-            )
+            raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
         if not isinstance(top_k, int):
-            raise ValueError(
-                f"`top_k` is expected to be `int` but `{type(top_k)} was passed.`"
-            )
+            raise ValueError(f"`top_k` is expected to be `int` but `{type(top_k)} was passed.`")
         return multiclass_hamming_distance(
             preds,
             target,
@@ -444,9 +423,7 @@ def hamming_distance(
         )
     if task == ClassificationTask.MULTILABEL:
         if not isinstance(num_labels, int):
-            raise ValueError(
-                f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-            )
+            raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
         return multilabel_hamming_distance(
             preds,
             target,

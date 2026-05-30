@@ -1,16 +1,13 @@
 from typing import Optional, Union
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 
 def _total_variation_update(img: paddle.Tensor) -> tuple[paddle.Tensor, int]:
     """Compute total variation statistics on current batch."""
     if img.ndim != 4:
-        raise RuntimeError(
-            f"Expected input `img` to be an 4D tensor, but got {img.shape}"
-        )
+        raise RuntimeError(f"Expected input `img` to be an 4D tensor, but got {img.shape}")
     diff1 = img[..., 1:, :] - img[..., :-1, :]
     diff2 = img[..., :, 1:] - img[..., :, :-1]
     res1 = diff1.abs().sum([1, 2, 3])
@@ -31,14 +28,10 @@ def _total_variation_compute(
         return score.sum()
     if reduction is None or reduction == "none":
         return score
-    raise ValueError(
-        "Expected argument `reduction` to either be 'sum', 'mean', 'none' or None"
-    )
+    raise ValueError("Expected argument `reduction` to either be 'sum', 'mean', 'none' or None")
 
 
-def total_variation(
-    img: paddle.Tensor, reduction: Optional[Literal["mean", "sum", "none"]] = "sum"
-) -> paddle.Tensor:
+def total_variation(img: paddle.Tensor, reduction: Optional[Literal["mean", "sum", "none"]] = "sum") -> paddle.Tensor:
     """Compute total variation loss.
 
     Args:

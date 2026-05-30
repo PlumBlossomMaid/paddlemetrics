@@ -1,7 +1,6 @@
 from typing import Optional, Union
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.functional.classification.precision_recall_curve import (
@@ -13,14 +12,16 @@ from paddlemetrics.functional.classification.precision_recall_curve import (
     _multiclass_precision_recall_curve_update,
     _multilabel_precision_recall_curve_format,
     _multilabel_precision_recall_curve_tensor_validation,
-    _multilabel_precision_recall_curve_update)
+    _multilabel_precision_recall_curve_update,
+)
 from paddlemetrics.functional.classification.recall_fixed_precision import (
     _binary_recall_at_fixed_precision_arg_validation,
     _binary_recall_at_fixed_precision_compute,
     _multiclass_recall_at_fixed_precision_arg_compute,
     _multiclass_recall_at_fixed_precision_arg_validation,
     _multilabel_recall_at_fixed_precision_arg_compute,
-    _multilabel_recall_at_fixed_precision_arg_validation)
+    _multilabel_recall_at_fixed_precision_arg_validation,
+)
 from paddlemetrics.utils.enums import ClassificationTask
 
 
@@ -32,19 +33,13 @@ def _precision_at_recall(
 ) -> tuple[paddle.Tensor, paddle.Tensor]:
     try:
         max_precision, _, best_threshold = max(
-            (p, r, t)
-            for p, r, t in zip(precision, recall, thresholds)
-            if r >= min_recall
+            (p, r, t) for p, r, t in zip(precision, recall, thresholds) if r >= min_recall
         )
     except ValueError:
-        max_precision = paddle.tensor(
-            0.0, device=precision.device, dtype=precision.dtype
-        )
+        max_precision = paddle.tensor(0.0, device=precision.device, dtype=precision.dtype)
         best_threshold = paddle.tensor(0)
     if max_precision == 0.0:
-        best_threshold = paddle.tensor(
-            float("nan"), device=thresholds.device, dtype=thresholds.dtype
-        )
+        best_threshold = paddle.tensor(float("nan"), device=thresholds.device, dtype=thresholds.dtype)
     return max_precision, best_threshold
 
 
@@ -114,13 +109,9 @@ def binary_precision_at_fixed_recall(
 
     """
     if validate_args:
-        _binary_recall_at_fixed_precision_arg_validation(
-            min_recall, thresholds, ignore_index
-        )
+        _binary_recall_at_fixed_precision_arg_validation(min_recall, thresholds, ignore_index)
         _binary_precision_recall_curve_tensor_validation(preds, target, ignore_index)
-    preds, target, thresholds = _binary_precision_recall_curve_format(
-        preds, target, thresholds, ignore_index
-    )
+    preds, target, thresholds = _binary_precision_recall_curve_format(preds, target, thresholds, ignore_index)
     state = _binary_precision_recall_curve_update(preds, target, thresholds)
     return _binary_recall_at_fixed_precision_compute(
         state, thresholds, min_precision=min_recall, reduce_fn=_precision_at_recall
@@ -202,18 +193,12 @@ def multiclass_precision_at_fixed_recall(
 
     """
     if validate_args:
-        _multiclass_recall_at_fixed_precision_arg_validation(
-            num_classes, min_recall, thresholds, ignore_index
-        )
-        _multiclass_precision_recall_curve_tensor_validation(
-            preds, target, num_classes, ignore_index
-        )
+        _multiclass_recall_at_fixed_precision_arg_validation(num_classes, min_recall, thresholds, ignore_index)
+        _multiclass_precision_recall_curve_tensor_validation(preds, target, num_classes, ignore_index)
     preds, target, thresholds = _multiclass_precision_recall_curve_format(
         preds, target, num_classes, thresholds, ignore_index
     )
-    state = _multiclass_precision_recall_curve_update(
-        preds, target, num_classes, thresholds
-    )
+    state = _multiclass_precision_recall_curve_update(preds, target, num_classes, thresholds)
     return _multiclass_recall_at_fixed_precision_arg_compute(
         state,
         num_classes,
@@ -297,18 +282,12 @@ def multilabel_precision_at_fixed_recall(
 
     """
     if validate_args:
-        _multilabel_recall_at_fixed_precision_arg_validation(
-            num_labels, min_recall, thresholds, ignore_index
-        )
-        _multilabel_precision_recall_curve_tensor_validation(
-            preds, target, num_labels, ignore_index
-        )
+        _multilabel_recall_at_fixed_precision_arg_validation(num_labels, min_recall, thresholds, ignore_index)
+        _multilabel_precision_recall_curve_tensor_validation(preds, target, num_labels, ignore_index)
     preds, target, thresholds = _multilabel_precision_recall_curve_format(
         preds, target, num_labels, thresholds, ignore_index
     )
-    state = _multilabel_precision_recall_curve_update(
-        preds, target, num_labels, thresholds
-    )
+    state = _multilabel_precision_recall_curve_update(preds, target, num_labels, thresholds)
     return _multilabel_recall_at_fixed_precision_arg_compute(
         state,
         num_labels,
@@ -345,14 +324,10 @@ def precision_at_fixed_recall(
     """
     task = ClassificationTask.from_str(task)
     if task == ClassificationTask.BINARY:
-        return binary_precision_at_fixed_recall(
-            preds, target, min_recall, thresholds, ignore_index, validate_args
-        )
+        return binary_precision_at_fixed_recall(preds, target, min_recall, thresholds, ignore_index, validate_args)
     if task == ClassificationTask.MULTICLASS:
         if not isinstance(num_classes, int):
-            raise ValueError(
-                f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-            )
+            raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
         return multiclass_precision_at_fixed_recall(
             preds,
             target,
@@ -364,9 +339,7 @@ def precision_at_fixed_recall(
         )
     if task == ClassificationTask.MULTILABEL:
         if not isinstance(num_labels, int):
-            raise ValueError(
-                f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-            )
+            raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
         return multilabel_precision_at_fixed_recall(
             preds,
             target,

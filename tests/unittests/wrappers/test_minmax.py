@@ -4,14 +4,13 @@ from typing import Any
 
 import paddle
 import pytest
+
+from paddlemetrics.classification import BinaryAccuracy, BinaryConfusionMatrix, MulticlassAccuracy
+from paddlemetrics.regression import MeanSquaredError
+from paddlemetrics.wrappers import MinMaxMetric
 from unittests import BATCH_SIZE, NUM_BATCHES, NUM_CLASSES
 from unittests._helpers import seed_all
 from unittests._helpers.testers import MetricTester
-
-from paddlemetrics.classification import (BinaryAccuracy, BinaryConfusionMatrix,
-                                         MulticlassAccuracy)
-from paddlemetrics.regression import MeanSquaredError
-from paddlemetrics.wrappers import MinMaxMetric
 
 seed_all(42)
 
@@ -34,11 +33,7 @@ def _compare_fn(preds, target, base_fn):
     """Comparison function for minmax wrapper."""
     v_min, v_max = 1000000.0, -1000000.0
     for i in range(NUM_BATCHES):
-        val = (
-            base_fn(preds[: (i + 1) * BATCH_SIZE], target[: (i + 1) * BATCH_SIZE])
-            .cpu()
-            .numpy()
-        )
+        val = base_fn(preds[: (i + 1) * BATCH_SIZE], target[: (i + 1) * BATCH_SIZE]).cpu().numpy()
         v_min = v_min if v_min < val else val
         v_max = v_max if v_max > val else val
     raw = base_fn(preds, target)
@@ -118,7 +113,5 @@ def test_no_base_metric() -> None:
 def test_no_scalar_compute() -> None:
     """Tests that an assertion error is thrown if the wrapped basemetric gives a non-scalar on compute."""
     min_max_nsm = MinMaxMetric(BinaryConfusionMatrix())
-    with pytest.raises(
-        RuntimeError, match="Returned value from base metric should be a float.*"
-    ):
+    with pytest.raises(RuntimeError, match="Returned value from base metric should be a float.*"):
         min_max_nsm.compute()

@@ -69,21 +69,15 @@ class PeakSignalNoiseRatio(Metric):
         self,
         data_range: Union[float, tuple[float, float]],
         base: float = 10.0,
-        reduction: Literal[
-            "elementwise_mean", "sum", "none", None
-        ] = "elementwise_mean",
+        reduction: Literal["elementwise_mean", "sum", "none", None] = "elementwise_mean",
         dim: Optional[Union[int, tuple[int, ...]]] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
         if dim is None and reduction != "elementwise_mean":
-            rank_zero_warn(
-                f"The `reduction={reduction}` will not have any effect when `dim` is None."
-            )
+            rank_zero_warn(f"The `reduction={reduction}` will not have any effect when `dim` is None.")
         if dim is None:
-            self.add_state(
-                "sum_squared_error", default=paddle.tensor(0.0), dist_reduce_fx="sum"
-            )
+            self.add_state("sum_squared_error", default=paddle.tensor(0.0), dist_reduce_fx="sum")
             self.add_state("total", default=paddle.tensor(0), dist_reduce_fx="sum")
         else:
             self.add_state("sum_squared_error", default=[], dist_reduce_fx="cat")
@@ -95,9 +89,7 @@ class PeakSignalNoiseRatio(Metric):
                 default=paddle.tensor(data_range[1] - data_range[0]),
                 dist_reduce_fx="mean",
             )
-            self.clamping_fn = partial(
-                paddle.clamp, min=data_range[0], max=data_range[1]
-            )
+            self.clamping_fn = partial(paddle.clamp, min=data_range[0], max=data_range[1])
         else:
             self.add_state(
                 "data_range",
@@ -120,9 +112,7 @@ class PeakSignalNoiseRatio(Metric):
                     f"Expected `self.sum_squared_error` to be a Tensor, but got {type(self.sum_squared_error)}"
                 )
             if not isinstance(self.total, paddle.Tensor):
-                raise TypeError(
-                    f"Expected `self.total` to be a Tensor, but got {type(self.total)}"
-                )
+                raise TypeError(f"Expected `self.total` to be a Tensor, but got {type(self.total)}")
             self.sum_squared_error += sum_squared_error
             self.total += num_obs
         else:
@@ -131,9 +121,7 @@ class PeakSignalNoiseRatio(Metric):
                     f"Expected `self.sum_squared_error` to be a list, but got {type(self.sum_squared_error)}"
                 )
             if not isinstance(self.total, list):
-                raise TypeError(
-                    f"Expected `self.total` to be a list, but got {type(self.total)}"
-                )
+                raise TypeError(f"Expected `self.total` to be a list, but got {type(self.total)}")
             self.sum_squared_error.append(sum_squared_error)
             self.total.append(num_obs)
 
@@ -142,13 +130,9 @@ class PeakSignalNoiseRatio(Metric):
         if isinstance(self.sum_squared_error, paddle.Tensor):
             sum_squared_error = self.sum_squared_error
         elif isinstance(self.sum_squared_error, list):
-            sum_squared_error = paddle.concat(
-                [value.flatten() for value in self.sum_squared_error]
-            )
+            sum_squared_error = paddle.concat([value.flatten() for value in self.sum_squared_error])
         else:
-            raise TypeError(
-                "Expected sum_squared_error to be a Tensor or a list of Tensors"
-            )
+            raise TypeError("Expected sum_squared_error to be a Tensor or a list of Tensors")
         if isinstance(self.total, paddle.Tensor):
             total = self.total
         elif isinstance(self.total, list):

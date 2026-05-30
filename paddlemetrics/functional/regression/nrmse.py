@@ -1,7 +1,6 @@
 from typing import Union
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.functional.regression.mse import _mean_squared_error_update
@@ -27,10 +26,7 @@ def _normalized_root_mean_squared_error_update(
     if normalization == "mean":
         denom = paddle.mean(target, axis=0)
     elif normalization == "range":
-        denom = (
-            paddle.max(target, axis=0).values
-            - paddle.min(target, axis=0).values
-        )
+        denom = paddle.max(target, axis=0)[0] - paddle.min(target, axis=0)[0]
     elif normalization == "std":
         denom = paddle.std(x=target, unbiased=0, axis=0)
     elif normalization == "l2":
@@ -97,6 +93,4 @@ def normalized_root_mean_squared_error(
     sum_squared_error, num_obs, denom = _normalized_root_mean_squared_error_update(
         preds, target, num_outputs=num_outputs, normalization=normalization
     )
-    return _normalized_root_mean_squared_error_compute(
-        sum_squared_error, num_obs, denom
-    )
+    return _normalized_root_mean_squared_error_compute(sum_squared_error, num_obs, denom)

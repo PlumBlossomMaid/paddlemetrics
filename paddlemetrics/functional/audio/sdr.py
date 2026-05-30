@@ -2,7 +2,6 @@ import math
 from typing import Optional
 
 import paddle
-from paddle import Tensor
 
 from paddlemetrics.utils import rank_zero_warn
 from paddlemetrics.utils.checks import _check_same_shape
@@ -60,9 +59,7 @@ def _compute_autocorr_crosscorr(
     """
     n_fft = 2 ** math.ceil(math.log2(preds.shape[-1] + target.shape[-1] - 1))
     t_fft = paddle.fft.rfft(target, n=n_fft, axis=-1)
-    r_0 = paddle.fft.irfft(t_fft.real() ** 2 + t_fft.imag() ** 2, n=n_fft)[
-        ..., :corr_len
-    ]
+    r_0 = paddle.fft.irfft(t_fft.real() ** 2 + t_fft.imag() ** 2, n=n_fft)[..., :corr_len]
     p_fft = paddle.fft.rfft(preds, n=n_fft, axis=-1)
     b = paddle.fft.irfft(t_fft.conj() * p_fft, n=n_fft, axis=-1)[..., :corr_len]
     return r_0, b
@@ -129,17 +126,13 @@ def signal_distortion_ratio(
     """
     _check_same_shape(preds, target)
     preds_dtype = preds.dtype
-    preds = preds.astype('float64')
-    target = target.astype('float64')
+    preds = preds.astype("float64")
+    target = target.astype("float64")
     if zero_mean:
         preds = preds - preds.mean(axis=-1, keepdim=True)
         target = target - target.mean(axis=-1, keepdim=True)
-    target = target / paddle.clip(
-        paddle.linalg.norm(target, axis=-1, keepdim=True), min=1e-06
-    )
-    preds = preds / paddle.clip(
-        paddle.linalg.norm(preds, axis=-1, keepdim=True), min=1e-06
-    )
+    target = target / paddle.clip(paddle.linalg.norm(target, axis=-1, keepdim=True), min=1e-06)
+    preds = preds / paddle.clip(paddle.linalg.norm(preds, axis=-1, keepdim=True), min=1e-06)
     r_0, b = _compute_autocorr_crosscorr(target, preds, corr_len=filter_length)
     if load_diag is not None:
         r_0[..., 0] += load_diag
@@ -200,9 +193,7 @@ def scale_invariant_signal_distortion_ratio(
     )
     target_scaled = alpha * target
     noise = target_scaled - preds
-    val = (paddle.sum(target_scaled**2, axis=-1) + eps) / (
-        paddle.sum(noise**2, axis=-1) + eps
-    )
+    val = (paddle.sum(target_scaled**2, axis=-1) + eps) / (paddle.sum(noise**2, axis=-1) + eps)
     return 10 * paddle.log10(x=val)
 
 
@@ -250,20 +241,16 @@ def source_aggregated_signal_distortion_ratio(
     """
     _check_same_shape(preds, target)
     if preds.ndim < 2:
-        raise RuntimeError(
-            f"The preds and target should have the shape (..., spk, time), but {preds.shape} found"
-        )
+        raise RuntimeError(f"The preds and target should have the shape (..., spk, time), but {preds.shape} found")
     eps = paddle.finfo(preds.dtype).eps
     if zero_mean:
         target = target - paddle.mean(target, axis=-1, keepdim=True)
         preds = preds - paddle.mean(preds, axis=-1, keepdim=True)
     if scale_invariant:
-        alpha = (
-            (preds * target).sum(axis=-1, keepdim=True).sum(axis=-2, keepdim=True) + eps
-        ) / ((target**2).sum(axis=-1, keepdim=True).sum(axis=-2, keepdim=True) + eps)
+        alpha = ((preds * target).sum(axis=-1, keepdim=True).sum(axis=-2, keepdim=True) + eps) / (
+            (target**2).sum(axis=-1, keepdim=True).sum(axis=-2, keepdim=True) + eps
+        )
         target = alpha * target
     distortion = target - preds
-    val = ((target**2).sum(axis=-1).sum(axis=-1) + eps) / (
-        (distortion**2).sum(axis=-1).sum(axis=-1) + eps
-    )
+    val = ((target**2).sum(axis=-1).sum(axis=-1) + eps) / ((distortion**2).sum(axis=-1).sum(axis=-1) + eps)
     return 10 * paddle.log10(x=val)

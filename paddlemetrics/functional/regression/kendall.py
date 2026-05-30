@@ -4,8 +4,7 @@ import paddle
 from paddle import Tensor
 from typing_extensions import Literal
 
-from paddlemetrics.functional.regression.utils import \
-    _check_data_shape_to_num_outputs
+from paddlemetrics.functional.regression.utils import _check_data_shape_to_num_outputs
 from paddlemetrics.utils.checks import _check_same_shape
 from paddlemetrics.utils.data import _bincount, _cumsum, dim_zero_cat
 from paddlemetrics.utils.enums import EnumStr
@@ -35,9 +34,7 @@ class _TestAlternative(EnumStr):
         return "alternative"
 
 
-def _sort_on_first_sequence(
-    x: paddle.Tensor, y: paddle.Tensor
-) -> tuple[paddle.Tensor, paddle.Tensor]:
+def _sort_on_first_sequence(x: paddle.Tensor, y: paddle.Tensor) -> tuple[paddle.Tensor, paddle.Tensor]:
     """Sort sequences in an ascent order according to the sequence ``x``."""
     y = paddle.clone(x=y)
     x, y = x.T, y.T
@@ -47,25 +44,17 @@ def _sort_on_first_sequence(
     return x.T, y.T
 
 
-def _concordant_element_sum(
-    x: paddle.Tensor, y: paddle.Tensor, i: int
-) -> paddle.Tensor:
+def _concordant_element_sum(x: paddle.Tensor, y: paddle.Tensor, i: int) -> paddle.Tensor:
     """Count a total number of concordant pairs in a single sequence."""
     return paddle.logical_and(x[i] < x[i + 1 :], y[i] < y[i + 1 :]).sum(0).unsqueeze(0)
 
 
-def _count_concordant_pairs(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> paddle.Tensor:
+def _count_concordant_pairs(preds: paddle.Tensor, target: paddle.Tensor) -> paddle.Tensor:
     """Count a total number of concordant pairs in given sequences."""
-    return paddle.concat(
-        [_concordant_element_sum(preds, target, i) for i in range(preds.shape[0])]
-    ).sum(0)
+    return paddle.concat([_concordant_element_sum(preds, target, i) for i in range(preds.shape[0])]).sum(0)
 
 
-def _discordant_element_sum(
-    x: paddle.Tensor, y: paddle.Tensor, i: int
-) -> paddle.Tensor:
+def _discordant_element_sum(x: paddle.Tensor, y: paddle.Tensor, i: int) -> paddle.Tensor:
     """Count a total number of discordant pairs in a single sequences."""
     return (
         paddle.logical_or(
@@ -77,21 +66,15 @@ def _discordant_element_sum(
     )
 
 
-def _count_discordant_pairs(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> paddle.Tensor:
+def _count_discordant_pairs(preds: paddle.Tensor, target: paddle.Tensor) -> paddle.Tensor:
     """Count a total number of discordant pairs in given sequences."""
-    return paddle.concat(
-        [_discordant_element_sum(preds, target, i) for i in range(preds.shape[0])]
-    ).sum(0)
+    return paddle.concat([_discordant_element_sum(preds, target, i) for i in range(preds.shape[0])]).sum(0)
 
 
-def _convert_sequence_to_dense_rank(
-    x: paddle.Tensor, sort: bool = False
-) -> paddle.Tensor:
+def _convert_sequence_to_dense_rank(x: paddle.Tensor, sort: bool = False) -> paddle.Tensor:
     """Convert a sequence to the rank tensor."""
     if sort:
-        x = (paddle.sort(axis=0, x=x), paddle.argsort(axis=0, x=x)).values
+        x = paddle.sort(x, axis=0)[0]
     _ones = paddle.zeros(1, x.shape[1], dtype=paddle.int32, device=x.place)
     return _cumsum(paddle.concat([_ones, (x[1:] != x[:-1]).int()], axis=0), axis=0)
 
@@ -165,23 +148,13 @@ def _calculate_tau(
     if variant == _MetricVariant.B:
         total_combinations: Tensor = n_total * (n_total - 1) // 2
         if preds_ties is None:
-            preds_ties = paddle.tensor(
-                0.0, dtype=total_combinations.dtype, device=total_combinations.device
-            )
+            preds_ties = paddle.tensor(0.0, dtype=total_combinations.dtype, device=total_combinations.device)
         if target_ties is None:
-            target_ties = paddle.tensor(
-                0.0, dtype=total_combinations.dtype, device=total_combinations.device
-            )
-        denominator = (total_combinations - preds_ties) * (
-            total_combinations - target_ties
-        )
+            target_ties = paddle.tensor(0.0, dtype=total_combinations.dtype, device=total_combinations.device)
+        denominator = (total_combinations - preds_ties) * (total_combinations - target_ties)
         return con_min_dis_pairs / paddle.sqrt(denominator)
-    preds_unique = paddle.tensor(
-        [len(p.unique()) for p in preds.T], dtype=preds.dtype, device=preds.device
-    )
-    target_unique = paddle.tensor(
-        [len(t.unique()) for t in target.T], dtype=target.dtype, device=target.device
-    )
+    preds_unique = paddle.tensor([len(p.unique()) for p in preds.T], dtype=preds.dtype, device=preds.device)
+    target_unique = paddle.tensor([len(t.unique()) for t in target.T], dtype=target.dtype, device=target.device)
     min_classes = paddle.minimum(preds_unique, target_unique)
     return 2 * con_min_dis_pairs / ((min_classes - 1) / min_classes * n_total**2)
 
@@ -193,12 +166,12 @@ def _get_p_value_for_t_value_from_dist(t_value: paddle.Tensor) -> paddle.Tensor:
 
     """
     device = t_value
-    normal_dist = paddle.distribution.Normal(
-        loc=paddle.tensor([0.0]).to(device), scale=paddle.tensor([1.0]).to(device)
-    )
+    normal_dist = paddle.distribution.Normal(loc=paddle.tensor([0.0]).to(device), scale=paddle.tensor([1.0]).to(device))
     is_nan = t_value.isnan()
     t_value = t_value.nan_to_num()
     """Not Support auto convert *.cdf, please judge whether it is Pytorch API and convert by yourself"""
+
+
 def _calculate_p_value(
     con_min_dis_pairs: paddle.Tensor,
     n_total: paddle.Tensor,
@@ -223,10 +196,7 @@ def _calculate_p_value(
             - (target_ties_p2 if target_ties_p2 is not None else 0)
         ) / 18
         t_value_denominator += (
-            2
-            * (preds_ties if preds_ties is not None else 0)
-            * (target_ties if target_ties is not None else 0)
-            / m
+            2 * (preds_ties if preds_ties is not None else 0) * (target_ties if target_ties is not None else 0) / m
         )
         t_value_denominator += (
             (preds_ties_p1 if preds_ties_p1 is not None else 0)
@@ -416,21 +386,15 @@ def kendall_rank_corrcoef(
 
     """
     if not isinstance(t_test, bool):
-        raise ValueError(
-            f"Argument `t_test` is expected to be of a type `bool`, but got {type(t_test)}."
-        )
+        raise ValueError(f"Argument `t_test` is expected to be of a type `bool`, but got {type(t_test)}.")
     if t_test and alternative is None:
-        raise ValueError(
-            "Argument `alternative` is required if `t_test=True` but got `None`."
-        )
+        raise ValueError("Argument `alternative` is required if `t_test=True` but got `None`.")
     _variant = _MetricVariant.from_str(str(variant))
     _alternative = _TestAlternative.from_str(str(alternative)) if t_test else None
     _preds, _target = _kendall_corrcoef_update(
         preds, target, [], [], num_outputs=1 if preds.ndim == 1 else preds.shape[-1]
     )
-    tau, p_value = _kendall_corrcoef_compute(
-        dim_zero_cat(_preds), dim_zero_cat(_target), _variant, _alternative
-    )
+    tau, p_value = _kendall_corrcoef_compute(dim_zero_cat(_preds), dim_zero_cat(_target), _variant, _alternative)
     if p_value is not None:
         return tau, p_value
     return tau

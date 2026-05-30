@@ -3,29 +3,28 @@ from typing import Callable, Optional, Union
 import numpy as np
 import paddle
 import pytest
-from sklearn.metrics import \
-    average_precision_score as sk_average_precision_score
+from sklearn.metrics import average_precision_score as sk_average_precision_score
 from typing_extensions import Literal
+
+from paddlemetrics.functional.retrieval.average_precision import retrieval_average_precision
+from paddlemetrics.retrieval.average_precision import RetrievalMAP
 from unittests._helpers import seed_all
 from unittests.retrieval.helpers import (
-    RetrievalMetricTester, _concat_tests, _custom_aggregate_fn,
+    RetrievalMetricTester,
+    _concat_tests,
+    _custom_aggregate_fn,
     _default_metric_class_input_arguments,
     _default_metric_class_input_arguments_ignore_index,
     _default_metric_functional_input_arguments,
     _errors_test_class_metric_parameters_default,
     _errors_test_class_metric_parameters_no_pos_target,
-    _errors_test_functional_metric_parameters_default)
-
-from paddlemetrics.functional.retrieval.average_precision import \
-    retrieval_average_precision
-from paddlemetrics.retrieval.average_precision import RetrievalMAP
+    _errors_test_functional_metric_parameters_default,
+)
 
 seed_all(42)
 
 
-def _average_precision_at_k(
-    target: np.ndarray, preds: np.ndarray, top_k: Optional[int] = None
-):
+def _average_precision_at_k(target: np.ndarray, preds: np.ndarray, top_k: Optional[int] = None):
     """Wrap reference metric to account for top_k argument."""
     assert target.shape == preds.shape
     assert len(target.shape) == 1
@@ -42,9 +41,7 @@ class TestMAP(RetrievalMetricTester):
     @pytest.mark.parametrize("empty_target_action", ["skip", "neg", "pos"])
     @pytest.mark.parametrize("ignore_index", [None, 1])
     @pytest.mark.parametrize("top_k", [None, 1, 4, 10])
-    @pytest.mark.parametrize(
-        "aggregation", ["mean", "median", "max", "min", _custom_aggregate_fn]
-    )
+    @pytest.mark.parametrize("aggregation", ["mean", "median", "max", "min", _custom_aggregate_fn])
     @pytest.mark.parametrize(**_default_metric_class_input_arguments)
     def test_class_metric(
         self,
@@ -105,9 +102,7 @@ class TestMAP(RetrievalMetricTester):
 
     @pytest.mark.parametrize(**_default_metric_functional_input_arguments)
     @pytest.mark.parametrize("top_k", [None, 1, 4, 10])
-    def test_functional_metric(
-        self, preds: paddle.Tensor, target: paddle.Tensor, top_k: int
-    ):
+    def test_functional_metric(self, preds: paddle.Tensor, target: paddle.Tensor, top_k: int):
         """Test functional implementation of metric."""
         self.run_functional_metric_test(
             preds=preds,
@@ -119,9 +114,7 @@ class TestMAP(RetrievalMetricTester):
         )
 
     @pytest.mark.parametrize(**_default_metric_class_input_arguments)
-    def test_precision_cpu(
-        self, indexes: paddle.Tensor, preds: paddle.Tensor, target: paddle.Tensor
-    ):
+    def test_precision_cpu(self, indexes: paddle.Tensor, preds: paddle.Tensor, target: paddle.Tensor):
         """Test dtype support of the metric on CPU."""
         self.run_precision_test_cpu(
             indexes=indexes,
@@ -132,9 +125,7 @@ class TestMAP(RetrievalMetricTester):
         )
 
     @pytest.mark.parametrize(**_default_metric_class_input_arguments)
-    def test_precision_gpu(
-        self, indexes: paddle.Tensor, preds: paddle.Tensor, target: paddle.Tensor
-    ):
+    def test_precision_gpu(self, indexes: paddle.Tensor, preds: paddle.Tensor, target: paddle.Tensor):
         """Test dtype support of the metric on GPU."""
         self.run_precision_test_gpu(
             indexes=indexes,

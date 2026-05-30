@@ -1,4 +1,3 @@
-import sys
 
 from abc import ABC, abstractmethod
 from typing import Any, Callable, List, Optional, Union
@@ -20,7 +19,21 @@ def _retrieval_aggregate(
     if aggregation == "mean":
         return values.mean() if dim is None else values.mean(dim=dim)
     if aggregation == "median":
-        """Not Support auto convert *.median, please judge whether it is Pytorch API and convert by yourself"""
+        flat = values.flatten()
+        sorted_vals = paddle.sort(flat)[0]
+        n = sorted_vals.numel().item()
+        if n % 2 == 1:
+            return sorted_vals[n // 2]
+        return (sorted_vals[n // 2 - 1] + sorted_vals[n // 2]) / 2.0
+    if aggregation == "max":
+        return values.max() if dim is None else values.max(axis=dim)
+    if aggregation == "min":
+        return values.min() if dim is None else values.min(axis=dim)
+    if callable(aggregation):
+        return aggregation(values)
+    raise ValueError(f"Unknown aggregation: {aggregation}")
+
+
 class RetrievalMetric(Metric, ABC):
     """Works with binary target data. Accepts float predictions from a model output.
 
@@ -93,16 +106,12 @@ class RetrievalMetric(Metric, ABC):
         self.allow_non_binary_target = False
         empty_target_action_options = "error", "skip", "neg", "pos"
         if empty_target_action not in empty_target_action_options:
-            raise ValueError(
-                f"Argument `empty_target_action` received a wrong value `{empty_target_action}`."
-            )
+            raise ValueError(f"Argument `empty_target_action` received a wrong value `{empty_target_action}`.")
         self.empty_target_action = empty_target_action
         if ignore_index is not None and not isinstance(ignore_index, int):
             raise ValueError("Argument `ignore_index` must be an integer or None.")
         self.ignore_index = ignore_index
-        if not (
-            aggregation in ("mean", "median", "min", "max") or callable(aggregation)
-        ):
+        if not (aggregation in ("mean", "median", "min", "max") or callable(aggregation)):
             raise ValueError(
                 f"Argument `aggregation` must be one of `mean`, `median`, `min`, `max` or a custom callable functionwhich takes tensor of values, but got {aggregation}."
             )
@@ -111,9 +120,7 @@ class RetrievalMetric(Metric, ABC):
         self.add_state("preds", default=[], dist_reduce_fx=None)
         self.add_state("target", default=[], dist_reduce_fx=None)
 
-    def update(
-        self, preds: paddle.Tensor, target: paddle.Tensor, indexes: paddle.Tensor
-    ) -> None:
+    def update(self, preds: paddle.Tensor, target: paddle.Tensor, indexes: paddle.Tensor) -> None:
         """Check shape, check and convert dtypes, flatten and add to accumulators."""
         if indexes is None:
             raise ValueError("Argument `indexes` cannot be None")
@@ -139,7 +146,8 @@ class RetrievalMetric(Metric, ABC):
         indexes = dim_zero_cat(self.indexes)
         preds = dim_zero_cat(self.preds)
         target = dim_zero_cat(self.target)
-        indexes, indices = paddle.sort(indexes)
+        indices = paddle.argsort(indexes)
+        indexes = indexes[indices]
         preds = preds[indices]
         target = target[indices]
         split_sizes = _flexible_bincount(indexes).detach().cpu().tolist()
@@ -150,9 +158,7 @@ class RetrievalMetric(Metric, ABC):
         ):
             if not mini_target.sum():
                 if self.empty_target_action == "error":
-                    raise ValueError(
-                        "`compute` method was provided with a query with no positive target."
-                    )
+                    raise ValueError("`compute` method was provided with a query with no positive target.")
                 if self.empty_target_action == "pos":
                     res.append(paddle.tensor(1.0))
                 elif self.empty_target_action == "neg":
@@ -160,9 +166,7 @@ class RetrievalMetric(Metric, ABC):
             else:
                 res.append(self._metric(mini_preds, mini_target))
         if res:
-            return _retrieval_aggregate(
-                paddle.stack([x.to(preds) for x in res]), self.aggregation
-            )
+            return _retrieval_aggregate(paddle.stack([x.to(preds) for x in res]), self.aggregation)
         return paddle.tensor(0.0).to(preds)
 
     @abstractmethod

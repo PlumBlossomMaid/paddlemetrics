@@ -3,17 +3,13 @@ from functools import partial
 import paddle
 import pytest
 from sklearn.metrics import adjusted_mutual_info_score as sklearn_ami
+
+from paddlemetrics.clustering.adjusted_mutual_info_score import AdjustedMutualInfoScore
+from paddlemetrics.functional.clustering.adjusted_mutual_info_score import adjusted_mutual_info_score
 from unittests import BATCH_SIZE, NUM_CLASSES
 from unittests._helpers import seed_all
 from unittests._helpers.testers import MetricTester
-from unittests.clustering._inputs import (_float_inputs_extrinsic,
-                                          _single_target_extrinsic1,
-                                          _single_target_extrinsic2)
-
-from paddlemetrics.clustering.adjusted_mutual_info_score import \
-    AdjustedMutualInfoScore
-from paddlemetrics.functional.clustering.adjusted_mutual_info_score import \
-    adjusted_mutual_info_score
+from unittests.clustering._inputs import _float_inputs_extrinsic, _single_target_extrinsic1, _single_target_extrinsic2
 
 seed_all(42)
 ATOL = 1e-05

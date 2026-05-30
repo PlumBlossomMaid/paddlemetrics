@@ -1,7 +1,6 @@
 from typing import List, Optional, Union
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.functional.classification.precision_recall_curve import (
@@ -19,7 +18,8 @@ from paddlemetrics.functional.classification.precision_recall_curve import (
     _multilabel_precision_recall_curve_compute,
     _multilabel_precision_recall_curve_format,
     _multilabel_precision_recall_curve_tensor_validation,
-    _multilabel_precision_recall_curve_update)
+    _multilabel_precision_recall_curve_update,
+)
 from paddlemetrics.utils.compute import _safe_divide
 from paddlemetrics.utils.data import _bincount
 from paddlemetrics.utils.enums import ClassificationTask
@@ -34,18 +34,11 @@ def _reduce_average_precision(
 ) -> paddle.Tensor:
     """Reduce multiple average precision score into one number."""
     if isinstance(precision, paddle.Tensor) and isinstance(recall, paddle.Tensor):
-        precision = paddle.where(
-            paddle.isnan(precision), paddle.zeros_like(precision), precision
-        )
+        precision = paddle.where(paddle.isnan(precision), paddle.zeros_like(precision), precision)
         recall = paddle.where(paddle.isnan(recall), paddle.zeros_like(recall), recall)
         res = -paddle.sum((recall[:, 1:] - recall[:, :-1]) * precision[:, :-1], 1)
     else:
-        res = paddle.stack(
-            [
-                (-paddle.sum((r[1:] - r[:-1]) * p[:-1]))
-                for p, r in zip(precision, recall)
-            ]
-        )
+        res = paddle.stack([(-paddle.sum((r[1:] - r[:-1]) * p[:-1])) for p, r in zip(precision, recall)])
     if average is None or average == "none":
         return res
     if paddle.isnan(res).any():
@@ -59,9 +52,7 @@ def _reduce_average_precision(
     if average == "weighted" and weights is not None:
         weights = _safe_divide(weights[idx], weights[idx].sum())
         return (res[idx] * weights).sum()
-    raise ValueError(
-        "Received an incompatible combinations of inputs to make reduction."
-    )
+    raise ValueError("Received an incompatible combinations of inputs to make reduction.")
 
 
 def _binary_average_precision_compute(
@@ -69,9 +60,7 @@ def _binary_average_precision_compute(
     thresholds: Optional[paddle.Tensor],
 ) -> paddle.Tensor:
     precision, recall, _ = _binary_precision_recall_curve_compute(state, thresholds)
-    precision = paddle.where(
-        paddle.isnan(precision), paddle.zeros_like(precision), precision
-    )
+    precision = paddle.where(paddle.isnan(precision), paddle.zeros_like(precision), precision)
     recall = paddle.where(paddle.isnan(recall), paddle.zeros_like(recall), recall)
     return -paddle.sum((recall[1:] - recall[:-1]) * precision[:-1])
 
@@ -145,9 +134,7 @@ def binary_average_precision(
     if validate_args:
         _binary_precision_recall_curve_arg_validation(thresholds, ignore_index)
         _binary_precision_recall_curve_tensor_validation(preds, target, ignore_index)
-    preds, target, thresholds = _binary_precision_recall_curve_format(
-        preds, target, thresholds, ignore_index
-    )
+    preds, target, thresholds = _binary_precision_recall_curve_format(preds, target, thresholds, ignore_index)
     state = _binary_precision_recall_curve_update(preds, target, thresholds)
     return _binary_average_precision_compute(state, thresholds)
 
@@ -158,14 +145,10 @@ def _multiclass_average_precision_arg_validation(
     thresholds: Optional[Union[int, list[float], paddle.Tensor]] = None,
     ignore_index: Optional[int] = None,
 ) -> None:
-    _multiclass_precision_recall_curve_arg_validation(
-        num_classes, thresholds, ignore_index
-    )
+    _multiclass_precision_recall_curve_arg_validation(num_classes, thresholds, ignore_index)
     allowed_average = "macro", "weighted", "none", None
     if average not in allowed_average:
-        raise ValueError(
-            f"Expected argument `average` to be one of {allowed_average} but got {average}"
-        )
+        raise ValueError(f"Expected argument `average` to be one of {allowed_average} but got {average}")
 
 
 def _multiclass_average_precision_compute(
@@ -174,16 +157,12 @@ def _multiclass_average_precision_compute(
     average: Optional[Literal["macro", "weighted", "none"]] = "macro",
     thresholds: Optional[paddle.Tensor] = None,
 ) -> paddle.Tensor:
-    precision, recall, _ = _multiclass_precision_recall_curve_compute(
-        state, num_classes, thresholds
-    )
+    precision, recall, _ = _multiclass_precision_recall_curve_compute(state, num_classes, thresholds)
     return _reduce_average_precision(
         precision,
         recall,
         average,
-        weights=_bincount(state[1], minlength=num_classes).float()
-        if thresholds is None
-        else state[0][:, 1, :].sum(-1),
+        weights=_bincount(state[1], minlength=num_classes).float() if thresholds is None else state[0][:, 1, :].sum(-1),
     )
 
 
@@ -271,21 +250,13 @@ def multiclass_average_precision(
 
     """
     if validate_args:
-        _multiclass_average_precision_arg_validation(
-            num_classes, average, thresholds, ignore_index
-        )
-        _multiclass_precision_recall_curve_tensor_validation(
-            preds, target, num_classes, ignore_index
-        )
+        _multiclass_average_precision_arg_validation(num_classes, average, thresholds, ignore_index)
+        _multiclass_precision_recall_curve_tensor_validation(preds, target, num_classes, ignore_index)
     preds, target, thresholds = _multiclass_precision_recall_curve_format(
         preds, target, num_classes, thresholds, ignore_index
     )
-    state = _multiclass_precision_recall_curve_update(
-        preds, target, num_classes, thresholds
-    )
-    return _multiclass_average_precision_compute(
-        state, num_classes, average, thresholds
-    )
+    state = _multiclass_precision_recall_curve_update(preds, target, num_classes, thresholds)
+    return _multiclass_average_precision_compute(state, num_classes, average, thresholds)
 
 
 def _multilabel_average_precision_arg_validation(
@@ -294,14 +265,10 @@ def _multilabel_average_precision_arg_validation(
     thresholds: Optional[Union[int, list[float], paddle.Tensor]] = None,
     ignore_index: Optional[int] = None,
 ) -> None:
-    _multilabel_precision_recall_curve_arg_validation(
-        num_labels, thresholds, ignore_index
-    )
+    _multilabel_precision_recall_curve_arg_validation(num_labels, thresholds, ignore_index)
     allowed_average = "micro", "macro", "weighted", "none", None
     if average not in allowed_average:
-        raise ValueError(
-            f"Expected argument `average` to be one of {allowed_average} but got {average}"
-        )
+        raise ValueError(f"Expected argument `average` to be one of {allowed_average} but got {average}")
 
 
 def _multilabel_average_precision_compute(
@@ -322,16 +289,12 @@ def _multilabel_average_precision_compute(
                 target = target[~idx]
             state = preds, target
         return _binary_average_precision_compute(state, thresholds)
-    precision, recall, _ = _multilabel_precision_recall_curve_compute(
-        state, num_labels, thresholds, ignore_index
-    )
+    precision, recall, _ = _multilabel_precision_recall_curve_compute(state, num_labels, thresholds, ignore_index)
     return _reduce_average_precision(
         precision,
         recall,
         average,
-        weights=(state[1] == 1).sum(dim=0).float()
-        if thresholds is None
-        else state[0][:, 1, :].sum(-1),
+        weights=(state[1] == 1).sum(dim=0).float() if thresholds is None else state[0][:, 1, :].sum(-1),
     )
 
 
@@ -423,21 +386,13 @@ def multilabel_average_precision(
 
     """
     if validate_args:
-        _multilabel_average_precision_arg_validation(
-            num_labels, average, thresholds, ignore_index
-        )
-        _multilabel_precision_recall_curve_tensor_validation(
-            preds, target, num_labels, ignore_index
-        )
+        _multilabel_average_precision_arg_validation(num_labels, average, thresholds, ignore_index)
+        _multilabel_precision_recall_curve_tensor_validation(preds, target, num_labels, ignore_index)
     preds, target, thresholds = _multilabel_precision_recall_curve_format(
         preds, target, num_labels, thresholds, ignore_index
     )
-    state = _multilabel_precision_recall_curve_update(
-        preds, target, num_labels, thresholds
-    )
-    return _multilabel_average_precision_compute(
-        state, num_labels, average, thresholds, ignore_index
-    )
+    state = _multilabel_precision_recall_curve_update(preds, target, num_labels, thresholds)
+    return _multilabel_average_precision_compute(state, num_labels, average, thresholds, ignore_index)
 
 
 def average_precision(
@@ -487,23 +442,15 @@ def average_precision(
     """
     task = ClassificationTask.from_str(task)
     if task == ClassificationTask.BINARY:
-        return binary_average_precision(
-            preds, target, thresholds, ignore_index, validate_args
-        )
+        return binary_average_precision(preds, target, thresholds, ignore_index, validate_args)
     if task == ClassificationTask.MULTICLASS:
         if not isinstance(num_classes, int):
-            raise ValueError(
-                f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-            )
+            raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
         return multiclass_average_precision(
             preds, target, num_classes, average, thresholds, ignore_index, validate_args
         )
     if task == ClassificationTask.MULTILABEL:
         if not isinstance(num_labels, int):
-            raise ValueError(
-                f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-            )
-        return multilabel_average_precision(
-            preds, target, num_labels, average, thresholds, ignore_index, validate_args
-        )
+            raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
+        return multilabel_average_precision(preds, target, num_labels, average, thresholds, ignore_index, validate_args)
     return None

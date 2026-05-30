@@ -4,12 +4,9 @@ from typing import Any, Optional, Union
 import paddle
 from paddle import Tensor
 
-from paddlemetrics.functional.audio.nisqa import \
-    non_intrusive_speech_quality_assessment
+from paddlemetrics.functional.audio.nisqa import non_intrusive_speech_quality_assessment
 from paddlemetrics.metric import Metric
-from paddlemetrics.utils.imports import (_LIBROSA_AVAILABLE,
-                                            _MATPLOTLIB_AVAILABLE,
-                                            _REQUESTS_AVAILABLE)
+from paddlemetrics.utils.imports import _LIBROSA_AVAILABLE, _MATPLOTLIB_AVAILABLE, _REQUESTS_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
 
 __doctest_requires__ = {"NonIntrusiveSpeechQualityAssessment": ["librosa", "requests"]}
@@ -77,9 +74,7 @@ class NonIntrusiveSpeechQualityAssessment(Metric):
                 "NISQA metric requires that librosa and requests are installed. Install as `pip install librosa requests`."
             )
         if not isinstance(fs, int) or fs <= 0:
-            raise ValueError(
-                f"Argument `fs` expected to be a positive integer, but got {fs}"
-            )
+            raise ValueError(f"Argument `fs` expected to be a positive integer, but got {fs}")
         self.fs = fs
         self.add_state(
             "sum_nisqa",
@@ -90,9 +85,7 @@ class NonIntrusiveSpeechQualityAssessment(Metric):
 
     def update(self, preds: paddle.Tensor) -> None:
         """Update state with predictions."""
-        nisqa_batch = non_intrusive_speech_quality_assessment(preds, self.fs).to(
-            self.sum_nisqa.device
-        )
+        nisqa_batch = non_intrusive_speech_quality_assessment(preds, self.fs).to(self.sum_nisqa.device)
         nisqa_batch = nisqa_batch.reshape(-1, 5)
         self.sum_nisqa += nisqa_batch.sum(dim=0)
         self.total += nisqa_batch.shape[0]

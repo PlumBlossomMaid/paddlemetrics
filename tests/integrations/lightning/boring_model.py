@@ -35,4 +35,3 @@ class RandomDataset(paddle.io.Dataset):
     def __len__(self) -> int:
         """Get length of dataset."""
         return self.len
-

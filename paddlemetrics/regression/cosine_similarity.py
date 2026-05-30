@@ -4,8 +4,7 @@ from typing import Any, List, Optional, Union
 import paddle
 from typing_extensions import Literal
 
-from paddlemetrics.functional.regression.cosine_similarity import (
-    _cosine_similarity_compute, _cosine_similarity_update)
+from paddlemetrics.functional.regression.cosine_similarity import _cosine_similarity_compute, _cosine_similarity_update
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.data import dim_zero_cat
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
@@ -56,15 +55,11 @@ class CosineSimilarity(Metric):
     preds: List[paddle.Tensor]
     target: List[paddle.Tensor]
 
-    def __init__(
-        self, reduction: Literal["mean", "sum", "none", None] = "sum", **kwargs: Any
-    ) -> None:
+    def __init__(self, reduction: Literal["mean", "sum", "none", None] = "sum", **kwargs: Any) -> None:
         super().__init__(**kwargs)
         allowed_reduction = "sum", "mean", "none", None
         if reduction not in allowed_reduction:
-            raise ValueError(
-                f"Expected argument `reduction` to be one of {allowed_reduction} but got {reduction}"
-            )
+            raise ValueError(f"Expected argument `reduction` to be one of {allowed_reduction} but got {reduction}")
         self.reduction = reduction
         self.add_state("preds", [], dist_reduce_fx="cat")
         self.add_state("target", [], dist_reduce_fx="cat")

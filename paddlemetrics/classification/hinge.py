@@ -7,11 +7,16 @@ from typing_extensions import Literal
 
 from paddlemetrics.classification.base import _ClassificationTaskWrapper
 from paddlemetrics.functional.classification.hinge import (
-    _binary_confusion_matrix_format, _binary_hinge_loss_arg_validation,
-    _binary_hinge_loss_tensor_validation, _binary_hinge_loss_update,
-    _hinge_loss_compute, _multiclass_confusion_matrix_format,
+    _binary_confusion_matrix_format,
+    _binary_hinge_loss_arg_validation,
+    _binary_hinge_loss_tensor_validation,
+    _binary_hinge_loss_update,
+    _hinge_loss_compute,
+    _multiclass_confusion_matrix_format,
     _multiclass_hinge_loss_arg_validation,
-    _multiclass_hinge_loss_tensor_validation, _multiclass_hinge_loss_update)
+    _multiclass_hinge_loss_tensor_validation,
+    _multiclass_hinge_loss_update,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.enums import ClassificationTaskNoMultilabel
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
@@ -234,9 +239,7 @@ class MulticlassHingeLoss(Metric):
     ) -> None:
         super().__init__(**kwargs)
         if validate_args:
-            _multiclass_hinge_loss_arg_validation(
-                num_classes, squared, multiclass_mode, ignore_index
-            )
+            _multiclass_hinge_loss_arg_validation(num_classes, squared, multiclass_mode, ignore_index)
         self.validate_args = validate_args
         self.num_classes = num_classes
         self.squared = squared
@@ -244,9 +247,7 @@ class MulticlassHingeLoss(Metric):
         self.ignore_index = ignore_index
         self.add_state(
             "measures",
-            default=paddle.tensor(0.0)
-            if self.multiclass_mode == "crammer-singer"
-            else paddle.zeros(num_classes),
+            default=paddle.tensor(0.0) if self.multiclass_mode == "crammer-singer" else paddle.zeros(num_classes),
             dist_reduce_fx="sum",
         )
         self.add_state("total", default=paddle.tensor(0), dist_reduce_fx="sum")
@@ -254,15 +255,9 @@ class MulticlassHingeLoss(Metric):
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update metric state."""
         if self.validate_args:
-            _multiclass_hinge_loss_tensor_validation(
-                preds, target, self.num_classes, self.ignore_index
-            )
-        preds, target = _multiclass_confusion_matrix_format(
-            preds, target, self.ignore_index, convert_to_labels=False
-        )
-        measures, total = _multiclass_hinge_loss_update(
-            preds, target, self.squared, self.multiclass_mode
-        )
+            _multiclass_hinge_loss_tensor_validation(preds, target, self.num_classes, self.ignore_index)
+        preds, target = _multiclass_confusion_matrix_format(preds, target, self.ignore_index, convert_to_labels=False)
+        measures, total = _multiclass_hinge_loss_update(preds, target, self.squared, self.multiclass_mode)
         self.measures += measures
         self.total += total
 
@@ -350,9 +345,7 @@ class HingeLoss(_ClassificationTaskWrapper):
         task: Literal["binary", "multiclass"],
         num_classes: Optional[int] = None,
         squared: bool = False,
-        multiclass_mode: Optional[
-            Literal["crammer-singer", "one-vs-all"]
-        ] = "crammer-singer",
+        multiclass_mode: Optional[Literal["crammer-singer", "one-vs-all"]] = "crammer-singer",
         ignore_index: Optional[int] = None,
         validate_args: bool = True,
         **kwargs: Any,
@@ -364,9 +357,7 @@ class HingeLoss(_ClassificationTaskWrapper):
             return BinaryHingeLoss(squared, **kwargs)
         if task == ClassificationTaskNoMultilabel.MULTICLASS:
             if not isinstance(num_classes, int):
-                raise ValueError(
-                    f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-                )
+                raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
             if multiclass_mode not in ("crammer-singer", "one-vs-all"):
                 raise ValueError(
                     f"`multiclass_mode` is expected to be one of 'crammer-singer' or 'one-vs-all' but `{multiclass_mode}` was passed."

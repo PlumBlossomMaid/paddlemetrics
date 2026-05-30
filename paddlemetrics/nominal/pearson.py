@@ -7,7 +7,8 @@ from typing_extensions import Literal
 
 from paddlemetrics.functional.nominal.pearson import (
     _pearsons_contingency_coefficient_compute,
-    _pearsons_contingency_coefficient_update)
+    _pearsons_contingency_coefficient_update,
+)
 from paddlemetrics.functional.nominal.utils import _nominal_input_validation
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
@@ -82,16 +83,14 @@ class PearsonsContingencyCoefficient(Metric):
         num_classes: int,
         nan_strategy: Literal["replace", "drop"] = "replace",
         nan_replace_value: Optional[float] = 0.0,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
         self.num_classes = num_classes
         _nominal_input_validation(nan_strategy, nan_replace_value)
         self.nan_strategy = nan_strategy
         self.nan_replace_value = nan_replace_value
-        self.add_state(
-            "confmat", paddle.zeros(num_classes, num_classes), dist_reduce_fx="sum"
-        )
+        self.add_state("confmat", paddle.zeros(num_classes, num_classes), dist_reduce_fx="sum")
 
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update state with predictions and targets."""

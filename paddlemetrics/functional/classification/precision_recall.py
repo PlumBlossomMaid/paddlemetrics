@@ -1,18 +1,23 @@
 from typing import Optional
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.functional.classification.stat_scores import (
-    _binary_stat_scores_arg_validation, _binary_stat_scores_format,
-    _binary_stat_scores_tensor_validation, _binary_stat_scores_update,
-    _multiclass_stat_scores_arg_validation, _multiclass_stat_scores_format,
-    _multiclass_stat_scores_tensor_validation, _multiclass_stat_scores_update,
-    _multilabel_stat_scores_arg_validation, _multilabel_stat_scores_format,
-    _multilabel_stat_scores_tensor_validation, _multilabel_stat_scores_update)
-from paddlemetrics.utils.compute import (_adjust_weights_safe_divide,
-                                            _safe_divide)
+    _binary_stat_scores_arg_validation,
+    _binary_stat_scores_format,
+    _binary_stat_scores_tensor_validation,
+    _binary_stat_scores_update,
+    _multiclass_stat_scores_arg_validation,
+    _multiclass_stat_scores_format,
+    _multiclass_stat_scores_tensor_validation,
+    _multiclass_stat_scores_update,
+    _multilabel_stat_scores_arg_validation,
+    _multilabel_stat_scores_format,
+    _multilabel_stat_scores_tensor_validation,
+    _multilabel_stat_scores_update,
+)
+from paddlemetrics.utils.compute import _adjust_weights_safe_divide, _safe_divide
 from paddlemetrics.utils.enums import ClassificationTask
 
 
@@ -34,14 +39,10 @@ def _precision_recall_reduce(
     if average == "micro":
         tp = tp.sum(dim=0 if multidim_average == "global" else 1)
         fn = fn.sum(dim=0 if multidim_average == "global" else 1)
-        different_stat = different_stat.sum(
-            dim=0 if multidim_average == "global" else 1
-        )
+        different_stat = different_stat.sum(dim=0 if multidim_average == "global" else 1)
         return _safe_divide(tp, tp + different_stat, zero_division)
     score = _safe_divide(tp, tp + different_stat, zero_division)
-    return _adjust_weights_safe_divide(
-        score, average, multilabel, tp, fp, fn, top_k=top_k
-    )
+    return _adjust_weights_safe_divide(score, average, multilabel, tp, fp, fn, top_k=top_k)
 
 
 def binary_precision(
@@ -114,9 +115,7 @@ def binary_precision(
     """
     if validate_args:
         _binary_stat_scores_arg_validation(threshold, multidim_average, ignore_index)
-        _binary_stat_scores_tensor_validation(
-            preds, target, multidim_average, ignore_index
-        )
+        _binary_stat_scores_tensor_validation(preds, target, multidim_average, ignore_index)
     preds, target = _binary_stat_scores_format(preds, target, threshold, ignore_index)
     tp, fp, tn, fn = _binary_stat_scores_update(preds, target, multidim_average)
     return _precision_recall_reduce(
@@ -231,12 +230,8 @@ def multiclass_precision(
 
     """
     if validate_args:
-        _multiclass_stat_scores_arg_validation(
-            num_classes, top_k, average, multidim_average, ignore_index
-        )
-        _multiclass_stat_scores_tensor_validation(
-            preds, target, num_classes, multidim_average, ignore_index
-        )
+        _multiclass_stat_scores_arg_validation(num_classes, top_k, average, multidim_average, ignore_index)
+        _multiclass_stat_scores_tensor_validation(preds, target, num_classes, multidim_average, ignore_index)
     preds, target = _multiclass_stat_scores_format(preds, target, top_k)
     tp, fp, tn, fn = _multiclass_stat_scores_update(
         preds, target, num_classes, top_k, average, multidim_average, ignore_index
@@ -350,15 +345,9 @@ def multilabel_precision(
 
     """
     if validate_args:
-        _multilabel_stat_scores_arg_validation(
-            num_labels, threshold, average, multidim_average, ignore_index
-        )
-        _multilabel_stat_scores_tensor_validation(
-            preds, target, num_labels, multidim_average, ignore_index
-        )
-    preds, target = _multilabel_stat_scores_format(
-        preds, target, num_labels, threshold, ignore_index
-    )
+        _multilabel_stat_scores_arg_validation(num_labels, threshold, average, multidim_average, ignore_index)
+        _multilabel_stat_scores_tensor_validation(preds, target, num_labels, multidim_average, ignore_index)
+    preds, target = _multilabel_stat_scores_format(preds, target, num_labels, threshold, ignore_index)
     tp, fp, tn, fn = _multilabel_stat_scores_update(preds, target, multidim_average)
     return _precision_recall_reduce(
         "precision",
@@ -443,9 +432,7 @@ def binary_recall(
     """
     if validate_args:
         _binary_stat_scores_arg_validation(threshold, multidim_average, ignore_index)
-        _binary_stat_scores_tensor_validation(
-            preds, target, multidim_average, ignore_index
-        )
+        _binary_stat_scores_tensor_validation(preds, target, multidim_average, ignore_index)
     preds, target = _binary_stat_scores_format(preds, target, threshold, ignore_index)
     tp, fp, tn, fn = _binary_stat_scores_update(preds, target, multidim_average)
     return _precision_recall_reduce(
@@ -560,12 +547,8 @@ def multiclass_recall(
 
     """
     if validate_args:
-        _multiclass_stat_scores_arg_validation(
-            num_classes, top_k, average, multidim_average, ignore_index
-        )
-        _multiclass_stat_scores_tensor_validation(
-            preds, target, num_classes, multidim_average, ignore_index
-        )
+        _multiclass_stat_scores_arg_validation(num_classes, top_k, average, multidim_average, ignore_index)
+        _multiclass_stat_scores_tensor_validation(preds, target, num_classes, multidim_average, ignore_index)
     preds, target = _multiclass_stat_scores_format(preds, target, top_k)
     tp, fp, tn, fn = _multiclass_stat_scores_update(
         preds, target, num_classes, top_k, average, multidim_average, ignore_index
@@ -679,15 +662,9 @@ def multilabel_recall(
 
     """
     if validate_args:
-        _multilabel_stat_scores_arg_validation(
-            num_labels, threshold, average, multidim_average, ignore_index
-        )
-        _multilabel_stat_scores_tensor_validation(
-            preds, target, num_labels, multidim_average, ignore_index
-        )
-    preds, target = _multilabel_stat_scores_format(
-        preds, target, num_labels, threshold, ignore_index
-    )
+        _multilabel_stat_scores_arg_validation(num_labels, threshold, average, multidim_average, ignore_index)
+        _multilabel_stat_scores_tensor_validation(preds, target, num_labels, multidim_average, ignore_index)
+    preds, target = _multilabel_stat_scores_format(preds, target, num_labels, threshold, ignore_index)
     tp, fp, tn, fn = _multilabel_stat_scores_update(preds, target, multidim_average)
     return _precision_recall_reduce(
         "recall",
@@ -753,13 +730,9 @@ def precision(
         )
     if task == ClassificationTask.MULTICLASS:
         if not isinstance(num_classes, int):
-            raise ValueError(
-                f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-            )
+            raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
         if not isinstance(top_k, int):
-            raise ValueError(
-                f"`top_k` is expected to be `int` but `{type(top_k)} was passed.`"
-            )
+            raise ValueError(f"`top_k` is expected to be `int` but `{type(top_k)} was passed.`")
         return multiclass_precision(
             preds,
             target,
@@ -773,9 +746,7 @@ def precision(
         )
     if task == ClassificationTask.MULTILABEL:
         if not isinstance(num_labels, int):
-            raise ValueError(
-                f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-            )
+            raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
         return multilabel_precision(
             preds,
             target,
@@ -844,13 +815,9 @@ def recall(
         )
     if task == ClassificationTask.MULTICLASS:
         if not isinstance(num_classes, int):
-            raise ValueError(
-                f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-            )
+            raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
         if not isinstance(top_k, int):
-            raise ValueError(
-                f"`top_k` is expected to be `int` but `{type(top_k)} was passed.`"
-            )
+            raise ValueError(f"`top_k` is expected to be `int` but `{type(top_k)} was passed.`")
         return multiclass_recall(
             preds,
             target,
@@ -864,9 +831,7 @@ def recall(
         )
     if task == ClassificationTask.MULTILABEL:
         if not isinstance(num_labels, int):
-            raise ValueError(
-                f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-            )
+            raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
         return multilabel_recall(
             preds,
             target,

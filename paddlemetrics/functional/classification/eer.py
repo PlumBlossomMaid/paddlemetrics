@@ -1,12 +1,9 @@
 from typing import List, Optional, Union
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
-from paddlemetrics.functional.classification.roc import (binary_roc,
-                                                        multiclass_roc,
-                                                        multilabel_roc)
+from paddlemetrics.functional.classification.roc import binary_roc, multiclass_roc, multilabel_roc
 from paddlemetrics.utils.enums import ClassificationTask
 
 
@@ -22,11 +19,7 @@ def _eer_compute(
     tpr: Union[paddle.Tensor, List[paddle.Tensor]],
 ) -> paddle.Tensor:
     """Compute Equal Error Rate (EER)."""
-    if (
-        isinstance(fpr, paddle.Tensor)
-        and isinstance(tpr, paddle.Tensor)
-        and fpr.ndim == 1
-    ):
+    if isinstance(fpr, paddle.Tensor) and isinstance(tpr, paddle.Tensor) and fpr.ndim == 1:
         return _binary_eer_compute(fpr, tpr)
     return paddle.stack([_binary_eer_compute(f, t) for f, t in zip(fpr, tpr)])
 
@@ -148,9 +141,7 @@ def multiclass_eer(
         tensor([0.0000, 0.0000, 0.6667, 0.6667, 1.0000])
 
     """
-    fpr, tpr, _ = multiclass_roc(
-        preds, target, num_classes, thresholds, average, ignore_index, validate_args
-    )
+    fpr, tpr, _ = multiclass_roc(preds, target, num_classes, thresholds, average, ignore_index, validate_args)
     return _eer_compute(fpr, tpr)
 
 
@@ -209,9 +200,7 @@ def multilabel_eer(
         tensor([0.5000, 0.7500, 0.1667])
 
     """
-    fpr, tpr, _ = multilabel_roc(
-        preds, target, num_labels, thresholds, ignore_index, validate_args
-    )
+    fpr, tpr, _ = multilabel_roc(preds, target, num_labels, thresholds, ignore_index, validate_args)
     return _eer_compute(fpr, tpr)
 
 
@@ -268,18 +257,10 @@ def eer(
         return binary_eer(preds, target, thresholds, ignore_index, validate_args)
     if task == ClassificationTask.MULTICLASS:
         if not isinstance(num_classes, int):
-            raise ValueError(
-                f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-            )
-        return multiclass_eer(
-            preds, target, num_classes, thresholds, average, ignore_index, validate_args
-        )
+            raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
+        return multiclass_eer(preds, target, num_classes, thresholds, average, ignore_index, validate_args)
     if task == ClassificationTask.MULTILABEL:
         if not isinstance(num_labels, int):
-            raise ValueError(
-                f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-            )
-        return multilabel_eer(
-            preds, target, num_labels, thresholds, ignore_index, validate_args
-        )
+            raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
+        return multilabel_eer(preds, target, num_labels, thresholds, ignore_index, validate_args)
     raise ValueError(f"Task {task} not supported.")

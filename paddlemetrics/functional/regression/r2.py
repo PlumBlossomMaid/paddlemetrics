@@ -82,9 +82,7 @@ def _r2_score_compute(
             f"Argument `multioutput` must be either `raw_values`, `uniform_average` or `variance_weighted`. Received {multioutput}."
         )
     if adjusted < 0 or not isinstance(adjusted, int):
-        raise ValueError(
-            "`adjusted` parameter should be an integer larger or equal to 0."
-        )
+        raise ValueError("`adjusted` parameter should be an integer larger or equal to 0.")
     if adjusted != 0:
         if adjusted > num_obs - 1:
             rank_zero_warn(
@@ -154,6 +152,4 @@ def r2_score(
 
     """
     sum_squared_obs, sum_obs, rss, num_obs = _r2_score_update(preds, target)
-    return _r2_score_compute(
-        sum_squared_obs, sum_obs, rss, num_obs, adjusted, multioutput
-    )
+    return _r2_score_compute(sum_squared_obs, sum_obs, rss, num_obs, adjusted, multioutput)

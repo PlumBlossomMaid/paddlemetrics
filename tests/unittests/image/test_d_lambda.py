@@ -3,15 +3,15 @@ from typing import NamedTuple
 
 import numpy as np
 import paddle
-from paddle import Tensor
 import pytest
-from unittests import BATCH_SIZE, NUM_BATCHES
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
+from paddle import Tensor
 
 from paddlemetrics.functional.image.d_lambda import spectral_distortion_index
 from paddlemetrics.functional.image.uqi import universal_image_quality_index
 from paddlemetrics.image.d_lambda import SpectralDistortionIndex
+from unittests import BATCH_SIZE, NUM_BATCHES
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
 
 seed_all(42)
 
@@ -44,12 +44,8 @@ def _baseline_d_lambda(preds: np.ndarray, target: np.ndarray, p: int = 1) -> flo
     m2 = np.zeros((length, length), dtype=np.float32)
     for k in range(length):
         for r in range(k, length):
-            m1[k, r] = m1[r, k] = universal_image_quality_index(
-                target[:, k : k + 1, :, :], target[:, r : r + 1, :, :]
-            )
-            m2[k, r] = m2[r, k] = universal_image_quality_index(
-                preds[:, k : k + 1, :, :], preds[:, r : r + 1, :, :]
-            )
+            m1[k, r] = m1[r, k] = universal_image_quality_index(target[:, k : k + 1, :, :], target[:, r : r + 1, :, :])
+            m2[k, r] = m2[r, k] = universal_image_quality_index(preds[:, k : k + 1, :, :], preds[:, r : r + 1, :, :])
     diff = np.abs(m1 - m2) ** p
     if length == 1:
         return diff[0][0] ** (1.0 / p)
@@ -63,9 +59,7 @@ def _reference_numpy_d_lambda(preds, target, p):
     return _baseline_d_lambda(np_preds, np_target, p=p)
 
 
-@pytest.mark.parametrize(
-    ("preds", "target", "p"), [(i.preds, i.target, i.p) for i in _inputs]
-)
+@pytest.mark.parametrize(("preds", "target", "p"), [(i.preds, i.target, i.p) for i in _inputs])
 class TestSpectralDistortionIndex(MetricTester):
     """Test class for `SpectralDistortionIndex` metric."""
 
@@ -96,9 +90,7 @@ class TestSpectralDistortionIndex(MetricTester):
     @pytest.mark.skipif(not paddle.cuda.is_available(), reason="test requires cuda")
     def test_d_lambda_half_gpu(self, preds, target, p):
         """Test dtype support of the metric on GPU."""
-        self.run_precision_test_gpu(
-            preds, target, SpectralDistortionIndex, spectral_distortion_index, {"p": p}
-        )
+        self.run_precision_test_gpu(preds, target, SpectralDistortionIndex, spectral_distortion_index, {"p": p})
 
 
 @pytest.mark.parametrize(
@@ -136,9 +128,7 @@ def test_d_lambda_invalid_type():
     """Test that error is raised on different dtypes."""
     preds_t = paddle.rand((1, 1, 16, 16))
     target_t = paddle.rand((1, 1, 16, 16), dtype=paddle.float64)
-    with pytest.raises(
-        TypeError, match="Expected `ms` and `fused` to have the same data type.*"
-    ):
+    with pytest.raises(TypeError, match="Expected `ms` and `fused` to have the same data type.*"):
         spectral_distortion_index(preds_t, target_t, p=1)
 
 

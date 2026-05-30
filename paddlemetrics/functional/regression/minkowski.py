@@ -1,13 +1,10 @@
 import paddle
-from paddle import Tensor
 
 from paddlemetrics.utils.checks import _check_same_shape
 from paddlemetrics.utils.exceptions import PaddleMetricsUserError
 
 
-def _minkowski_distance_update(
-    preds: paddle.Tensor, targets: paddle.Tensor, p: float
-) -> paddle.Tensor:
+def _minkowski_distance_update(preds: paddle.Tensor, targets: paddle.Tensor, p: float) -> paddle.Tensor:
     """Update and return variables required to compute Minkowski distance.
 
     Checks for same shape of input tensors.
@@ -20,9 +17,7 @@ def _minkowski_distance_update(
     """
     _check_same_shape(preds, targets)
     if not (isinstance(p, (float, int)) and p >= 1):
-        raise PaddleMetricsUserError(
-            f"Argument ``p`` must be a float or int greater than 1, but got {p}"
-        )
+        raise PaddleMetricsUserError(f"Argument ``p`` must be a float or int greater than 1, but got {p}")
     difference = paddle.abs(preds - targets)
     return paddle.sum(paddle.pow(difference, p))
 
@@ -45,9 +40,7 @@ def _minkowski_distance_compute(distance: paddle.Tensor, p: float) -> paddle.Ten
     return paddle.pow(distance, 1.0 / p)
 
 
-def minkowski_distance(
-    preds: paddle.Tensor, targets: paddle.Tensor, p: float
-) -> paddle.Tensor:
+def minkowski_distance(preds: paddle.Tensor, targets: paddle.Tensor, p: float) -> paddle.Tensor:
     """Compute the `Minkowski distance`_.
 
     .. math:: d_{\\text{Minkowski}} = \\\\sum_{i}^N (| y_i - \\\\hat{y_i} |^p)^\\frac{1}{p}

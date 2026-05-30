@@ -8,8 +8,7 @@ from paddle import Tensor
 from paddlemetrics.collections import MetricCollection
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
-from paddlemetrics.utils.plot import (_AX_TYPE, _PLOT_OUT_TYPE,
-                                         plot_single_or_multi_val)
+from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE, plot_single_or_multi_val
 from paddlemetrics.utils.prints import rank_zero_warn
 from paddlemetrics.wrappers import ClasswiseWrapper
 
@@ -120,36 +119,20 @@ class MetricTracker(paddle.nn.LayerList):
                         raise AttributeError(
                             f"The metric '{name}' in the MetricCollection does not have a 'higher_is_better' attribute. Please provide the `maximize` argument explicitly."
                         )
-                    if isinstance(m, ClasswiseWrapper) and isinstance(
-                        m.metric.num_classes, int
-                    ):
-                        m_higher_is_better = [
-                            m.higher_is_better for _ in range(int(m.metric.num_classes))
-                        ]
+                    if isinstance(m, ClasswiseWrapper) and isinstance(m.metric.num_classes, int):
+                        m_higher_is_better = [m.higher_is_better for _ in range(int(m.metric.num_classes))]
                     else:
                         m_higher_is_better = [m.higher_is_better]
                     self.maximize.extend(m_higher_is_better)
         else:
             if not isinstance(maximize, (bool, list)):
-                raise ValueError(
-                    "Argument `maximize` should either be a single bool or list of bool"
-                )
-            if isinstance(maximize, list) and not all(
-                isinstance(m, bool) for m in maximize
-            ):
+                raise ValueError("Argument `maximize` should either be a single bool or list of bool")
+            if isinstance(maximize, list) and not all(isinstance(m, bool) for m in maximize):
                 raise ValueError("Argument `maximize` is list but not type of bool.")
-            if (
-                isinstance(maximize, list)
-                and isinstance(metric, MetricCollection)
-                and len(maximize) != len(metric)
-            ):
-                raise ValueError(
-                    "The len of argument `maximize` should match the length of the metric collection"
-                )
+            if isinstance(maximize, list) and isinstance(metric, MetricCollection) and len(maximize) != len(metric):
+                raise ValueError("The len of argument `maximize` should match the length of the metric collection")
             if isinstance(metric, Metric) and not isinstance(maximize, bool):
-                raise ValueError(
-                    "Argument `maximize` should be a single bool when `metric` is a single Metric"
-                )
+                raise ValueError("Argument `maximize` should be a single bool when `metric` is a single Metric")
             self.maximize = maximize
         self._increment_called = False
 
@@ -167,27 +150,21 @@ class MetricTracker(paddle.nn.LayerList):
         """Call forward of the current metric being tracked."""
         self._check_for_increment("forward")
         if not isinstance(self[-1], (Metric, MetricCollection)):
-            raise TypeError(
-                f"Expected the last item to be a Metric or MetricCollection, but got {type(self[-1])}."
-            )
+            raise TypeError(f"Expected the last item to be a Metric or MetricCollection, but got {type(self[-1])}.")
         return self[-1](*args, **kwargs)
 
     def update(self, *args: Any, **kwargs: Any) -> None:
         """Update the current metric being tracked."""
         self._check_for_increment("update")
         if not isinstance(self[-1], (Metric, MetricCollection)):
-            raise TypeError(
-                f"Expected the last item to be a Metric or MetricCollection, but got {type(self[-1])}."
-            )
+            raise TypeError(f"Expected the last item to be a Metric or MetricCollection, but got {type(self[-1])}.")
         self[-1].update(*args, **kwargs)
 
     def compute(self) -> Any:
         """Call compute of the current metric being tracked."""
         self._check_for_increment("compute")
         if not isinstance(self[-1], (Metric, MetricCollection)):
-            raise TypeError(
-                f"Expected the last item to be a Metric or MetricCollection, but got {type(self[-1])}."
-            )
+            raise TypeError(f"Expected the last item to be a Metric or MetricCollection, but got {type(self[-1])}.")
         return self[-1].compute()
 
     def compute_all(self) -> Any:
@@ -209,20 +186,16 @@ class MetricTracker(paddle.nn.LayerList):
             if i == 0:
                 continue
             if not isinstance(metric, (Metric, MetricCollection)):
-                raise TypeError(
-                    f"Expected the item to be a Metric or MetricCollection, but got {type(metric)}."
-                )
+                raise TypeError(f"Expected the item to be a Metric or MetricCollection, but got {type(metric)}.")
             res.append(metric.compute())
         try:
             if isinstance(res[0], dict):
                 keys = res[0].keys()
-                return {
-                    k: paddle.stack([cast(Tensor, r[k]) for r in res], axis=0)
-                    for k in keys
-                }
+                return {k: paddle.stack([cast(Tensor, r[k]) for r in res], axis=0) for k in keys}
             if isinstance(res[0], list):
                 return paddle.stack(
-                    [paddle.stack(cast(list[paddle.Tensor], r), axis=0) for r in res], axis=0,
+                    [paddle.stack(cast(list[paddle.Tensor], r), axis=0) for r in res],
+                    axis=0,
                 )
             return paddle.stack(cast(list[paddle.Tensor], res), axis=0)
         except TypeError:
@@ -232,18 +205,14 @@ class MetricTracker(paddle.nn.LayerList):
     def reset(self) -> None:
         """Reset the current metric being tracked."""
         if not isinstance(self[-1], (Metric, MetricCollection)):
-            raise TypeError(
-                f"Expected the last item to be a Metric or MetricCollection, but got {type(self[-1])}."
-            )
+            raise TypeError(f"Expected the last item to be a Metric or MetricCollection, but got {type(self[-1])}.")
         self[-1].reset()
 
     def reset_all(self) -> None:
         """Reset all metrics being tracked."""
         for metric in self:
             if not isinstance(metric, (Metric, MetricCollection)):
-                raise TypeError(
-                    f"Expected all metrics to be Metric or MetricCollection, but got {type(metric)}."
-                )
+                raise TypeError(f"Expected all metrics to be Metric or MetricCollection, but got {type(metric)}.")
             metric.reset()
 
     def best_metric(
@@ -287,9 +256,7 @@ class MetricTracker(paddle.nn.LayerList):
             if return_step:
                 return None, None
             return None
-        if isinstance(self._base_metric, Metric) and not isinstance(
-            self._base_metric, ClasswiseWrapper
-        ):
+        if isinstance(self._base_metric, Metric) and not isinstance(self._base_metric, ClasswiseWrapper):
             fn = paddle.max if self.maximize else paddle.min
             try:
                 value, idx = fn(res, 0)
@@ -305,11 +272,7 @@ class MetricTracker(paddle.nn.LayerList):
                     return None, None
                 return None
         else:
-            maximize = (
-                self.maximize
-                if isinstance(self.maximize, list)
-                else len(res) * [self.maximize]
-            )
+            maximize = self.maximize if isinstance(self.maximize, list) else len(res) * [self.maximize]
             value, idx = {}, {}
             for i, (k, v) in enumerate(res.items()):
                 try:
@@ -329,9 +292,7 @@ class MetricTracker(paddle.nn.LayerList):
     def _check_for_increment(self, method: str) -> None:
         """Check that a metric that can be updated/used for computations has been initialized."""
         if not self._increment_called:
-            raise ValueError(
-                f"`{method}` cannot be called before `.increment()` has been called."
-            )
+            raise ValueError(f"`{method}` cannot be called before `.increment()` has been called.")
 
     def plot(
         self,

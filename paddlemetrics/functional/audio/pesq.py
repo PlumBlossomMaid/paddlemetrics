@@ -4,8 +4,7 @@ import numpy as np
 import paddle
 
 from paddlemetrics.utils.checks import _check_same_shape
-from paddlemetrics.utils.imports import (_MULTIPROCESSING_AVAILABLE,
-                                            _PESQ_AVAILABLE)
+from paddlemetrics.utils.imports import _MULTIPROCESSING_AVAILABLE, _PESQ_AVAILABLE
 
 __doctest_requires__ = {("perceptual_evaluation_speech_quality",): ["pesq"]}
 
@@ -75,35 +74,23 @@ def perceptual_evaluation_speech_quality(
 
     _filter_error_msg = np.vectorize(_issubtype_number)
     if fs not in (8000, 16000):
-        raise ValueError(
-            f"Expected argument `fs` to either be 8000 or 16000 but got {fs}"
-        )
+        raise ValueError(f"Expected argument `fs` to either be 8000 or 16000 but got {fs}")
     if mode not in ("wb", "nb"):
-        raise ValueError(
-            f"Expected argument `mode` to either be 'wb' or 'nb' but got {mode}"
-        )
+        raise ValueError(f"Expected argument `mode` to either be 'wb' or 'nb' but got {mode}")
     _check_same_shape(preds, target)
     if preds.ndim == 1:
-        pesq_val_np = pesq_backend.pesq(
-            fs, target.detach().cpu().numpy(), preds.detach().cpu().numpy(), mode
-        )
+        pesq_val_np = pesq_backend.pesq(fs, target.detach().cpu().numpy(), preds.detach().cpu().numpy(), mode)
         pesq_val = paddle.to_tensor(pesq_val_np)
     else:
         preds_np = preds.reshape([-1, preds.shape[-1]]).detach().cpu().numpy()
         target_np = target.reshape([-1, preds.shape[-1]]).detach().cpu().numpy()
         if _MULTIPROCESSING_AVAILABLE and n_processes != 1:
-            pesq_val_np = pesq_backend.pesq_batch(
-                fs, target_np, preds_np, mode, n_processor=n_processes
-            )
+            pesq_val_np = pesq_backend.pesq_batch(fs, target_np, preds_np, mode, n_processor=n_processes)
             pesq_val_np = np.array(pesq_val_np)
         else:
             pesq_val_np = np.empty(shape=preds_np.shape[0])
             for b in range(preds_np.shape[0]):
-                pesq_val_np[b] = pesq_backend.pesq(
-                    fs, target_np[b, :], preds_np[b, :], mode
-                )
-        pesq_val = paddle.to_tensor(
-            pesq_val_np[_filter_error_msg(pesq_val_np)].astype(np.float32)
-        )
+                pesq_val_np[b] = pesq_backend.pesq(fs, target_np[b, :], preds_np[b, :], mode)
+        pesq_val = paddle.to_tensor(pesq_val_np[_filter_error_msg(pesq_val_np)].astype(np.float32))
         pesq_val = pesq_val.reshape([len(pesq_val)])
     return pesq_val

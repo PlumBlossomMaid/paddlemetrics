@@ -1,4 +1,3 @@
-import sys
 
 from functools import partial
 from itertools import chain
@@ -9,31 +8,21 @@ import paddle
 import pytest
 from numpy import array
 from typing_extensions import Literal
+
 from unittests._helpers import seed_all
 from unittests._helpers.testers import Metric, MetricTester
 from unittests.retrieval._inputs import _input_retrieval_scores as _irs
-from unittests.retrieval._inputs import \
-    _input_retrieval_scores_all_target as _irs_all
-from unittests.retrieval._inputs import \
-    _input_retrieval_scores_empty as _irs_empty
-from unittests.retrieval._inputs import \
-    _input_retrieval_scores_extra as _irs_extra
-from unittests.retrieval._inputs import \
-    _input_retrieval_scores_float_target as _irs_float_tgt
-from unittests.retrieval._inputs import \
-    _input_retrieval_scores_for_adaptive_k as _irs_adpt_k
-from unittests.retrieval._inputs import \
-    _input_retrieval_scores_int_target as _irs_int_tgt
-from unittests.retrieval._inputs import \
-    _input_retrieval_scores_mismatching_sizes as _irs_bad_sz
-from unittests.retrieval._inputs import \
-    _input_retrieval_scores_mismatching_sizes_func as _irs_bad_sz_fn
-from unittests.retrieval._inputs import \
-    _input_retrieval_scores_no_target as _irs_no_tgt
-from unittests.retrieval._inputs import \
-    _input_retrieval_scores_with_ignore_index as _irs_ii
-from unittests.retrieval._inputs import \
-    _input_retrieval_scores_wrong_targets as _irs_bad_tgt
+from unittests.retrieval._inputs import _input_retrieval_scores_all_target as _irs_all
+from unittests.retrieval._inputs import _input_retrieval_scores_empty as _irs_empty
+from unittests.retrieval._inputs import _input_retrieval_scores_extra as _irs_extra
+from unittests.retrieval._inputs import _input_retrieval_scores_float_target as _irs_float_tgt
+from unittests.retrieval._inputs import _input_retrieval_scores_for_adaptive_k as _irs_adpt_k
+from unittests.retrieval._inputs import _input_retrieval_scores_int_target as _irs_int_tgt
+from unittests.retrieval._inputs import _input_retrieval_scores_mismatching_sizes as _irs_bad_sz
+from unittests.retrieval._inputs import _input_retrieval_scores_mismatching_sizes_func as _irs_bad_sz_fn
+from unittests.retrieval._inputs import _input_retrieval_scores_no_target as _irs_no_tgt
+from unittests.retrieval._inputs import _input_retrieval_scores_with_ignore_index as _irs_ii
+from unittests.retrieval._inputs import _input_retrieval_scores_wrong_targets as _irs_bad_tgt
 
 seed_all(42)
 
@@ -48,9 +37,9 @@ def _retrieval_aggregate(
         return values.mean() if dim is None else values.mean(dim=dim)
     if aggregation == "median":
         """Not Support auto convert *.median, please judge whether it is Pytorch API and convert by yourself"""
-def get_group_indexes(
-    indexes: Union[paddle.Tensor, np.ndarray]
-) -> list[Union[paddle.Tensor, np.ndarray]]:
+
+
+def get_group_indexes(indexes: Union[paddle.Tensor, np.ndarray]) -> list[Union[paddle.Tensor, np.ndarray]]:
     """Extract group indexes.
 
     Given an integer :class:`~paddle.Tensor` or `np.ndarray` `indexes`, return a :class:`~paddle.Tensor` or
@@ -68,11 +57,7 @@ def get_group_indexes(
         [tensor([0, 1, 2]), tensor([3, 4, 5, 6])]
 
     """
-    structure, dtype = (
-        (tensor, paddle.long)
-        if isinstance(indexes, paddle.Tensor)
-        else (np.array, np.int64)
-    )
+    structure, dtype = (tensor, paddle.long) if isinstance(indexes, paddle.Tensor) else (np.array, np.int64)
     res = {}
     for i, _id in enumerate(indexes):
         _id = _id.item()
@@ -84,7 +69,7 @@ def get_group_indexes(
 
 
 def _custom_aggregate_fn(val: paddle.Tensor, axis=None) -> paddle.Tensor:
-    return (val**2).mean() if dim is None else (val**2).mean(dim=dim)
+    return (val**2).mean() if axis is None else (val**2).mean(axis=axis)
 
 
 def _compute_sklearn_metric(
@@ -96,7 +81,7 @@ def _compute_sklearn_metric(
     ignore_index: Optional[int] = None,
     reverse: bool = False,
     aggregation: Union[Literal["mean", "median", "min", "max"], Callable] = "mean",
-    **kwargs: Any
+    **kwargs: Any,
 ) -> paddle.Tensor:
     """Compute metric with multiple iterations over every query predictions set."""
     if indexes is None:
@@ -137,18 +122,14 @@ def _compute_sklearn_metric(
     sk_results = np.array(sk_results)
     sk_results[np.isnan(sk_results)] = 0.0
     if len(sk_results) > 0:
-        return _retrieval_aggregate(
-            paddle.from_numpy(sk_results), aggregation=aggregation
-        ).numpy()
+        return _retrieval_aggregate(paddle.from_numpy(sk_results), aggregation=aggregation).numpy()
     return np.array(0.0)
 
 
 def _concat_tests(*tests: tuple[dict]) -> dict:
     """Concat tests composed by a string and a list of arguments."""
     assert len(tests), "`_concat_tests` expects at least an argument"
-    assert all(
-        tests[0]["argnames"] == x["argnames"] for x in tests[1:]
-    ), "the header must be the same for all tests"
+    assert all(tests[0]["argnames"] == x["argnames"] for x in tests[1:]), "the header must be the same for all tests"
     return {
         "argnames": tests[0]["argnames"],
         "argvalues": list(chain.from_iterable(x["argvalues"] for x in tests)),
@@ -517,12 +498,7 @@ class RetrievalMetricTester(MetricTester):
         reverse: bool = False,
     ):
         """Test class implementation of metric."""
-        _ref_metric_adapted = partial(
-            _compute_sklearn_metric,
-            metric=reference_metric,
-            reverse=reverse,
-            **metric_args
-        )
+        _ref_metric_adapted = partial(_compute_sklearn_metric, metric=reference_metric, reverse=reverse, **metric_args)
         super().run_class_metric_test(
             ddp=ddp,
             preds=preds,
@@ -542,15 +518,10 @@ class RetrievalMetricTester(MetricTester):
         reference_metric: Callable,
         metric_args: dict,
         reverse: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ):
         """Test functional implementation of metric."""
-        _ref_metric_adapted = partial(
-            _compute_sklearn_metric,
-            metric=reference_metric,
-            reverse=reverse,
-            **metric_args
-        )
+        _ref_metric_adapted = partial(_compute_sklearn_metric, metric=reference_metric, reverse=reverse, **metric_args)
         super().run_functional_metric_test(
             preds=preds,
             target=target,
@@ -558,7 +529,7 @@ class RetrievalMetricTester(MetricTester):
             reference_metric=_ref_metric_adapted,
             metric_args=metric_args,
             fragment_kwargs=True,
-            **kwargs
+            **kwargs,
         )
 
     def run_precision_test_cpu(
@@ -571,9 +542,7 @@ class RetrievalMetricTester(MetricTester):
     ):
         """Test dtype support of the metric on CPU."""
 
-        def metric_functional_ignore_indexes(
-            preds, target, indexes, empty_target_action
-        ):
+        def metric_functional_ignore_indexes(preds, target, indexes, empty_target_action):
             return metric_functional(preds, target)
 
         super().run_precision_test_cpu(
@@ -597,9 +566,7 @@ class RetrievalMetricTester(MetricTester):
         if not paddle.cuda.is_available():
             pytest.skip("Test requires GPU")
 
-        def metric_functional_ignore_indexes(
-            preds, target, indexes, empty_target_action
-        ):
+        def metric_functional_ignore_indexes(preds, target, indexes, empty_target_action):
             return metric_functional(preds, target)
 
         super().run_precision_test_gpu(
@@ -631,7 +598,7 @@ class RetrievalMetricTester(MetricTester):
             message=message,
             metric_args=metric_args,
             exception_type=exception_type,
-            **kwargs_update
+            **kwargs_update,
         )
 
     @staticmethod

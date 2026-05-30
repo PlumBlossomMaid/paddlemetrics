@@ -2,15 +2,15 @@ from functools import partial
 from typing import NamedTuple
 
 import paddle
-from paddle import Tensor
 import pytest
 import sewar
-from unittests import BATCH_SIZE
-from unittests._helpers.testers import MetricTester
+from paddle import Tensor
 
 from paddlemetrics.functional import relative_average_spectral_error
 from paddlemetrics.functional.image.utils import _uniform_filter
 from paddlemetrics.image import RelativeAverageSpectralError
+from unittests import BATCH_SIZE
+from unittests._helpers.testers import MetricTester
 
 
 class _InputWindowSized(NamedTuple):
@@ -28,9 +28,7 @@ for size, channel, window_size, dtype in [
 ]:
     preds = paddle.rand(2, BATCH_SIZE, channel, size, size, dtype=dtype)
     target = paddle.rand(2, BATCH_SIZE, channel, size, size, dtype=dtype)
-    _inputs.append(
-        _InputWindowSized(preds=preds, target=target, window_size=window_size)
-    )
+    _inputs.append(_InputWindowSized(preds=preds, target=target, window_size=window_size))
 
 
 def _reference_sewar_rase(preds, target, window_size):
@@ -40,9 +38,7 @@ def _reference_sewar_rase(preds, target, window_size):
     adjustments.
 
     """
-    target_sum = paddle.sum(
-        _uniform_filter(target, window_size) / window_size**2, axis=0
-    )
+    target_sum = paddle.sum(_uniform_filter(target, window_size) / window_size**2, axis=0)
     target_mean = target_sum / target.shape[0]
     target_mean = target_mean.mean(0)
     preds = preds.permute(0, 2, 3, 1).numpy()

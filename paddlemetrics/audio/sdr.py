@@ -5,8 +5,10 @@ import paddle
 from paddle import Tensor
 
 from paddlemetrics.functional.audio.sdr import (
-    scale_invariant_signal_distortion_ratio, signal_distortion_ratio,
-    source_aggregated_signal_distortion_ratio)
+    scale_invariant_signal_distortion_ratio,
+    signal_distortion_ratio,
+    source_aggregated_signal_distortion_ratio,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -209,9 +211,7 @@ class ScaleInvariantSignalDistortionRatio(Metric):
 
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update state with predictions and targets."""
-        si_sdr_batch = scale_invariant_signal_distortion_ratio(
-            preds=preds, target=target, zero_mean=self.zero_mean
-        )
+        si_sdr_batch = scale_invariant_signal_distortion_ratio(preds=preds, target=target, zero_mean=self.zero_mean)
         self.sum_si_sdr += si_sdr_batch.sum()
         self.total += si_sdr_batch.size
 
@@ -318,28 +318,20 @@ class SourceAggregatedSignalDistortionRatio(Metric):
     plot_lower_bound: Optional[float] = None
     plot_upper_bound: Optional[float] = None
 
-    def __init__(
-        self, scale_invariant: bool = True, zero_mean: bool = False, **kwargs: Any
-    ) -> None:
+    def __init__(self, scale_invariant: bool = True, zero_mean: bool = False, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         if not isinstance(scale_invariant, bool):
-            raise ValueError(
-                f"Expected argument `scale_invarint` to be a bool, but got {scale_invariant}"
-            )
+            raise ValueError(f"Expected argument `scale_invarint` to be a bool, but got {scale_invariant}")
         self.scale_invariant = scale_invariant
         if not isinstance(zero_mean, bool):
-            raise ValueError(
-                f"Expected argument `zero_mean` to be a bool, but got {zero_mean}"
-            )
+            raise ValueError(f"Expected argument `zero_mean` to be a bool, but got {zero_mean}")
         self.zero_mean = zero_mean
         self.add_state("msum", default=paddle.tensor(0.0), dist_reduce_fx="sum")
         self.add_state("mnum", default=paddle.tensor(0), dist_reduce_fx="sum")
 
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update state with predictions and targets."""
-        mbatch = source_aggregated_signal_distortion_ratio(
-            preds, target, self.scale_invariant, self.zero_mean
-        )
+        mbatch = source_aggregated_signal_distortion_ratio(preds, target, self.scale_invariant, self.zero_mean)
         self.msum += mbatch.sum()
         self.mnum += mbatch.size
 

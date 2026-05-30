@@ -6,14 +6,17 @@ from typing_extensions import Literal
 
 from paddlemetrics.classification.base import _ClassificationTaskWrapper
 from paddlemetrics.classification.precision_recall_curve import (
-    BinaryPrecisionRecallCurve, MulticlassPrecisionRecallCurve,
-    MultilabelPrecisionRecallCurve)
+    BinaryPrecisionRecallCurve,
+    MulticlassPrecisionRecallCurve,
+    MultilabelPrecisionRecallCurve,
+)
 from paddlemetrics.functional.classification.average_precision import (
     _binary_average_precision_compute,
     _multiclass_average_precision_arg_validation,
     _multiclass_average_precision_compute,
     _multilabel_average_precision_arg_validation,
-    _multilabel_average_precision_compute)
+    _multilabel_average_precision_compute,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.data import dim_zero_cat
 from paddlemetrics.utils.enums import ClassificationTask
@@ -99,11 +102,7 @@ class BinaryAveragePrecision(BinaryPrecisionRecallCurve):
 
     def compute(self) -> paddle.Tensor:
         """Compute metric."""
-        state = (
-            (dim_zero_cat(self.preds), dim_zero_cat(self.target))
-            if self.thresholds is None
-            else self.confmat
-        )
+        state = (dim_zero_cat(self.preds), dim_zero_cat(self.target)) if self.thresholds is None else self.confmat
         return _binary_average_precision_compute(state, self.thresholds)
 
     def plot(
@@ -259,22 +258,14 @@ class MulticlassAveragePrecision(MulticlassPrecisionRecallCurve):
             **kwargs,
         )
         if validate_args:
-            _multiclass_average_precision_arg_validation(
-                num_classes, average, thresholds, ignore_index
-            )
+            _multiclass_average_precision_arg_validation(num_classes, average, thresholds, ignore_index)
         self.average = average
         self.validate_args = validate_args
 
     def compute(self) -> paddle.Tensor:
         """Compute metric."""
-        state = (
-            (dim_zero_cat(self.preds), dim_zero_cat(self.target))
-            if self.thresholds is None
-            else self.confmat
-        )
-        return _multiclass_average_precision_compute(
-            state, self.num_classes, self.average, self.thresholds
-        )
+        state = (dim_zero_cat(self.preds), dim_zero_cat(self.target)) if self.thresholds is None else self.confmat
+        return _multiclass_average_precision_compute(state, self.num_classes, self.average, self.thresholds)
 
     def plot(
         self,
@@ -428,19 +419,13 @@ class MultilabelAveragePrecision(MultilabelPrecisionRecallCurve):
             **kwargs,
         )
         if validate_args:
-            _multilabel_average_precision_arg_validation(
-                num_labels, average, thresholds, ignore_index
-            )
+            _multilabel_average_precision_arg_validation(num_labels, average, thresholds, ignore_index)
         self.average = average
         self.validate_args = validate_args
 
     def compute(self) -> paddle.Tensor:
         """Compute metric."""
-        state = (
-            (dim_zero_cat(self.preds), dim_zero_cat(self.target))
-            if self.thresholds is None
-            else self.confmat
-        )
+        state = (dim_zero_cat(self.preds), dim_zero_cat(self.target)) if self.thresholds is None else self.confmat
         return _multilabel_average_precision_compute(
             state, self.num_labels, self.average, self.thresholds, self.ignore_index
         )
@@ -552,14 +537,10 @@ class AveragePrecision(_ClassificationTaskWrapper):
             return BinaryAveragePrecision(**kwargs)
         if task == ClassificationTask.MULTICLASS:
             if not isinstance(num_classes, int):
-                raise ValueError(
-                    f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-                )
+                raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
             return MulticlassAveragePrecision(num_classes, average, **kwargs)
         if task == ClassificationTask.MULTILABEL:
             if not isinstance(num_labels, int):
-                raise ValueError(
-                    f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-                )
+                raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
             return MultilabelAveragePrecision(num_labels, average, **kwargs)
         raise ValueError(f"Task {task} not supported!")

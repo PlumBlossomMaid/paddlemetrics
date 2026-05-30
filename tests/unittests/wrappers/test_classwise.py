@@ -2,8 +2,7 @@ import paddle
 import pytest
 
 from paddlemetrics import MetricCollection
-from paddlemetrics.classification import (MulticlassAccuracy, MulticlassF1Score,
-                                         MulticlassRecall)
+from paddlemetrics.classification import MulticlassAccuracy, MulticlassF1Score, MulticlassRecall
 from paddlemetrics.clustering import CalinskiHarabaszScore
 from paddlemetrics.wrappers import ClasswiseWrapper
 
@@ -20,9 +19,7 @@ def test_raises_error_on_wrong_input():
         match="Expected argument `labels` to either be `None` or a list of strings.*",
     ):
         ClasswiseWrapper(MulticlassAccuracy(num_classes=3), "hest")
-    with pytest.raises(
-        ValueError, match="Expected argument `prefix` to either be `None` or a string.*"
-    ):
+    with pytest.raises(ValueError, match="Expected argument `prefix` to either be `None` or a string.*"):
         ClasswiseWrapper(MulticlassAccuracy(num_classes=3), prefix=1)
     with pytest.raises(
         ValueError,
@@ -51,9 +48,7 @@ def test_output_with_labels():
     """Test that wrapper works with label input."""
     labels = ["horse", "fish", "cat"]
     base = MulticlassAccuracy(num_classes=3, average=None)
-    metric = ClasswiseWrapper(
-        MulticlassAccuracy(num_classes=3, average=None), labels=labels
-    )
+    metric = ClasswiseWrapper(MulticlassAccuracy(num_classes=3, average=None), labels=labels)
     for _ in range(2):
         preds = paddle.randn(20, 3).softmax(dim=-1)
         target = paddle.randint(low=0, high=3, shape=(20,))
@@ -76,9 +71,7 @@ def test_output_with_labels():
 def test_output_with_prefix():
     """Test that wrapper works with prefix."""
     base = MulticlassAccuracy(num_classes=3, average=None)
-    metric = ClasswiseWrapper(
-        MulticlassAccuracy(num_classes=3, average=None), prefix="pre_"
-    )
+    metric = ClasswiseWrapper(MulticlassAccuracy(num_classes=3, average=None), prefix="pre_")
     for _ in range(2):
         preds = paddle.randn(20, 3).softmax(dim=-1)
         target = paddle.randint(low=0, high=3, shape=(20,))
@@ -94,9 +87,7 @@ def test_output_with_prefix():
 def test_output_with_postfix():
     """Test that wrapper works with postfix."""
     base = MulticlassAccuracy(num_classes=3, average=None)
-    metric = ClasswiseWrapper(
-        MulticlassAccuracy(num_classes=3, average=None), postfix="_post"
-    )
+    metric = ClasswiseWrapper(MulticlassAccuracy(num_classes=3, average=None), postfix="_post")
     for _ in range(2):
         preds = paddle.randn(20, 3).softmax(dim=-1)
         target = paddle.randint(low=0, high=3, shape=(20,))
@@ -116,12 +107,8 @@ def test_using_metriccollection(prefix, postfix):
     labels = ["horse", "fish", "cat"]
     metric = MetricCollection(
         {
-            "accuracy": ClasswiseWrapper(
-                MulticlassAccuracy(num_classes=3, average=None), labels=labels
-            ),
-            "recall": ClasswiseWrapper(
-                MulticlassRecall(num_classes=3, average=None), labels=labels
-            ),
+            "accuracy": ClasswiseWrapper(MulticlassAccuracy(num_classes=3, average=None), labels=labels),
+            "recall": ClasswiseWrapper(MulticlassRecall(num_classes=3, average=None), labels=labels),
         },
         prefix=prefix,
         postfix=postfix,
@@ -174,9 +161,7 @@ def test_filter_kwargs_and_metriccollection():
     """Test that kwargs are correctly filtered when using metric collection."""
     metric = MetricCollection(
         {
-            "accuracy": ClasswiseWrapper(
-                MulticlassAccuracy(num_classes=3, average=None)
-            ),
+            "accuracy": ClasswiseWrapper(MulticlassAccuracy(num_classes=3, average=None)),
             "cluster": CalinskiHarabaszScore(),
         }
     )

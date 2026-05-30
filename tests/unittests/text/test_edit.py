@@ -2,11 +2,11 @@ from functools import partial
 
 import pytest
 from nltk.metrics.distance import edit_distance as nltk_edit_distance
-from unittests.text._helpers import TextTester
-from unittests.text._inputs import _inputs_single_reference
 
 from paddlemetrics.functional.text.edit import edit_distance
 from paddlemetrics.text.edit import EditDistance
+from unittests.text._helpers import TextTester
+from unittests.text._inputs import _inputs_single_reference
 
 
 @pytest.mark.parametrize(
@@ -48,10 +48,7 @@ def test_for_correctness(left: str, right: str, substitution_cost: int, expected
 
 
 def _reference_nltk_edit_dist(preds, target, substitution_cost=1, reduction="mean"):
-    costs = [
-        nltk_edit_distance(p, t, substitution_cost=substitution_cost)
-        for p, t in zip(preds, target)
-    ]
+    costs = [nltk_edit_distance(p, t, substitution_cost=substitution_cost) for p, t in zip(preds, target)]
     if reduction == "mean":
         return sum(costs) / len(costs)
     if reduction == "sum":
@@ -72,9 +69,7 @@ class TestEditDistance(TextTester):
     def test_edit_class(self, preds, targets, ddp, substitution_cost, reduction):
         """Test class implementation of metric."""
         if ddp and reduction == "none":
-            pytest.skip(
-                "DDP not available for reduction='none' because order of outputs is not guaranteed."
-            )
+            pytest.skip("DDP not available for reduction='none' because order of outputs is not guaranteed.")
         self.run_class_metric_test(
             ddp=ddp,
             preds=preds,
@@ -137,11 +132,7 @@ def test_edit_raise_errors():
         match="Expected argument `substitution_cost` to be a positive integer.*",
     ):
         EditDistance(substitution_cost=2.0)
-    with pytest.raises(
-        ValueError, match="Expected argument `reduction` to be one of.*"
-    ):
+    with pytest.raises(ValueError, match="Expected argument `reduction` to be one of.*"):
         EditDistance(reduction=2.0)
-    with pytest.raises(
-        ValueError, match="Expected argument `preds` and `target` to have same length.*"
-    ):
+    with pytest.raises(ValueError, match="Expected argument `preds` and `target` to have same length.*"):
         edit_distance(["abc"], ["abc", "def"])

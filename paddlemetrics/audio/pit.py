@@ -73,7 +73,7 @@ class PermutationInvariantTraining(Metric):
         metric_func: Callable,
         mode: Literal["speaker-wise", "permutation-wise"] = "speaker-wise",
         eval_func: Literal["max", "min"] = "max",
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         base_kwargs: dict[str, Any] = {
             "dist_sync_on_step": kwargs.pop("dist_sync_on_step", False),
@@ -85,9 +85,7 @@ class PermutationInvariantTraining(Metric):
         self.mode = mode
         self.eval_func = eval_func
         self.kwargs = kwargs
-        self.add_state(
-            "sum_pit_metric", default=paddle.tensor(0.0), dist_reduce_fx="sum"
-        )
+        self.add_state("sum_pit_metric", default=paddle.tensor(0.0), dist_reduce_fx="sum")
         self.add_state("total", default=paddle.tensor(0), dist_reduce_fx="sum")
 
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:

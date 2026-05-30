@@ -1,7 +1,6 @@
 from typing import Union
 
 import paddle
-from paddle import Tensor
 
 from paddlemetrics.utils.checks import _check_same_shape
 
@@ -21,9 +20,7 @@ def _symmetric_mean_absolute_percentage_error_update(
     """
     _check_same_shape(preds, target)
     abs_diff = paddle.abs(preds - target)
-    abs_per_error = abs_diff / paddle.clamp(
-        paddle.abs(target) + paddle.abs(preds), min=epsilon
-    )
+    abs_per_error = abs_diff / paddle.clamp(paddle.abs(target) + paddle.abs(preds), min=epsilon)
     sum_abs_per_error = 2 * paddle.sum(abs_per_error)
     num_obs = target.size
     return sum_abs_per_error, num_obs
@@ -50,9 +47,7 @@ def _symmetric_mean_absolute_percentage_error_compute(
     return sum_abs_per_error / num_obs
 
 
-def symmetric_mean_absolute_percentage_error(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> paddle.Tensor:
+def symmetric_mean_absolute_percentage_error(preds: paddle.Tensor, target: paddle.Tensor) -> paddle.Tensor:
     """Compute symmetric mean absolute percentage error (SMAPE_).
 
     .. math:: \\text{SMAPE} = \\frac{2}{n}\\sum_1^n\\frac{|   y_i - \\hat{y_i} |}{max(| y_i | + | \\hat{y_i} |, \\epsilon)}
@@ -74,7 +69,5 @@ def symmetric_mean_absolute_percentage_error(
         tensor(0.2290)
 
     """
-    sum_abs_per_error, num_obs = _symmetric_mean_absolute_percentage_error_update(
-        preds, target
-    )
+    sum_abs_per_error, num_obs = _symmetric_mean_absolute_percentage_error_update(preds, target)
     return _symmetric_mean_absolute_percentage_error_compute(sum_abs_per_error, num_obs)

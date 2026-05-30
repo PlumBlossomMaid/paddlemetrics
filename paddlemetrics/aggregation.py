@@ -413,7 +413,7 @@ class RunningMean(Metric):
             value = paddle.to_tensor(value, dtype=paddle.get_default_dtype())
         self.buffer.append(value)
         if len(self.buffer) > self.window:
-            self.buffer = self.buffer[-self.window:]
+            self.buffer = self.buffer[-self.window :]
 
     def compute(self) -> paddle.Tensor:
         """Compute the running mean."""
@@ -502,7 +502,7 @@ class RunningSum(Metric):
             value = paddle.to_tensor(value, dtype=paddle.get_default_dtype())
         self.buffer.append(value)
         if len(self.buffer) > self.window:
-            self.buffer = self.buffer[-self.window:]
+            self.buffer = self.buffer[-self.window :]
 
     def compute(self) -> paddle.Tensor:
         """Compute the running sum."""

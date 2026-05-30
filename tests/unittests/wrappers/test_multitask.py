@@ -2,14 +2,15 @@ import re
 
 import paddle
 import pytest
-from unittests import BATCH_SIZE, NUM_BATCHES
-from unittests._helpers import seed_all
 
 from paddlemetrics import MetricCollection
 from paddlemetrics.classification import BinaryAccuracy, BinaryF1Score
 from paddlemetrics.regression import MeanAbsoluteError, MeanSquaredError
-from paddlemetrics.utils.imports import (_MATPLOTLIB_AVAILABLE,
-                                            True)
+from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
+from unittests import BATCH_SIZE, NUM_BATCHES
+from unittests._helpers import seed_all
+
+_PLOTTING_AVAILABLE = True
 from paddlemetrics.wrappers import MultitaskWrapper
 
 seed_all(42)
@@ -29,18 +30,14 @@ _multitask_targets = {
 }
 
 
-def _dict_results_same_as_individual_results(
-    classification_results, regression_results, multitask_results
-):
+def _dict_results_same_as_individual_results(classification_results, regression_results, multitask_results):
     return (
         multitask_results["Classification"] == classification_results
         and multitask_results["Regression"] == regression_results
     )
 
 
-def _multitask_same_as_individual_tasks(
-    classification_metric, regression_metric, multitask_metrics
-):
+def _multitask_same_as_individual_tasks(classification_metric, regression_metric, multitask_metrics):
     """Update classification and regression metrics individually and together using a multitask wrapper.
 
     Return True if the results are the same.
@@ -52,9 +49,7 @@ def _multitask_same_as_individual_tasks(
     classification_results = classification_metric.compute()
     regression_results = regression_metric.compute()
     multitask_results = multitask_metrics.compute()
-    return _dict_results_same_as_individual_results(
-        classification_results, regression_results, multitask_results
-    )
+    return _dict_results_same_as_individual_results(classification_results, regression_results, multitask_results)
 
 
 def test_errors_on_wrong_input():
@@ -69,9 +64,7 @@ def test_errors_on_wrong_input():
 
 def test_error_on_wrong_keys():
     """Check that ValueError is raised when the sets of keys of the task metrics, preds, and targets do not match."""
-    multitask_metrics = MultitaskWrapper(
-        {"Classification": BinaryAccuracy(), "Regression": MeanSquaredError()}
-    )
+    multitask_metrics = MultitaskWrapper({"Classification": BinaryAccuracy(), "Regression": MeanSquaredError()})
     wrong_key_preds = {"Classification": _classification_preds}
     wrong_key_targets = {"Classification": _classification_target}
     wrong_key_multitask_metrics = MultitaskWrapper({"Classification": BinaryAccuracy()})
@@ -103,12 +96,8 @@ def test_basic_multitask():
     """Check that wrapping some Metrics in a MultitaskWrapper is the same as computing them individually."""
     classification_metric = BinaryAccuracy()
     regression_metric = MeanSquaredError()
-    multitask_metrics = MultitaskWrapper(
-        {"Classification": BinaryAccuracy(), "Regression": MeanSquaredError()}
-    )
-    assert _multitask_same_as_individual_tasks(
-        classification_metric, regression_metric, multitask_metrics
-    )
+    multitask_metrics = MultitaskWrapper({"Classification": BinaryAccuracy(), "Regression": MeanSquaredError()})
+    assert _multitask_same_as_individual_tasks(classification_metric, regression_metric, multitask_metrics)
 
 
 def test_metric_collection_multitask():
@@ -121,26 +110,18 @@ def test_metric_collection_multitask():
             "Regression": MetricCollection([MeanSquaredError(), MeanAbsoluteError()]),
         }
     )
-    assert _multitask_same_as_individual_tasks(
-        classification_metric, regression_metric, multitask_metrics
-    )
+    assert _multitask_same_as_individual_tasks(classification_metric, regression_metric, multitask_metrics)
 
 
 def test_forward():
     """Check that the forward method works as expected."""
     classification_metric = BinaryAccuracy()
     regression_metric = MeanSquaredError()
-    multitask_metrics = MultitaskWrapper(
-        {"Classification": BinaryAccuracy(), "Regression": MeanSquaredError()}
-    )
-    classification_results = classification_metric(
-        _classification_preds, _classification_target
-    )
+    multitask_metrics = MultitaskWrapper({"Classification": BinaryAccuracy(), "Regression": MeanSquaredError()})
+    classification_results = classification_metric(_classification_preds, _classification_target)
     regression_results = regression_metric(_regression_preds, _regression_target)
     multitask_results = multitask_metrics(_multitask_preds, _multitask_targets)
-    assert _dict_results_same_as_individual_results(
-        classification_results, regression_results, multitask_results
-    )
+    assert _dict_results_same_as_individual_results(classification_results, regression_results, multitask_results)
 
 
 def test_nested_multitask_wrapper():
@@ -151,9 +132,7 @@ def test_nested_multitask_wrapper():
     multitask_metrics = MultitaskWrapper(
         {
             "Classification": BinaryAccuracy(),
-            "Regression": MultitaskWrapper(
-                {"Position": MeanSquaredError(), "Size": MeanAbsoluteError()}
-            ),
+            "Regression": MultitaskWrapper({"Position": MeanSquaredError(), "Size": MeanAbsoluteError()}),
         }
     )
     multitask_preds = {
@@ -176,9 +155,7 @@ def test_nested_multitask_wrapper():
         "Size": regression_size_results,
     }
     multitask_results = multitask_metrics.compute()
-    assert _dict_results_same_as_individual_results(
-        classification_results, regression_results, multitask_results
-    )
+    assert _dict_results_same_as_individual_results(classification_results, regression_results, multitask_results)
 
 
 @pytest.mark.parametrize("method", ["keys", "items", "values"])
@@ -253,9 +230,7 @@ def test_clone_with_prefix_and_postfix():
         "prefix_Classification_postfix",
         "prefix_Regression_postfix",
     }
-    cloned_metrics = multitask_metrics.clone(
-        prefix="new_prefix_", postfix="_new_postfix"
-    )
+    cloned_metrics = multitask_metrics.clone(prefix="new_prefix_", postfix="_new_postfix")
     assert set(cloned_metrics.keys()) == {
         "new_prefix_Classification_new_postfix",
         "new_prefix_Regression_new_postfix",
@@ -280,9 +255,7 @@ def test_check_arg():
 
 def test_clone_edge_cases():
     """Test edge cases for the clone method."""
-    metrics = MultitaskWrapper(
-        {"Classification": BinaryAccuracy(), "Regression": MeanSquaredError()}
-    )
+    metrics = MultitaskWrapper({"Classification": BinaryAccuracy(), "Regression": MeanSquaredError()})
     with pytest.raises(ValueError, match="Expected input `prefix` to be a string"):
         metrics.clone(prefix=123)
     with pytest.raises(ValueError, match="Expected input `prefix` to be a string"):
@@ -297,9 +270,7 @@ def test_plot():
     """Test the plot method of MultitaskWrapper."""
     import matplotlib.pyplot as plt
 
-    metrics = MultitaskWrapper(
-        {"Classification": BinaryAccuracy(), "Regression": MeanSquaredError()}
-    )
+    metrics = MultitaskWrapper({"Classification": BinaryAccuracy(), "Regression": MeanSquaredError()})
     metrics.update(_multitask_preds, _multitask_targets)
     value = metrics.compute()
     fig_axs = metrics.plot(value)

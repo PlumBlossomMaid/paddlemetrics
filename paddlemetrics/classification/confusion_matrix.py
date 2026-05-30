@@ -6,23 +6,26 @@ from typing_extensions import Literal
 
 from paddlemetrics.classification.base import _ClassificationTaskWrapper
 from paddlemetrics.functional.classification.confusion_matrix import (
-    _binary_confusion_matrix_arg_validation, _binary_confusion_matrix_compute,
+    _binary_confusion_matrix_arg_validation,
+    _binary_confusion_matrix_compute,
     _binary_confusion_matrix_format,
     _binary_confusion_matrix_tensor_validation,
     _binary_confusion_matrix_update,
     _multiclass_confusion_matrix_arg_validation,
-    _multiclass_confusion_matrix_compute, _multiclass_confusion_matrix_format,
+    _multiclass_confusion_matrix_compute,
+    _multiclass_confusion_matrix_format,
     _multiclass_confusion_matrix_tensor_validation,
     _multiclass_confusion_matrix_update,
     _multilabel_confusion_matrix_arg_validation,
-    _multilabel_confusion_matrix_compute, _multilabel_confusion_matrix_format,
+    _multilabel_confusion_matrix_compute,
+    _multilabel_confusion_matrix_format,
     _multilabel_confusion_matrix_tensor_validation,
-    _multilabel_confusion_matrix_update)
+    _multilabel_confusion_matrix_update,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.enums import ClassificationTask
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
-from paddlemetrics.utils.plot import (_AX_TYPE, _CMAP_TYPE, _PLOT_OUT_TYPE,
-                                         plot_confusion_matrix)
+from paddlemetrics.utils.plot import _AX_TYPE, _CMAP_TYPE, _PLOT_OUT_TYPE, plot_confusion_matrix
 
 if not _MATPLOTLIB_AVAILABLE:
     __doctest_skip__ = [
@@ -113,17 +116,13 @@ class BinaryConfusionMatrix(Metric):
         self.ignore_index = ignore_index
         self.normalize = normalize
         self.validate_args = validate_args
-        self.add_state(
-            "confmat", paddle.zeros(2, 2, dtype=paddle.long), dist_reduce_fx="sum"
-        )
+        self.add_state("confmat", paddle.zeros(2, 2, dtype=paddle.long), dist_reduce_fx="sum")
 
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update state with predictions and targets."""
         if self.validate_args:
             _binary_confusion_matrix_tensor_validation(preds, target, self.ignore_index)
-        preds, target = _binary_confusion_matrix_format(
-            preds, target, self.threshold, self.ignore_index
-        )
+        preds, target = _binary_confusion_matrix_format(preds, target, self.threshold, self.ignore_index)
         confmat = _binary_confusion_matrix_update(preds, target)
         self.confmat += confmat
 
@@ -170,9 +169,7 @@ class BinaryConfusionMatrix(Metric):
         val = val if val is not None else self.compute()
         if not isinstance(val, paddle.Tensor):
             raise TypeError(f"Expected val to be a single tensor but got {val}")
-        fig, ax = plot_confusion_matrix(
-            val, ax=ax, add_text=add_text, labels=labels, cmap=cmap
-        )
+        fig, ax = plot_confusion_matrix(val, ax=ax, add_text=add_text, labels=labels, cmap=cmap)
         return fig, ax
 
 
@@ -256,9 +253,7 @@ class MulticlassConfusionMatrix(Metric):
     ) -> None:
         super().__init__(**kwargs)
         if validate_args:
-            _multiclass_confusion_matrix_arg_validation(
-                num_classes, ignore_index, normalize
-            )
+            _multiclass_confusion_matrix_arg_validation(num_classes, ignore_index, normalize)
         self.num_classes = num_classes
         self.ignore_index = ignore_index
         self.normalize = normalize
@@ -272,12 +267,8 @@ class MulticlassConfusionMatrix(Metric):
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update state with predictions and targets."""
         if self.validate_args:
-            _multiclass_confusion_matrix_tensor_validation(
-                preds, target, self.num_classes, self.ignore_index
-            )
-        preds, target = _multiclass_confusion_matrix_format(
-            preds, target, self.ignore_index
-        )
+            _multiclass_confusion_matrix_tensor_validation(preds, target, self.num_classes, self.ignore_index)
+        preds, target = _multiclass_confusion_matrix_format(preds, target, self.ignore_index)
         confmat = _multiclass_confusion_matrix_update(preds, target, self.num_classes)
         self.confmat += confmat
 
@@ -324,9 +315,7 @@ class MulticlassConfusionMatrix(Metric):
         val = val if val is not None else self.compute()
         if not isinstance(val, paddle.Tensor):
             raise TypeError(f"Expected val to be a single tensor but got {val}")
-        fig, ax = plot_confusion_matrix(
-            val, ax=ax, add_text=add_text, labels=labels, cmap=cmap
-        )
+        fig, ax = plot_confusion_matrix(val, ax=ax, add_text=add_text, labels=labels, cmap=cmap)
         return fig, ax
 
 
@@ -410,9 +399,7 @@ class MultilabelConfusionMatrix(Metric):
     ) -> None:
         super().__init__(**kwargs)
         if validate_args:
-            _multilabel_confusion_matrix_arg_validation(
-                num_labels, threshold, ignore_index, normalize
-            )
+            _multilabel_confusion_matrix_arg_validation(num_labels, threshold, ignore_index, normalize)
         self.num_labels = num_labels
         self.threshold = threshold
         self.ignore_index = ignore_index
@@ -427,9 +414,7 @@ class MultilabelConfusionMatrix(Metric):
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update state with predictions and targets."""
         if self.validate_args:
-            _multilabel_confusion_matrix_tensor_validation(
-                preds, target, self.num_labels, self.ignore_index
-            )
+            _multilabel_confusion_matrix_tensor_validation(preds, target, self.num_labels, self.ignore_index)
         preds, target = _multilabel_confusion_matrix_format(
             preds, target, self.num_labels, self.threshold, self.ignore_index
         )
@@ -479,9 +464,7 @@ class MultilabelConfusionMatrix(Metric):
         val = val if val is not None else self.compute()
         if not isinstance(val, paddle.Tensor):
             raise TypeError(f"Expected val to be a single tensor but got {val}")
-        fig, ax = plot_confusion_matrix(
-            val, ax=ax, add_text=add_text, labels=labels, cmap=cmap
-        )
+        fig, ax = plot_confusion_matrix(val, ax=ax, add_text=add_text, labels=labels, cmap=cmap)
         return fig, ax
 
 
@@ -546,14 +529,10 @@ class ConfusionMatrix(_ClassificationTaskWrapper):
             return BinaryConfusionMatrix(threshold, **kwargs)
         if task == ClassificationTask.MULTICLASS:
             if not isinstance(num_classes, int):
-                raise ValueError(
-                    f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`"
-                )
+                raise ValueError(f"`num_classes` is expected to be `int` but `{type(num_classes)} was passed.`")
             return MulticlassConfusionMatrix(num_classes, **kwargs)
         if task == ClassificationTask.MULTILABEL:
             if not isinstance(num_labels, int):
-                raise ValueError(
-                    f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`"
-                )
+                raise ValueError(f"`num_labels` is expected to be `int` but `{type(num_labels)} was passed.`")
             return MultilabelConfusionMatrix(num_labels, threshold, **kwargs)
         raise ValueError(f"Task {task} not supported!")

@@ -65,9 +65,7 @@ class FowlkesMallowsIndex(Metric):
 
     def compute(self) -> paddle.Tensor:
         """Compute Fowlkes-Mallows index over state."""
-        return fowlkes_mallows_index(
-            dim_zero_cat(self.preds), dim_zero_cat(self.target)
-        )
+        return fowlkes_mallows_index(dim_zero_cat(self.preds), dim_zero_cat(self.target))
 
     def plot(
         self,

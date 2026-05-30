@@ -4,18 +4,17 @@ from typing import Any, Optional, Union
 import paddle
 from paddle import Tensor
 
-from paddlemetrics.functional.audio.dnsmos import \
-    deep_noise_suppression_mean_opinion_score
+from paddlemetrics.functional.audio.dnsmos import deep_noise_suppression_mean_opinion_score
 from paddlemetrics.metric import Metric
-from paddlemetrics.utils.imports import (_LIBROSA_AVAILABLE,
-                                            _MATPLOTLIB_AVAILABLE,
-                                            _ONNXRUNTIME_AVAILABLE,
-                                            _REQUESTS_AVAILABLE)
+from paddlemetrics.utils.imports import (
+    _LIBROSA_AVAILABLE,
+    _MATPLOTLIB_AVAILABLE,
+    _ONNXRUNTIME_AVAILABLE,
+    _REQUESTS_AVAILABLE,
+)
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
 
-__doctest_requires__ = {
-    "DeepNoiseSuppressionMeanOpinionScore": ["requests", "librosa", "onnxruntime"]
-}
+__doctest_requires__ = {"DeepNoiseSuppressionMeanOpinionScore": ["requests", "librosa", "onnxruntime"]}
 if not _MATPLOTLIB_AVAILABLE:
     __doctest_skip__ = ["DeepNoiseSuppressionMeanOpinionScore.plot"]
 
@@ -91,14 +90,10 @@ class DeepNoiseSuppressionMeanOpinionScore(Metric):
         device: Optional[str] = None,
         num_threads: Optional[int] = None,
         cache_sessions: bool = True,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
-        if (
-            not _LIBROSA_AVAILABLE
-            or not _ONNXRUNTIME_AVAILABLE
-            or not _REQUESTS_AVAILABLE
-        ):
+        if not _LIBROSA_AVAILABLE or not _ONNXRUNTIME_AVAILABLE or not _REQUESTS_AVAILABLE:
             raise ModuleNotFoundError(
                 "DNSMOS metric requires that librosa, onnxruntime and requests are installed. Install as `pip install librosa onnxruntime-gpu requests`."
             )

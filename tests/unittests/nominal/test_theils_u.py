@@ -3,25 +3,21 @@ from functools import partial
 
 import paddle
 import pytest
-from unittests import BATCH_SIZE, NUM_BATCHES, _Input
-from unittests._helpers.testers import MetricTester
 
 from paddlemetrics.functional.nominal.theils_u import theils_u, theils_u_matrix
 from paddlemetrics.nominal import TheilsU
+from unittests import BATCH_SIZE, NUM_BATCHES, _Input
+from unittests._helpers.testers import MetricTester
 
 NUM_CLASSES = 4
 _input_default = _Input(
     preds=paddle.randint(low=0, high=NUM_CLASSES, shape=(NUM_BATCHES, BATCH_SIZE)),
     target=paddle.randint(low=0, high=NUM_CLASSES, shape=(NUM_BATCHES, BATCH_SIZE)),
 )
-_preds = paddle.randint(
-    low=0, high=NUM_CLASSES, shape=(NUM_BATCHES, BATCH_SIZE), dtype=paddle.float32
-)
+_preds = paddle.randint(low=0, high=NUM_CLASSES, shape=(NUM_BATCHES, BATCH_SIZE)).cast(paddle.float32)
 _preds[0, 0] = float("nan")
 _preds[-1, -1] = float("nan")
-_target = paddle.randint(
-    low=0, high=NUM_CLASSES, shape=(NUM_BATCHES, BATCH_SIZE), dtype=paddle.float32
-)
+_target = paddle.randint(low=0, high=NUM_CLASSES, shape=(NUM_BATCHES, BATCH_SIZE)).cast(paddle.float32)
 _target[1, 0] = float("nan")
 _target[-1, 0] = float("nan")
 _input_with_nans = _Input(preds=_preds, target=_target)
@@ -40,18 +36,15 @@ def theils_u_matrix_input():
                 low=0,
                 high=NUM_CLASSES,
                 shape=(NUM_BATCHES * BATCH_SIZE, 1),
-                dtype=paddle.float32,
-            ),
+            ).cast(paddle.float32),
             paddle.randint(
                 low=0,
                 high=NUM_CLASSES + 2,
                 shape=(NUM_BATCHES * BATCH_SIZE, 1),
-                dtype=paddle.float32,
-            ),
-            paddle.randint(
-                low=0, high=2, shape=(NUM_BATCHES * BATCH_SIZE, 1), dtype=paddle.float32
-            ),
-        ], axis=-1,
+            ).cast(paddle.float32),
+            paddle.randint(low=0, high=2, shape=(NUM_BATCHES * BATCH_SIZE, 1)).cast(paddle.float32),
+        ],
+        axis=-1,
     )
     matrix[0, 0] = float("nan")
     matrix[-1, -1] = float("nan")
@@ -79,12 +72,8 @@ def _reference_dython_theils_u_matrix(matrix, nan_strategy, nan_replace_value):
     theils_u_matrix_value = paddle.ones(num_variables, num_variables)
     for i, j in itertools.combinations(range(num_variables), 2):
         x, y = matrix[:, i], matrix[:, j]
-        theils_u_matrix_value[i, j] = _reference_dython_theils_u(
-            x, y, nan_strategy, nan_replace_value
-        )
-        theils_u_matrix_value[j, i] = _reference_dython_theils_u(
-            y, x, nan_strategy, nan_replace_value
-        )
+        theils_u_matrix_value[i, j] = _reference_dython_theils_u(x, y, nan_strategy, nan_replace_value)
+        theils_u_matrix_value[j, i] = _reference_dython_theils_u(y, x, nan_strategy, nan_replace_value)
     return theils_u_matrix_value
 
 
@@ -96,9 +85,7 @@ def _reference_dython_theils_u_matrix(matrix, nan_strategy, nan_replace_value):
         (_input_logits.preds, _input_logits.target),
     ],
 )
-@pytest.mark.parametrize(
-    ("nan_strategy", "nan_replace_value"), [("replace", 0.0), ("drop", None)]
-)
+@pytest.mark.parametrize(("nan_strategy", "nan_replace_value"), [("replace", 0.0), ("drop", None)])
 class TestTheilsU(MetricTester):
     """Test class for `TheilsU` metric."""
 
@@ -145,9 +132,7 @@ class TestTheilsU(MetricTester):
             metric_args=metric_args,
         )
 
-    def test_theils_u_differentiability(
-        self, preds, target, nan_strategy, nan_replace_value
-    ):
+    def test_theils_u_differentiability(self, preds, target, nan_strategy, nan_replace_value):
         """Test the differentiability of the metric, according to its `is_differentiable` attribute."""
         metric_args = {
             "nan_strategy": nan_strategy,
@@ -163,13 +148,9 @@ class TestTheilsU(MetricTester):
         )
 
 
-@pytest.mark.parametrize(
-    ("nan_strategy", "nan_replace_value"), [("replace", 1.0), ("drop", None)]
-)
+@pytest.mark.parametrize(("nan_strategy", "nan_replace_value"), [("replace", 1.0), ("drop", None)])
 def test_theils_u_matrix(theils_u_matrix_input, nan_strategy, nan_replace_value):
     """Test matrix version of metric works as expected."""
     tm_score = theils_u_matrix(theils_u_matrix_input, nan_strategy, nan_replace_value)
-    reference_score = _reference_dython_theils_u_matrix(
-        theils_u_matrix_input, nan_strategy, nan_replace_value
-    )
+    reference_score = _reference_dython_theils_u_matrix(theils_u_matrix_input, nan_strategy, nan_replace_value)
     assert paddle.allclose(x=tm_score, y=reference_score, atol=1e-06).item()

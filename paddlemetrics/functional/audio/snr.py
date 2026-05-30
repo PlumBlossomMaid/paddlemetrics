@@ -1,13 +1,10 @@
 import paddle
 
-from paddlemetrics.functional.audio.sdr import \
-    scale_invariant_signal_distortion_ratio
+from paddlemetrics.functional.audio.sdr import scale_invariant_signal_distortion_ratio
 from paddlemetrics.utils.checks import _check_same_shape
 
 
-def signal_noise_ratio(
-    preds: paddle.Tensor, target: paddle.Tensor, zero_mean: bool = False
-) -> paddle.Tensor:
+def signal_noise_ratio(preds: paddle.Tensor, target: paddle.Tensor, zero_mean: bool = False) -> paddle.Tensor:
     """Calculate `Signal-to-noise ratio`_ (SNR_) meric for evaluating quality of audio.
 
     .. math::
@@ -42,15 +39,11 @@ def signal_noise_ratio(
         target = target - paddle.mean(target, axis=-1, keepdim=True)
         preds = preds - paddle.mean(preds, axis=-1, keepdim=True)
     noise = target - preds
-    snr_value = (paddle.sum(target**2, axis=-1) + eps) / (
-        paddle.sum(noise**2, axis=-1) + eps
-    )
+    snr_value = (paddle.sum(target**2, axis=-1) + eps) / (paddle.sum(noise**2, axis=-1) + eps)
     return 10 * paddle.log10(x=snr_value)
 
 
-def scale_invariant_signal_noise_ratio(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> paddle.Tensor:
+def scale_invariant_signal_noise_ratio(preds: paddle.Tensor, target: paddle.Tensor) -> paddle.Tensor:
     """`Scale-invariant signal-to-noise ratio`_ (SI-SNR).
 
     Args:
@@ -73,9 +66,7 @@ def scale_invariant_signal_noise_ratio(
         tensor(15.0918)
 
     """
-    return scale_invariant_signal_distortion_ratio(
-        preds=preds, target=target, zero_mean=True
-    )
+    return scale_invariant_signal_distortion_ratio(preds=preds, target=target, zero_mean=True)
 
 
 def complex_scale_invariant_signal_noise_ratio(
@@ -111,14 +102,10 @@ def complex_scale_invariant_signal_noise_ratio(
         preds = paddle.as_real(preds)
     if target.is_complex():
         target = paddle.as_real(target)
-    if (preds.ndim < 3 or preds.shape[-1] != 2) or (
-        target.ndim < 3 or target.shape[-1] != 2
-    ):
+    if (preds.ndim < 3 or preds.shape[-1] != 2) or (target.ndim < 3 or target.shape[-1] != 2):
         raise RuntimeError(
             f"Predictions and targets are expected to have the shape (..., frequency, time, 2), but got {preds.shape} and {target.shape}."
         )
     preds = preds.reshape([*preds.shape[:-3], -1])
     target = target.reshape([*target.shape[:-3], -1])
-    return scale_invariant_signal_distortion_ratio(
-        preds=preds, target=target, zero_mean=zero_mean
-    )
+    return scale_invariant_signal_distortion_ratio(preds=preds, target=target, zero_mean=zero_mean)

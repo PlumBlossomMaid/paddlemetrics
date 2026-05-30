@@ -3,8 +3,7 @@ from typing import Any, List, Optional
 import paddle
 from paddle import Tensor
 
-from paddlemetrics.functional.regression.csi import (
-    _critical_success_index_compute, _critical_success_index_update)
+from paddlemetrics.functional.regression.csi import _critical_success_index_compute, _critical_success_index_update
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils import dim_zero_cat
 
@@ -55,24 +54,16 @@ class CriticalSuccessIndex(Metric):
     misses_list: List[paddle.Tensor]
     false_alarms_list: List[paddle.Tensor]
 
-    def __init__(
-        self, threshold: float, keep_sequence_dim: Optional[int] = None, **kwargs: Any
-    ) -> None:
+    def __init__(self, threshold: float, keep_sequence_dim: Optional[int] = None, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.threshold = float(threshold)
-        if keep_sequence_dim and (
-            not isinstance(keep_sequence_dim, int) or keep_sequence_dim < 0
-        ):
-            raise ValueError(
-                f"Expected keep_sequence_dim to be a non-negative integer but got {keep_sequence_dim}"
-            )
+        if keep_sequence_dim and (not isinstance(keep_sequence_dim, int) or keep_sequence_dim < 0):
+            raise ValueError(f"Expected keep_sequence_dim to be a non-negative integer but got {keep_sequence_dim}")
         self.keep_sequence_dim = keep_sequence_dim
         if keep_sequence_dim is None:
             self.add_state("hits", default=paddle.tensor(0), dist_reduce_fx="sum")
             self.add_state("misses", default=paddle.tensor(0), dist_reduce_fx="sum")
-            self.add_state(
-                "false_alarms", default=paddle.tensor(0), dist_reduce_fx="sum"
-            )
+            self.add_state("false_alarms", default=paddle.tensor(0), dist_reduce_fx="sum")
         else:
             self.add_state("hits_list", default=[], dist_reduce_fx="cat")
             self.add_state("misses_list", default=[], dist_reduce_fx="cat")

@@ -4,17 +4,15 @@ from typing import Any
 
 import numpy as np
 import paddle
-from paddle import Tensor
 import pytest
-from paddlemetrics.utils.data import apply_to_collection
+from paddle import Tensor
 from sklearn.metrics import mean_squared_error, precision_score, recall_score
-from unittests._helpers import seed_all
 
-from paddlemetrics.classification import (MulticlassF1Score,
-                                         MulticlassPrecision, MulticlassRecall)
+from paddlemetrics.classification import MulticlassF1Score, MulticlassPrecision, MulticlassRecall
 from paddlemetrics.regression import MeanAbsoluteError, MeanSquaredError
-from paddlemetrics.wrappers.bootstrapping import (BootStrapper,
-                                                 _bootstrap_sampler)
+from paddlemetrics.utils.data import apply_to_collection
+from paddlemetrics.wrappers.bootstrapping import BootStrapper, _bootstrap_sampler
+from unittests._helpers import seed_all
 
 seed_all(42)
 _preds = paddle.randint(low=0, high=10, shape=(10, 32))
@@ -34,12 +32,8 @@ class TestBootStrapper(BootStrapper):
         self.out = []
         for idx in range(self.num_bootstraps):
             size = len(args[0])
-            sample_idx = _bootstrap_sampler(
-                size, sampling_strategy=self.sampling_strategy
-            ).to(self.place)
-            new_args = apply_to_collection(
-                args, Tensor, paddle.index_select, axis=0, index=sample_idx
-            )
+            sample_idx = _bootstrap_sampler(size, sampling_strategy=self.sampling_strategy).to(self.place)
+            new_args = apply_to_collection(args, Tensor, paddle.index_select, axis=0, index=sample_idx)
             self.metrics[idx].update(*new_args)
             self.out.append(new_args)
 
@@ -65,9 +59,7 @@ def test_bootstrap_sampler(sampling_strategy):
     found_one = _sample_checker(old_samples, new_samples, operator.eq, 2)
     assert found_one, "resampling did not work because no samples were sampled twice"
     found_zero = _sample_checker(old_samples, new_samples, operator.ne, 0)
-    assert (
-        found_zero
-    ), "resampling did not work because all samples were at least sampled once"
+    assert found_zero, "resampling did not work because all samples were at least sampled once"
 
 
 @pytest.mark.parametrize("device", ["cpu", "cuda"])
@@ -110,9 +102,7 @@ def test_bootstrap(device, sampling_strategy, metric, ref_metric):
             collected_target[i].append(o[1])
     collected_preds = [paddle.concat(cp).cpu() for cp in collected_preds]
     collected_target = [paddle.concat(ct).cpu() for ct in collected_target]
-    sk_scores = [
-        ref_metric(ct, cp) for ct, cp in zip(collected_target, collected_preds)
-    ]
+    sk_scores = [ref_metric(ct, cp) for ct, cp in zip(collected_target, collected_preds)]
     output = bootstrapper.compute()
     assert np.allclose(output["quantile"][0].cpu(), np.quantile(sk_scores, 0.05))
     assert np.allclose(output["quantile"][1].cpu(), np.quantile(sk_scores, 0.95))
@@ -162,9 +152,5 @@ def test_args_and_kwargs_works():
     res1 = bootstrapped_ae(x, y)
     res2 = bootstrapped_ae(x, target=y)
     res3 = bootstrapped_ae(preds=x, target=y)
-    assert (res1["mean"].shape == res2["mean"].shape) & (
-        res2["mean"].shape == res3["mean"].shape
-    )
-    assert (res1["std"].shape == res2["std"].shape) & (
-        res2["mean"].shape == res3["std"].shape
-    )
+    assert (res1["mean"].shape == res2["mean"].shape) & (res2["mean"].shape == res3["mean"].shape)
+    assert (res1["std"].shape == res2["std"].shape) & (res2["mean"].shape == res3["std"].shape)

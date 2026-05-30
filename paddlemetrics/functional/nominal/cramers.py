@@ -4,12 +4,15 @@ from typing import Optional
 import paddle
 from typing_extensions import Literal
 
-from paddlemetrics.functional.classification.confusion_matrix import \
-    _multiclass_confusion_matrix_update
+from paddlemetrics.functional.classification.confusion_matrix import _multiclass_confusion_matrix_update
 from paddlemetrics.functional.nominal.utils import (
-    _compute_bias_corrected_values, _compute_chi_squared,
-    _drop_empty_rows_and_cols, _handle_nan_in_data, _nominal_input_validation,
-    _unable_to_use_bias_correction_warning)
+    _compute_bias_corrected_values,
+    _compute_chi_squared,
+    _drop_empty_rows_and_cols,
+    _handle_nan_in_data,
+    _nominal_input_validation,
+    _unable_to_use_bias_correction_warning,
+)
 
 
 def _cramers_v_update(
@@ -63,10 +66,7 @@ def _cramers_v_compute(confmat: paddle.Tensor, bias_correction: bool) -> paddle.
         if paddle.min(rows_corrected, cols_corrected) == 1:
             _unable_to_use_bias_correction_warning(metric_name="Cramer's V")
             return paddle.tensor(float("nan"), device=confmat.place)
-        cramers_v_value = paddle.sqrt(
-            phi_squared_corrected
-            / paddle.min(rows_corrected - 1, cols_corrected - 1)
-        )
+        cramers_v_value = paddle.sqrt(phi_squared_corrected / paddle.min(rows_corrected - 1, cols_corrected - 1))
     else:
         cramers_v_value = paddle.sqrt(phi_squared / min(num_rows - 1, num_cols - 1))
     return cramers_v_value.clamp(0.0, 1.0)
@@ -121,9 +121,7 @@ def cramers_v(
     """
     _nominal_input_validation(nan_strategy, nan_replace_value)
     num_classes = len(paddle.concat([preds, target]).unique())
-    confmat = _cramers_v_update(
-        preds, target, num_classes, nan_strategy, nan_replace_value
-    )
+    confmat = _cramers_v_update(preds, target, num_classes, nan_strategy, nan_replace_value)
     return _cramers_v_compute(confmat, bias_correction)
 
 
@@ -163,14 +161,10 @@ def cramers_v_matrix(
     """
     _nominal_input_validation(nan_strategy, nan_replace_value)
     num_variables = matrix.shape[1]
-    cramers_v_matrix_value = paddle.ones(
-        num_variables, num_variables, device=matrix.device
-    )
+    cramers_v_matrix_value = paddle.ones(num_variables, num_variables, device=matrix.device)
     for i, j in itertools.combinations(range(num_variables), 2):
         x, y = matrix[:, i], matrix[:, j]
         num_classes = len(paddle.concat([x, y]).unique())
         confmat = _cramers_v_update(x, y, num_classes, nan_strategy, nan_replace_value)
-        cramers_v_matrix_value[i, j] = cramers_v_matrix_value[
-            j, i
-        ] = _cramers_v_compute(confmat, bias_correction)
+        cramers_v_matrix_value[i, j] = cramers_v_matrix_value[j, i] = _cramers_v_compute(confmat, bias_correction)
     return cramers_v_matrix_value

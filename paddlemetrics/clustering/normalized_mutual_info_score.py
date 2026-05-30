@@ -5,7 +5,9 @@ import paddle
 
 from paddlemetrics.clustering.mutual_info_score import MutualInfoScore
 from paddlemetrics.functional.clustering.normalized_mutual_info_score import (
-    _validate_average_method_arg, normalized_mutual_info_score)
+    _validate_average_method_arg,
+    normalized_mutual_info_score,
+)
 from paddlemetrics.utils.data import dim_zero_cat
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -61,9 +63,7 @@ class NormalizedMutualInfoScore(MutualInfoScore):
     target: List[paddle.Tensor]
 
     def __init__(
-        self,
-        average_method: Literal["min", "geometric", "arithmetic", "max"] = "arithmetic",
-        **kwargs: Any
+        self, average_method: Literal["min", "geometric", "arithmetic", "max"] = "arithmetic", **kwargs: Any
     ) -> None:
         super().__init__(**kwargs)
         _validate_average_method_arg(average_method)
@@ -71,9 +71,7 @@ class NormalizedMutualInfoScore(MutualInfoScore):
 
     def compute(self) -> paddle.Tensor:
         """Compute normalized mutual information over state."""
-        return normalized_mutual_info_score(
-            dim_zero_cat(self.preds), dim_zero_cat(self.target), self.average_method
-        )
+        return normalized_mutual_info_score(dim_zero_cat(self.preds), dim_zero_cat(self.target), self.average_method)
 
     def plot(
         self,

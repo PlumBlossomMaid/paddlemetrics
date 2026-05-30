@@ -2,14 +2,16 @@ from functools import partial
 
 import paddle
 import pytest
-from unittests import BATCH_SIZE, NUM_BATCHES, _Input
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
 
 from paddlemetrics.audio import SourceAggregatedSignalDistortionRatio
 from paddlemetrics.functional.audio import (
-    scale_invariant_signal_distortion_ratio, signal_noise_ratio,
-    source_aggregated_signal_distortion_ratio)
+    scale_invariant_signal_distortion_ratio,
+    signal_noise_ratio,
+    source_aggregated_signal_distortion_ratio,
+)
+from unittests import BATCH_SIZE, NUM_BATCHES, _Input
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
 
 seed_all(42)
 NUM_SAMPLES = 100
@@ -32,9 +34,7 @@ def _reference_local_sa_sdr(
     preds = preds.reshape(preds.shape[0], preds.shape[1] * preds.shape[2])
     target = target.reshape(target.shape[0], target.shape[1] * target.shape[2])
     if scale_invariant:
-        sa_sdr = scale_invariant_signal_distortion_ratio(
-            preds=preds, target=target, zero_mean=False
-        )
+        sa_sdr = scale_invariant_signal_distortion_ratio(preds=preds, target=target, zero_mean=False)
     else:
         sa_sdr = signal_noise_ratio(preds=preds, target=target, zero_mean=zero_mean)
     if reduce_mean:
@@ -45,10 +45,10 @@ def _reference_local_sa_sdr(
 @pytest.mark.parametrize(
     ("preds", "target", "scale_invariant", "zero_mean"),
     [
-        (inputs.preds, inputs.target, False),
-        (inputs.preds, inputs.target),
         (inputs.preds, inputs.target, False, False),
-        (inputs.preds, inputs.target, False),
+        (inputs.preds, inputs.target, True, False),
+        (inputs.preds, inputs.target, False, True),
+        (inputs.preds, inputs.target, True, True),
     ],
 )
 class TestSASDR(MetricTester):

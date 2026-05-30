@@ -6,7 +6,9 @@ from paddle import Tensor
 
 from paddlemetrics.functional.audio.snr import (
     complex_scale_invariant_signal_noise_ratio,
-    scale_invariant_signal_noise_ratio, signal_noise_ratio)
+    scale_invariant_signal_noise_ratio,
+    signal_noise_ratio,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -72,9 +74,7 @@ class SignalNoiseRatio(Metric):
 
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update state with predictions and targets."""
-        snr_batch = signal_noise_ratio(
-            preds=preds, target=target, zero_mean=self.zero_mean
-        )
+        snr_batch = signal_noise_ratio(preds=preds, target=target, zero_mean=self.zero_mean)
         self.sum_snr += snr_batch.sum()
         self.total += snr_batch.size
 
@@ -272,18 +272,14 @@ class ComplexScaleInvariantSignalNoiseRatio(Metric):
     def __init__(self, zero_mean: bool = False, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         if not isinstance(zero_mean, bool):
-            raise ValueError(
-                f"Expected argument `zero_mean` to be an bool, but got {zero_mean}"
-            )
+            raise ValueError(f"Expected argument `zero_mean` to be an bool, but got {zero_mean}")
         self.zero_mean = zero_mean
         self.add_state("ci_snr_sum", default=paddle.tensor(0.0), dist_reduce_fx="sum")
         self.add_state("num", default=paddle.tensor(0), dist_reduce_fx="sum")
 
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update state with predictions and targets."""
-        v = complex_scale_invariant_signal_noise_ratio(
-            preds=preds, target=target, zero_mean=self.zero_mean
-        )
+        v = complex_scale_invariant_signal_noise_ratio(preds=preds, target=target, zero_mean=self.zero_mean)
         self.ci_snr_sum += v.sum()
         self.num += v.size
 

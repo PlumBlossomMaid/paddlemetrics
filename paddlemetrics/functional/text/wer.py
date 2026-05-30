@@ -5,9 +5,7 @@ import paddle
 from paddlemetrics.functional.text.helper import _edit_distance
 
 
-def _wer_update(
-    preds: Union[str, list[str]], target: Union[str, list[str]]
-) -> tuple[paddle.Tensor, paddle.Tensor]:
+def _wer_update(preds: Union[str, list[str]], target: Union[str, list[str]]) -> tuple[paddle.Tensor, paddle.Tensor]:
     """Update the wer score with the current set of references and predictions.
 
     Args:
@@ -47,9 +45,7 @@ def _wer_compute(errors: paddle.Tensor, total: paddle.Tensor) -> paddle.Tensor:
     return errors / total
 
 
-def word_error_rate(
-    preds: Union[str, list[str]], target: Union[str, list[str]]
-) -> paddle.Tensor:
+def word_error_rate(preds: Union[str, list[str]], target: Union[str, list[str]]) -> paddle.Tensor:
     """Word error rate (WordErrorRate_) is a common metric of performance of an automatic speech recognition system.
 
     This value indicates the percentage of words that were incorrectly predicted. The lower the value, the better the

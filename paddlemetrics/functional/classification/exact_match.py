@@ -1,14 +1,16 @@
 from typing import Optional
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.functional.classification.stat_scores import (
-    _multiclass_stat_scores_arg_validation, _multiclass_stat_scores_format,
+    _multiclass_stat_scores_arg_validation,
+    _multiclass_stat_scores_format,
     _multiclass_stat_scores_tensor_validation,
-    _multilabel_stat_scores_arg_validation, _multilabel_stat_scores_format,
-    _multilabel_stat_scores_tensor_validation)
+    _multilabel_stat_scores_arg_validation,
+    _multilabel_stat_scores_format,
+    _multilabel_stat_scores_tensor_validation,
+)
 from paddlemetrics.utils.compute import _safe_divide
 from paddlemetrics.utils.enums import ClassificationTaskNoBinary
 
@@ -30,9 +32,7 @@ def _multiclass_exact_match_update(
         preds[target == ignore_index] = ignore_index
     correct = (preds == target).sum(1) == preds.shape[1]
     correct = correct if multidim_average == "samplewise" else correct.sum()
-    total = paddle.tensor(
-        preds.shape[0] if multidim_average == "global" else 1, device=correct.device
-    )
+    total = paddle.tensor(preds.shape[0] if multidim_average == "global" else 1, device=correct.device)
     return correct, total
 
 
@@ -96,16 +96,10 @@ def multiclass_exact_match(
     """
     top_k, average = 1, None
     if validate_args:
-        _multiclass_stat_scores_arg_validation(
-            num_classes, top_k, average, multidim_average, ignore_index
-        )
-        _multiclass_stat_scores_tensor_validation(
-            preds, target, num_classes, multidim_average, ignore_index
-        )
+        _multiclass_stat_scores_arg_validation(num_classes, top_k, average, multidim_average, ignore_index)
+        _multiclass_stat_scores_tensor_validation(preds, target, num_classes, multidim_average, ignore_index)
     preds, target = _multiclass_stat_scores_format(preds, target, top_k)
-    correct, total = _multiclass_exact_match_update(
-        preds, target, multidim_average, ignore_index
-    )
+    correct, total = _multiclass_exact_match_update(preds, target, multidim_average, ignore_index)
     return _exact_match_reduce(correct, total)
 
 
@@ -121,16 +115,10 @@ def _multilabel_exact_match_update(
         mask = target == -1
         target = paddle.where(mask, preds.long(), target)
     if multidim_average == "global":
-        preds = paddle.moveaxis(x=preds, source=1, destination=-1).reshape(
-            -1, num_labels
-        )
-        target = paddle.moveaxis(x=target, source=1, destination=-1).reshape(
-            -1, num_labels
-        )
+        preds = paddle.moveaxis(x=preds, source=1, destination=-1).reshape(-1, num_labels)
+        target = paddle.moveaxis(x=target, source=1, destination=-1).reshape(-1, num_labels)
     correct = ((preds == target).sum(1) == num_labels).sum(dim=-1)
-    total = paddle.tensor(
-        preds.shape[0 if multidim_average == "global" else 2], device=correct.device
-    )
+    total = paddle.tensor(preds.shape[0 if multidim_average == "global" else 2], device=correct.device)
     return correct, total
 
 
@@ -204,18 +192,10 @@ def multilabel_exact_match(
     """
     average = None
     if validate_args:
-        _multilabel_stat_scores_arg_validation(
-            num_labels, threshold, average, multidim_average, ignore_index
-        )
-        _multilabel_stat_scores_tensor_validation(
-            preds, target, num_labels, multidim_average, ignore_index
-        )
-    preds, target = _multilabel_stat_scores_format(
-        preds, target, num_labels, threshold, ignore_index
-    )
-    correct, total = _multilabel_exact_match_update(
-        preds, target, num_labels, multidim_average, ignore_index
-    )
+        _multilabel_stat_scores_arg_validation(num_labels, threshold, average, multidim_average, ignore_index)
+        _multilabel_stat_scores_tensor_validation(preds, target, num_labels, multidim_average, ignore_index)
+    preds, target = _multilabel_stat_scores_format(preds, target, num_labels, threshold, ignore_index)
+    correct, total = _multilabel_exact_match_update(preds, target, num_labels, multidim_average, ignore_index)
     return _exact_match_reduce(correct, total)
 
 
@@ -257,9 +237,7 @@ def exact_match(
     task = ClassificationTaskNoBinary.from_str(task)
     if task == ClassificationTaskNoBinary.MULTICLASS:
         assert num_classes is not None
-        return multiclass_exact_match(
-            preds, target, num_classes, multidim_average, ignore_index, validate_args
-        )
+        return multiclass_exact_match(preds, target, num_classes, multidim_average, ignore_index, validate_args)
     if task == ClassificationTaskNoBinary.MULTILABEL:
         assert num_labels is not None
         return multilabel_exact_match(

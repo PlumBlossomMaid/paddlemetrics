@@ -5,8 +5,7 @@ import paddle
 from typing_extensions import Literal
 
 from paddlemetrics import Metric
-from paddlemetrics.functional.retrieval.precision_recall_curve import \
-    retrieval_precision_recall_curve
+from paddlemetrics.functional.retrieval.precision_recall_curve import retrieval_precision_recall_curve
 from paddlemetrics.retrieval.base import _retrieval_aggregate
 from paddlemetrics.utils.checks import _check_retrieval_inputs
 from paddlemetrics.utils.data import _flexible_bincount, dim_zero_cat
@@ -39,9 +38,7 @@ def _retrieval_recall_at_fixed_precision(
 
     """
     try:
-        max_recall, best_k = max(
-            (r, k) for p, r, k in zip(precision, recall, top_k) if p >= min_precision
-        )
+        max_recall, best_k = max((r, k) for p, r, k in zip(precision, recall, top_k) if p >= min_precision)
     except ValueError:
         max_recall = paddle.tensor(0.0, device=recall.device, dtype=recall.dtype)
         best_k = paddle.tensor(len(top_k))
@@ -148,9 +145,7 @@ class RetrievalPrecisionRecallCurve(Metric):
         self.allow_non_binary_target = False
         empty_target_action_options = "error", "skip", "neg", "pos"
         if empty_target_action not in empty_target_action_options:
-            raise ValueError(
-                f"Argument `empty_target_action` received a wrong value `{empty_target_action}`."
-            )
+            raise ValueError(f"Argument `empty_target_action` received a wrong value `{empty_target_action}`.")
         self.empty_target_action = empty_target_action
         if ignore_index is not None and not isinstance(ignore_index, int):
             raise ValueError("Argument `ignore_index` must be an integer or None.")
@@ -161,9 +156,7 @@ class RetrievalPrecisionRecallCurve(Metric):
         if not isinstance(adaptive_k, bool):
             raise ValueError("`adaptive_k` has to be a boolean")
         self.adaptive_k = adaptive_k
-        if not (
-            aggregation in ("mean", "median", "min", "max") or callable(aggregation)
-        ):
+        if not (aggregation in ("mean", "median", "min", "max") or callable(aggregation)):
             raise ValueError(
                 f"Argument `aggregation` must be one of `mean`, `median`, `min`, `max` or a custom callable functionwhich takes tensor of values, but got {aggregation}."
             )
@@ -172,9 +165,7 @@ class RetrievalPrecisionRecallCurve(Metric):
         self.add_state("preds", default=[], dist_reduce_fx=None)
         self.add_state("target", default=[], dist_reduce_fx=None)
 
-    def update(
-        self, preds: paddle.Tensor, target: paddle.Tensor, indexes: paddle.Tensor
-    ) -> None:
+    def update(self, preds: paddle.Tensor, target: paddle.Tensor, indexes: paddle.Tensor) -> None:
         """Check shape, check and convert dtypes, flatten and add to accumulators."""
         if indexes is None:
             raise ValueError("Argument `indexes` cannot be None")
@@ -194,7 +185,8 @@ class RetrievalPrecisionRecallCurve(Metric):
         indexes = dim_zero_cat(self.indexes)
         preds = dim_zero_cat(self.preds)
         target = dim_zero_cat(self.target)
-        indexes, indices = paddle.sort(indexes)
+        indices = paddle.argsort(indexes)
+        indexes = indexes[indices]
         preds = preds[indices]
         target = target[indices]
         split_sizes = _flexible_bincount(indexes).detach().cpu().tolist()
@@ -208,9 +200,7 @@ class RetrievalPrecisionRecallCurve(Metric):
         ):
             if not mini_target.sum():
                 if self.empty_target_action == "error":
-                    raise ValueError(
-                        "`compute` method was provided with a query with no positive target."
-                    )
+                    raise ValueError("`compute` method was provided with a query with no positive target.")
                 if self.empty_target_action == "pos":
                     recalls.append(paddle.ones(max_k, device=preds.place))
                     precisions.append(paddle.ones(max_k, device=preds.place))
@@ -218,15 +208,14 @@ class RetrievalPrecisionRecallCurve(Metric):
                     recalls.append(paddle.zeros(max_k, device=preds.place))
                     precisions.append(paddle.zeros(max_k, device=preds.place))
             else:
-                precision, recall, _ = retrieval_precision_recall_curve(
-                    mini_preds, mini_target, max_k, self.adaptive_k
-                )
+                precision, recall, _ = retrieval_precision_recall_curve(mini_preds, mini_target, max_k, self.adaptive_k)
                 precisions.append(precision)
                 recalls.append(recall)
         precision = (
             _retrieval_aggregate(
                 paddle.stack([x.to(preds) for x in precisions]),
-                aggregation=self.aggregation, axis=0,
+                aggregation=self.aggregation,
+                dim=0,
             )
             if precisions
             else paddle.zeros(max_k).to(preds)
@@ -234,7 +223,8 @@ class RetrievalPrecisionRecallCurve(Metric):
         recall = (
             _retrieval_aggregate(
                 paddle.stack([x.to(preds) for x in recalls]),
-                aggregation=self.aggregation, axis=0,
+                aggregation=self.aggregation,
+                dim=0,
             )
             if recalls
             else paddle.zeros(max_k).to(preds)
@@ -363,17 +353,13 @@ class RetrievalRecallAtFixedPrecision(RetrievalPrecisionRecallCurve):
             **kwargs,
         )
         if not (isinstance(min_precision, float) and 0.0 <= min_precision <= 1.0):
-            raise ValueError(
-                "`min_precision` has to be a positive float between 0 and 1"
-            )
+            raise ValueError("`min_precision` has to be a positive float between 0 and 1")
         self.min_precision = min_precision
 
     def compute(self) -> tuple[paddle.Tensor, paddle.Tensor]:
         """Compute metric."""
         precisions, recalls, top_k = super().compute()
-        return _retrieval_recall_at_fixed_precision(
-            precisions, recalls, top_k, self.min_precision
-        )
+        return _retrieval_recall_at_fixed_precision(precisions, recalls, top_k, self.min_precision)
 
     def plot(
         self,

@@ -3,12 +3,11 @@ from functools import partial
 
 import paddle
 import pytest
-from unittests.text._helpers import TextTester
-from unittests.text._inputs import (
-    _inputs_multiple_references, _inputs_single_sentence_multiple_references)
 
 from paddlemetrics.functional.text.ter import translation_edit_rate
 from paddlemetrics.text.ter import TranslationEditRate
+from unittests.text._helpers import TextTester
+from unittests.text._inputs import _inputs_multiple_references, _inputs_single_sentence_multiple_references
 
 
 def _reference_sacrebleu_ter(
@@ -39,10 +38,10 @@ def _reference_sacrebleu_ter(
     [
         (False, False, False, False),
         (True, False, False, False),
-        (False, False, False),
-        (False, False, False),
-        (False, False, False),
-        (True),
+        (False, True, False, False),
+        (False, False, True, False),
+        (False, False, False, True),
+        (True, False, False, False),
     ],
 )
 @pytest.mark.parametrize(
@@ -53,9 +52,7 @@ class TestTER(TextTester):
     """Test class for `TranslationEditRate` metric."""
 
     @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
-    def test_ter_class(
-        self, ddp, preds, targets, normalize, no_punctuation, asian_support, lowercase
-    ):
+    def test_ter_class(self, ddp, preds, targets, normalize, no_punctuation, asian_support, lowercase):
         """Test class implementation of metric."""
         metric_args = {
             "normalize": normalize,
@@ -79,9 +76,7 @@ class TestTER(TextTester):
             metric_args=metric_args,
         )
 
-    def test_ter_score_functional(
-        self, preds, targets, normalize, no_punctuation, asian_support, lowercase
-    ):
+    def test_ter_score_functional(self, preds, targets, normalize, no_punctuation, asian_support, lowercase):
         """Test functional implementation of metric."""
         metric_args = {
             "normalize": normalize,
@@ -104,9 +99,7 @@ class TestTER(TextTester):
             metric_args=metric_args,
         )
 
-    def test_ter_differentiability(
-        self, preds, targets, normalize, no_punctuation, asian_support, lowercase
-    ):
+    def test_ter_differentiability(self, preds, targets, normalize, no_punctuation, asian_support, lowercase):
         """Test the differentiability of the metric, according to its `is_differentiable` attribute."""
         metric_args = {
             "normalize": normalize,
@@ -157,9 +150,7 @@ def test_ter_return_sentence_level_score_functional():
     """Test that functional metric can return sentence level scores."""
     preds = _inputs_single_sentence_multiple_references.preds
     targets = _inputs_single_sentence_multiple_references.target
-    _, sentence_ter = translation_edit_rate(
-        preds, targets, return_sentence_level_score=True
-    )
+    _, sentence_ter = translation_edit_rate(preds, targets, return_sentence_level_score=True)
     isinstance(sentence_ter, paddle.Tensor)
 
 

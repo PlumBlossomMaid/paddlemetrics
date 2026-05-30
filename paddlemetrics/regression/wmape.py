@@ -6,7 +6,8 @@ from paddle import Tensor
 
 from paddlemetrics.functional.regression.wmape import (
     _weighted_mean_absolute_percentage_error_compute,
-    _weighted_mean_absolute_percentage_error_update)
+    _weighted_mean_absolute_percentage_error_update,
+)
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -56,24 +57,18 @@ class WeightedMeanAbsolutePercentageError(Metric):
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
-        self.add_state(
-            "sum_abs_error", default=paddle.tensor(0.0), dist_reduce_fx="sum"
-        )
+        self.add_state("sum_abs_error", default=paddle.tensor(0.0), dist_reduce_fx="sum")
         self.add_state("sum_scale", default=paddle.tensor(0.0), dist_reduce_fx="sum")
 
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update state with predictions and targets."""
-        sum_abs_error, sum_scale = _weighted_mean_absolute_percentage_error_update(
-            preds, target
-        )
+        sum_abs_error, sum_scale = _weighted_mean_absolute_percentage_error_update(preds, target)
         self.sum_abs_error += sum_abs_error
         self.sum_scale += sum_scale
 
     def compute(self) -> paddle.Tensor:
         """Compute weighted mean absolute percentage error over state."""
-        return _weighted_mean_absolute_percentage_error_compute(
-            self.sum_abs_error, self.sum_scale
-        )
+        return _weighted_mean_absolute_percentage_error_compute(self.sum_abs_error, self.sum_scale)
 
     def plot(
         self,

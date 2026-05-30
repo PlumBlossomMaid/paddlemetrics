@@ -4,8 +4,7 @@ from typing import Any, Optional, Union
 import paddle
 from paddle import Tensor
 
-from paddlemetrics.functional.regression.log_cosh import (
-    _log_cosh_error_compute, _log_cosh_error_update)
+from paddlemetrics.functional.regression.log_cosh import _log_cosh_error_compute, _log_cosh_error_update
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -64,9 +63,7 @@ class LogCoshError(Metric):
     def __init__(self, num_outputs: int = 1, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         if not isinstance(num_outputs, int) and num_outputs < 1:
-            raise ValueError(
-                f"Expected argument `num_outputs` to be an int larger than 0, but got {num_outputs}"
-            )
+            raise ValueError(f"Expected argument `num_outputs` to be an int larger than 0, but got {num_outputs}")
         self.num_outputs = num_outputs
         self.add_state(
             "sum_log_cosh_error",
@@ -83,9 +80,7 @@ class LogCoshError(Metric):
                 If ``preds`` or ``target`` has multiple outputs when ``num_outputs=1``
 
         """
-        sum_log_cosh_error, num_obs = _log_cosh_error_update(
-            preds, target, self.num_outputs
-        )
+        sum_log_cosh_error, num_obs = _log_cosh_error_update(preds, target, self.num_outputs)
         self.sum_log_cosh_error += sum_log_cosh_error
         self.total += num_obs
 

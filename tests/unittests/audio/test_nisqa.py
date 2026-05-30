@@ -3,11 +3,10 @@ from typing import Any
 
 import paddle
 import pytest
-from unittests._helpers.testers import MetricTester
 
 from paddlemetrics.audio.nisqa import NonIntrusiveSpeechQualityAssessment
-from paddlemetrics.functional.audio.nisqa import \
-    non_intrusive_speech_quality_assessment
+from paddlemetrics.functional.audio.nisqa import non_intrusive_speech_quality_assessment
+from unittests._helpers.testers import MetricTester
 
 inputs = [
     {
@@ -95,9 +94,7 @@ inputs = [
                 ),
                 paddle.stack(
                     [
-                        paddle.sign(
-                            paddle.sin(2 * 3.14159 * 200 / 16000 * paddle.arange(16000))
-                        ),
+                        paddle.sign(paddle.sin(2 * 3.14159 * 200 / 16000 * paddle.arange(16000))),
                         (1 + 2 * 200 / 16000 * paddle.arange(16000)) % 2 - 1,
                     ]
                 ),
@@ -146,9 +143,7 @@ inputs = [
                 ),
                 paddle.stack(
                     [
-                        paddle.sign(
-                            paddle.sin(2 * 3.14159 * 200 / 48000 * paddle.arange(48000))
-                        ),
+                        paddle.sign(paddle.sin(2 * 3.14159 * 200 / 48000 * paddle.arange(48000))),
                         (1 + 2 * 200 / 48000 * paddle.arange(48000)) % 2 - 1,
                     ]
                 ),
@@ -198,18 +193,13 @@ inputs = [
 def _reference_metric_batch(preds, target, mean):
     def _reference_metric(preds):
         for pred, ref in zip(
-            *[
-                [x for i in inputs for x in i[which].reshape(-1, i[which].shape[-1])]
-                for which in ["preds", "reference"]
-            ]
+            *[[x for i in inputs for x in i[which].reshape(-1, i[which].shape[-1])] for which in ["preds", "reference"]]
         ):
             if paddle.equal(preds, pred):
                 return ref
         raise NotImplementedError
 
-    out = paddle.stack(
-        [_reference_metric(pred) for pred in preds.reshape(-1, preds.shape[-1])]
-    )
+    out = paddle.stack([_reference_metric(pred) for pred in preds.reshape(-1, preds.shape[-1])])
     return out.mean(dim=0) if mean else out.reshape(*preds.shape[:-1], 5)
 
 
@@ -250,9 +240,7 @@ class TestNISQA(MetricTester):
             metric_args={"fs": fs},
         )
 
-    def test_nisqa_functional(
-        self, preds: paddle.Tensor, reference: paddle.Tensor, fs: int, device="cpu"
-    ):
+    def test_nisqa_functional(self, preds: paddle.Tensor, reference: paddle.Tensor, fs: int, device="cpu"):
         """Test functional implementation of metric."""
         self.run_functional_metric_test(
             preds=preds,
@@ -279,10 +267,7 @@ def test_batched_vs_unbatched():
     preds = paddle.rand(2, 2, 16000)
     out_batched = non_intrusive_speech_quality_assessment(preds, 16000)
     out_unbatched = paddle.stack(
-        [
-            non_intrusive_speech_quality_assessment(x, 16000)
-            for x in preds.reshape(-1, 16000)
-        ]
+        [non_intrusive_speech_quality_assessment(x, 16000) for x in preds.reshape(-1, 16000)]
     ).reshape(2, 2, 5)
     assert paddle.allclose(x=out_batched, y=out_unbatched).item()
 

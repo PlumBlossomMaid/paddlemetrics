@@ -1,14 +1,11 @@
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
 from paddlemetrics.utils.checks import _check_same_shape
 from paddlemetrics.utils.distributed import reduce
 
 
-def _ergas_update(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> tuple[paddle.Tensor, paddle.Tensor]:
+def _ergas_update(preds: paddle.Tensor, target: paddle.Tensor) -> tuple[paddle.Tensor, paddle.Tensor]:
     """Update and returns variables required to compute Erreur Relative Globale Adimensionnelle de Synthèse.
 
     Args:
@@ -62,11 +59,7 @@ def _ergas_compute(
     sum_squared_error = paddle.sum(diff * diff, axis=2)
     rmse_per_band = paddle.sqrt(sum_squared_error / (h * w))
     mean_target = paddle.mean(target, axis=2)
-    ergas_score = (
-        100
-        / ratio
-        * paddle.sqrt(paddle.sum((rmse_per_band / mean_target) ** 2, axis=1) / c)
-    )
+    ergas_score = 100 / ratio * paddle.sqrt(paddle.sum((rmse_per_band / mean_target) ** 2, axis=1) / c)
     return reduce(ergas_score, reduction)
 
 

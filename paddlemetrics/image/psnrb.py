@@ -58,19 +58,12 @@ class PeakSignalNoiseRatioWithBlockedEffect(Metric):
     bef: Tensor
     data_range: Tensor
 
-    def __init__(
-        self,
-        data_range: Union[float, tuple[float, float]],
-        block_size: int = 8,
-        **kwargs: Any
-    ) -> None:
+    def __init__(self, data_range: Union[float, tuple[float, float]], block_size: int = 8, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         if not isinstance(block_size, int) and block_size < 1:
             raise ValueError("Argument ``block_size`` should be a positive integer")
         self.block_size = block_size
-        self.add_state(
-            "sum_squared_error", default=paddle.tensor(0.0), dist_reduce_fx="sum"
-        )
+        self.add_state("sum_squared_error", default=paddle.tensor(0.0), dist_reduce_fx="sum")
         self.add_state("total", default=paddle.tensor(0), dist_reduce_fx="sum")
         self.add_state("bef", default=paddle.tensor(0.0), dist_reduce_fx="sum")
         if isinstance(data_range, tuple):
@@ -79,9 +72,7 @@ class PeakSignalNoiseRatioWithBlockedEffect(Metric):
                 default=paddle.tensor(data_range[1] - data_range[0]),
                 dist_reduce_fx="mean",
             )
-            self.clamping_fn = lambda x: paddle.clamp(
-                x, min=data_range[0], max=data_range[1]
-            )
+            self.clamping_fn = lambda x: paddle.clamp(x, min=data_range[0], max=data_range[1])
         else:
             self.add_state(
                 "data_range",
@@ -95,18 +86,14 @@ class PeakSignalNoiseRatioWithBlockedEffect(Metric):
         if self.clamping_fn is not None:
             preds = self.clamping_fn(preds)
             target = self.clamping_fn(target)
-        sum_squared_error, bef, num_obs = _psnrb_update(
-            preds, target, block_size=self.block_size
-        )
+        sum_squared_error, bef, num_obs = _psnrb_update(preds, target, block_size=self.block_size)
         self.sum_squared_error += sum_squared_error
         self.bef += bef
         self.total += num_obs
 
     def compute(self) -> paddle.Tensor:
         """Compute peak signal-to-noise ratio over state."""
-        return _psnrb_compute(
-            self.sum_squared_error, self.bef, self.total, self.data_range
-        )
+        return _psnrb_compute(self.sum_squared_error, self.bef, self.total, self.data_range)
 
     def plot(
         self,

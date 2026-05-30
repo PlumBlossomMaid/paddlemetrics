@@ -1,9 +1,7 @@
 import paddle
 
-from paddlemetrics.functional.clustering.mutual_info_score import \
-    mutual_info_score
-from paddlemetrics.functional.clustering.utils import (calculate_entropy,
-                                                      check_cluster_labels)
+from paddlemetrics.functional.clustering.mutual_info_score import mutual_info_score
+from paddlemetrics.functional.clustering.utils import calculate_entropy, check_cluster_labels
 
 
 def _homogeneity_score_compute(
@@ -17,26 +15,14 @@ def _homogeneity_score_compute(
     entropy_target = calculate_entropy(target)
     entropy_preds = calculate_entropy(preds)
     mutual_info = mutual_info_score(preds, target)
-    homogeneity = (
-        mutual_info / entropy_target
-        if entropy_target
-        else paddle.ones_like(entropy_target)
-    )
+    homogeneity = mutual_info / entropy_target if entropy_target else paddle.ones_like(entropy_target)
     return homogeneity, mutual_info, entropy_preds, entropy_target
 
 
-def _completeness_score_compute(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> tuple[paddle.Tensor, paddle.Tensor]:
+def _completeness_score_compute(preds: paddle.Tensor, target: paddle.Tensor) -> tuple[paddle.Tensor, paddle.Tensor]:
     """Computes the completeness score of a clustering given the predicted and target cluster labels."""
-    homogeneity, mutual_info, entropy_preds, _ = _homogeneity_score_compute(
-        preds, target
-    )
-    completeness = (
-        mutual_info / entropy_preds
-        if entropy_preds
-        else paddle.ones_like(entropy_preds)
-    )
+    homogeneity, mutual_info, entropy_preds, _ = _homogeneity_score_compute(preds, target)
+    completeness = mutual_info / entropy_preds if entropy_preds else paddle.ones_like(entropy_preds)
     return completeness, homogeneity
 
 
@@ -86,9 +72,7 @@ def completeness_score(preds: paddle.Tensor, target: paddle.Tensor) -> paddle.Te
     return completeness
 
 
-def v_measure_score(
-    preds: paddle.Tensor, target: paddle.Tensor, beta: float = 1.0
-) -> paddle.Tensor:
+def v_measure_score(preds: paddle.Tensor, target: paddle.Tensor, beta: float = 1.0) -> paddle.Tensor:
     """Compute the V-measure score between two clusterings.
 
     Args:

@@ -1,13 +1,13 @@
 import paddle
 
 from paddlemetrics.functional.clustering.utils import (
-    calculate_contingency_matrix, calculate_pair_cluster_confusion_matrix,
-    check_cluster_labels)
+    calculate_contingency_matrix,
+    calculate_pair_cluster_confusion_matrix,
+    check_cluster_labels,
+)
 
 
-def _adjusted_rand_score_update(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> paddle.Tensor:
+def _adjusted_rand_score_update(preds: paddle.Tensor, target: paddle.Tensor) -> paddle.Tensor:
     """Update and return variables required to compute the rand score.
 
     Args:
@@ -32,9 +32,7 @@ def _adjusted_rand_score_compute(contingency: paddle.Tensor) -> paddle.Tensor:
         rand_score: rand score
 
     """
-    (tn, fp), (fn, tp) = calculate_pair_cluster_confusion_matrix(
-        contingency=contingency
-    )
+    (tn, fp), (fn, tp) = calculate_pair_cluster_confusion_matrix(contingency=contingency)
     if fn == 0 and fp == 0:
         return paddle.ones_like(tn, dtype=paddle.float32)
     return 2.0 * (tp * tn - fn * fp) / ((tp + fn) * (fn + tn) + (tp + fp) * (fp + tn))

@@ -4,11 +4,9 @@ import paddle
 from paddle import Tensor
 
 from paddlemetrics.functional.classification import multiclass_confusion_matrix
-from paddlemetrics.functional.clustering.cluster_accuracy import \
-    _cluster_accuracy_compute
+from paddlemetrics.functional.clustering.cluster_accuracy import _cluster_accuracy_compute
 from paddlemetrics.metric import Metric
-from paddlemetrics.utils.imports import (_MATPLOTLIB_AVAILABLE,
-                                            _TORCH_LINEAR_ASSIGNMENT_AVAILABLE)
+from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE, _TORCH_LINEAR_ASSIGNMENT_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
 
 if not _MATPLOTLIB_AVAILABLE:
@@ -86,9 +84,7 @@ class ClusterAccuracy(Metric):
 
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update the confusion matrix with the new predictions and targets."""
-        self.confmat += multiclass_confusion_matrix(
-            preds, target, num_classes=self.num_classes
-        )
+        self.confmat += multiclass_confusion_matrix(preds, target, num_classes=self.num_classes)
 
     def compute(self) -> paddle.Tensor:
         """Computes the clustering accuracy."""

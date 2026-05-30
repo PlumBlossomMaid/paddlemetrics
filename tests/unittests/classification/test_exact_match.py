@@ -4,18 +4,14 @@ import numpy as np
 import paddle
 import pytest
 from scipy.special import expit as sigmoid
+
+from paddlemetrics.classification.exact_match import ExactMatch, MulticlassExactMatch, MultilabelExactMatch
+from paddlemetrics.functional.classification.exact_match import multiclass_exact_match, multilabel_exact_match
+from paddlemetrics.metric import Metric
 from unittests import NUM_CLASSES, THRESHOLD
 from unittests._helpers import seed_all
 from unittests._helpers.testers import MetricTester, inject_ignore_index
-from unittests.classification._inputs import (_multiclass_cases,
-                                              _multilabel_cases)
-
-from paddlemetrics.classification.exact_match import (ExactMatch,
-                                                     MulticlassExactMatch,
-                                                     MultilabelExactMatch)
-from paddlemetrics.functional.classification.exact_match import (
-    multiclass_exact_match, multilabel_exact_match)
-from paddlemetrics.metric import Metric
+from unittests.classification._inputs import _multiclass_cases, _multilabel_cases
 
 seed_all(42)
 
@@ -69,9 +65,7 @@ class TestMulticlassExactMatch(MetricTester):
 
     @pytest.mark.parametrize("multidim_average", ["global", "samplewise"])
     @pytest.mark.parametrize("ignore_index", [None, -1])
-    def test_multiclass_exact_match_functional(
-        self, inputs, ignore_index, multidim_average
-    ):
+    def test_multiclass_exact_match_functional(self, inputs, ignore_index, multidim_average):
         """Test functional implementation of metric."""
         preds, target = inputs
         if ignore_index == -1:
@@ -109,14 +103,8 @@ class TestMulticlassExactMatch(MetricTester):
     def test_multiclass_exact_match_half_cpu(self, inputs, dtype):
         """Test dtype support of the metric on CPU."""
         preds, target = inputs
-        if (
-            not True
-            and (preds < 0).any()
-            and dtype == paddle.float16
-        ):
-            pytest.xfail(
-                reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1"
-            )
+        if not True and (preds < 0).any() and dtype == paddle.float16:
+            pytest.xfail(reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1")
         self.run_precision_test_cpu(
             preds=preds,
             target=target,
@@ -201,9 +189,7 @@ class TestMultilabelExactMatch(MetricTester):
 
     @pytest.mark.parametrize("ignore_index", [None, 0, -1])
     @pytest.mark.parametrize("multidim_average", ["global", "samplewise"])
-    def test_multilabel_exact_match_functional(
-        self, inputs, ignore_index, multidim_average
-    ):
+    def test_multilabel_exact_match_functional(self, inputs, ignore_index, multidim_average):
         """Test functional implementation of metric."""
         preds, target = inputs
         if ignore_index == -1:
@@ -242,14 +228,8 @@ class TestMultilabelExactMatch(MetricTester):
     def test_multilabel_exact_match_half_cpu(self, inputs, dtype):
         """Test dtype support of the metric on CPU."""
         preds, target = inputs
-        if (
-            not True
-            and (preds < 0).any()
-            and dtype == paddle.float16
-        ):
-            pytest.xfail(
-                reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1"
-            )
+        if not True and (preds < 0).any() and dtype == paddle.float16:
+            pytest.xfail(reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1")
         self.run_precision_test_cpu(
             preds=preds,
             target=target,

@@ -3,12 +3,12 @@ from functools import partial
 import numpy as np
 import paddle
 import pytest
-from unittests import BATCH_SIZE, NUM_BATCHES, _Input
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
 
 from paddlemetrics.functional import relative_squared_error
 from paddlemetrics.regression import RelativeSquaredError
+from unittests import BATCH_SIZE, NUM_BATCHES, _Input
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
 
 seed_all(42)
 NUM_TARGETS = 5
@@ -89,9 +89,7 @@ class TestRelativeSquaredError(MetricTester):
             metric_args={"squared": squared},
         )
 
-    def test_rse_differentiability(
-        self, squared, preds, target, ref_metric, num_outputs
-    ):
+    def test_rse_differentiability(self, squared, preds, target, ref_metric, num_outputs):
         """Test the differentiability of the metric, according to its `is_differentiable` attribute."""
         self.run_differentiability_test(
             preds=preds,

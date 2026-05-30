@@ -6,21 +6,15 @@ import pytest
 from scipy.special import expit as sigmoid
 from scipy.special import softmax
 from sklearn.metrics import roc_auc_score as sk_roc_auc_score
-from unittests import NUM_CLASSES
-from unittests._helpers import seed_all
-from unittests._helpers.testers import (MetricTester, inject_ignore_index,
-                                        remove_ignore_index)
-from unittests.classification._inputs import (_binary_cases, _multiclass_cases,
-                                              _multilabel_cases)
 
-from paddlemetrics.classification.auroc import (AUROC, BinaryAUROC,
-                                               MulticlassAUROC,
-                                               MultilabelAUROC)
-from paddlemetrics.functional.classification.auroc import (binary_auroc,
-                                                          multiclass_auroc,
-                                                          multilabel_auroc)
+from paddlemetrics.classification.auroc import AUROC, BinaryAUROC, MulticlassAUROC, MultilabelAUROC
+from paddlemetrics.functional.classification.auroc import binary_auroc, multiclass_auroc, multilabel_auroc
 from paddlemetrics.functional.classification.roc import binary_roc
 from paddlemetrics.metric import Metric
+from unittests import NUM_CLASSES
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester, inject_ignore_index, remove_ignore_index
+from unittests.classification._inputs import _binary_cases, _multiclass_cases, _multilabel_cases
 
 seed_all(42)
 
@@ -30,15 +24,11 @@ def _reference_sklearn_auroc_binary(preds, target, max_fpr=None, ignore_index=No
     target = target.flatten().numpy()
     if not ((preds > 0) & (preds < 1)).all():
         preds = sigmoid(preds)
-    target, preds = remove_ignore_index(
-        target=target, preds=preds, ignore_index=ignore_index
-    )
+    target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
     return sk_roc_auc_score(target, preds, max_fpr=max_fpr)
 
 
-@pytest.mark.parametrize(
-    "inputs", [_binary_cases[1], _binary_cases[2], _binary_cases[4], _binary_cases[5]]
-)
+@pytest.mark.parametrize("inputs", [_binary_cases[1], _binary_cases[2], _binary_cases[4], _binary_cases[5]])
 class TestBinaryAUROC(MetricTester):
     """Test class for `BinaryAUROC` metric."""
 
@@ -105,14 +95,8 @@ class TestBinaryAUROC(MetricTester):
     def test_binary_auroc_dtype_cpu(self, inputs, dtype):
         """Test dtype support of the metric on CPU."""
         preds, target = inputs
-        if (
-            not True
-            and (preds < 0).any()
-            and dtype == paddle.float16
-        ):
-            pytest.xfail(
-                reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1"
-            )
+        if not True and (preds < 0).any() and dtype == paddle.float16:
+            pytest.xfail(reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1")
         self.run_precision_test_cpu(
             preds=preds,
             target=target,
@@ -151,16 +135,12 @@ class TestBinaryAUROC(MetricTester):
             assert paddle.allclose(x=ap1, y=ap2).item()
 
 
-def _reference_sklearn_auroc_multiclass(
-    preds, target, average="macro", ignore_index=None
-):
+def _reference_sklearn_auroc_multiclass(preds, target, average="macro", ignore_index=None):
     preds = np.moveaxis(preds.numpy(), 1, -1).reshape((-1, preds.shape[1]))
     target = target.numpy().flatten()
     if not ((preds > 0) & (preds < 1)).all():
         preds = softmax(preds, 1)
-    target, preds = remove_ignore_index(
-        target=target, preds=preds, ignore_index=ignore_index
-    )
+    target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
     return sk_roc_auc_score(
         target,
         preds,
@@ -280,9 +260,7 @@ class TestMulticlassAUROC(MetricTester):
             preds = preds.softmax(dim=-1)
         for pred, true in zip(preds, target):
             pred = paddle.tensor(np.round(pred.numpy(), 2)) + 1e-06
-            ap1 = multiclass_auroc(
-                pred, true, num_classes=NUM_CLASSES, average=average, thresholds=None
-            )
+            ap1 = multiclass_auroc(pred, true, num_classes=NUM_CLASSES, average=average, thresholds=None)
             ap2 = multiclass_auroc(
                 pred,
                 true,
@@ -293,9 +271,7 @@ class TestMulticlassAUROC(MetricTester):
             assert paddle.allclose(x=ap1, y=ap2).item()
 
 
-def _reference_sklearn_auroc_multilabel(
-    preds, target, average="macro", ignore_index=None
-):
+def _reference_sklearn_auroc_multilabel(preds, target, average="macro", ignore_index=None):
     if ignore_index is None:
         if preds.ndim > 2:
             target = target.transpose(2, 1).reshape(-1, NUM_CLASSES)
@@ -310,17 +286,13 @@ def _reference_sklearn_auroc_multilabel(
             preds.flatten(), target.flatten(), max_fpr=None, ignore_index=ignore_index
         )
     res = [
-        _reference_sklearn_auroc_binary(
-            preds[:, i], target[:, i], max_fpr=None, ignore_index=ignore_index
-        )
+        _reference_sklearn_auroc_binary(preds[:, i], target[:, i], max_fpr=None, ignore_index=ignore_index)
         for i in range(NUM_CLASSES)
     ]
     if average == "macro":
         return np.array(res)[~np.isnan(res)].mean()
     if average == "weighted":
-        weights = (
-            (target == 1).sum([0, 2]) if target.ndim == 3 else (target == 1).sum(0)
-        ).numpy()
+        weights = ((target == 1).sum([0, 2]) if target.ndim == 3 else (target == 1).sum(0)).numpy()
         weights = weights / sum(weights)
         return (np.array(res) * weights)[~np.isnan(res)].sum()
     return res
@@ -436,9 +408,7 @@ class TestMultilabelAUROC(MetricTester):
             preds = sigmoid(preds)
         for pred, true in zip(preds, target):
             pred = paddle.tensor(np.round(pred.numpy(), 1)) + 1e-06
-            ap1 = multilabel_auroc(
-                pred, true, num_labels=NUM_CLASSES, average=average, thresholds=None
-            )
+            ap1 = multilabel_auroc(pred, true, num_labels=NUM_CLASSES, average=average, thresholds=None)
             ap2 = multilabel_auroc(
                 pred,
                 true,
@@ -457,9 +427,7 @@ class TestMultilabelAUROC(MetricTester):
         partial(MultilabelAUROC, num_labels=NUM_CLASSES),
     ],
 )
-@pytest.mark.parametrize(
-    "thresholds", [None, 100, [0.3, 0.5, 0.7, 0.9], paddle.linspace(0, 1, 10)]
-)
+@pytest.mark.parametrize("thresholds", [None, 100, [0.3, 0.5, 0.7, 0.9], paddle.linspace(0, 1, 10)])
 def test_valid_input_thresholds(recwarn, metric, thresholds):
     """Test valid formats of the threshold argument."""
     metric(thresholds=thresholds)

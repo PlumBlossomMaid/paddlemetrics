@@ -5,8 +5,7 @@ import paddle
 from paddle import Tensor
 
 from paddlemetrics.functional.regression.r2 import _r2_score_update
-from paddlemetrics.functional.regression.rse import \
-    _relative_squared_error_compute
+from paddlemetrics.functional.regression.rse import _relative_squared_error_compute
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
@@ -59,9 +58,7 @@ class RelativeSquaredError(Metric):
     residual: Tensor
     total: Tensor
 
-    def __init__(
-        self, num_outputs: int = 1, squared: bool = True, **kwargs: Any
-    ) -> None:
+    def __init__(self, num_outputs: int = 1, squared: bool = True, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.num_outputs = num_outputs
         self.add_state(
@@ -69,12 +66,8 @@ class RelativeSquaredError(Metric):
             default=paddle.zeros(self.num_outputs),
             dist_reduce_fx="sum",
         )
-        self.add_state(
-            "sum_error", default=paddle.zeros(self.num_outputs), dist_reduce_fx="sum"
-        )
-        self.add_state(
-            "residual", default=paddle.zeros(self.num_outputs), dist_reduce_fx="sum"
-        )
+        self.add_state("sum_error", default=paddle.zeros(self.num_outputs), dist_reduce_fx="sum")
+        self.add_state("residual", default=paddle.zeros(self.num_outputs), dist_reduce_fx="sum")
         self.add_state("total", default=paddle.tensor(0), dist_reduce_fx="sum")
         self.squared = squared
 

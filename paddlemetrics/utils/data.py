@@ -1,13 +1,9 @@
 """Data utilities for paddlemetrics."""
-import sys
+
 from collections.abc import Sequence
-from copy import deepcopy
 from typing import Any, Callable, List, Optional, Union
 
 import paddle
-
-from paddlemetrics.utils.exceptions import PaddleMetricsUserWarning
-from paddlemetrics.utils.prints import rank_zero_warn
 
 METRIC_EPS = 1e-06
 
@@ -35,10 +31,7 @@ def apply_to_collection(
         return function(data, *args, **kwargs)
 
     if isinstance(data, dict):
-        return {
-            key: apply_to_collection(item, dtype, function, *args, **kwargs)
-            for key, item in data.items()
-        }
+        return {key: apply_to_collection(item, dtype, function, *args, **kwargs) for key, item in data.items()}
 
     if isinstance(data, (tuple, list)):
         out = [apply_to_collection(item, dtype, function, *args, **kwargs) for item in data]
@@ -116,12 +109,10 @@ def to_onehot(label_tensor: paddle.Tensor, num_classes: Optional[int] = None) ->
         dtype=label_tensor.dtype,
     )
     index = label_tensor.cast("int64").unsqueeze(1).expand_as(tensor_onehot)
-    return tensor_onehot.put_along_axis(index, 1.0, axis=1)
+    return tensor_onehot.put_along_axis(index, paddle.ones([], dtype=label_tensor.dtype), axis=1)
 
 
-def _top_k_with_half_precision_support(
-    x: paddle.Tensor, k: int = 1, axis: int = 1
-) -> paddle.Tensor:
+def _top_k_with_half_precision_support(x: paddle.Tensor, k: int = 1, axis: int = 1) -> paddle.Tensor:
     """topk does not support half precision on CPU in some cases."""
     if x.dtype == paddle.float16 and not paddle.device.is_compiled_with_cuda():
         idx = paddle.argsort(x, axis=axis, stable=True).flip(axis=axis)
@@ -129,9 +120,7 @@ def _top_k_with_half_precision_support(
     return paddle.topk(x, k=k, axis=axis).indices
 
 
-def select_topk(
-    prob_tensor: paddle.Tensor, topk: int = 1, axis: int = 1
-) -> paddle.Tensor:
+def select_topk(prob_tensor: paddle.Tensor, topk: int = 1, axis: int = 1) -> paddle.Tensor:
     """Convert a probability tensor to binary by selecting top-k highest entries.
 
     Args:
@@ -188,9 +177,7 @@ def _bincount(x: paddle.Tensor, minlength: Optional[int] = None) -> paddle.Tenso
     return paddle.bincount(x, minlength=minlength)
 
 
-def _cumsum(
-    x: paddle.Tensor, axis: Optional[int] = 0, dtype: Optional[paddle.dtype] = None
-) -> paddle.Tensor:
+def _cumsum(x: paddle.Tensor, axis: Optional[int] = 0, dtype: Optional[paddle.dtype] = None) -> paddle.Tensor:
     """Implement cumulative summation."""
     return paddle.cumsum(x, axis=axis, dtype=dtype)
 

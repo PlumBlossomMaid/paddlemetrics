@@ -19,7 +19,7 @@ def test_saving_loading(persistent, in_device, out_device):
     )
     paddle.save(obj=metric1.state_dict(), path="metric.pth")
     metric2 = MulticlassAccuracy(num_classes=5).to(out_device)
-    metric2.load_state_dict(paddle.load(path=str("metric.pth")))
+    metric2.load_state_dict(paddle.load(path=str("metric.pth")), strict=persistent)
     metric_state1 = metric1.metric_state
     metric_state2 = metric2.metric_state
     for k, v in metric_state1.items():

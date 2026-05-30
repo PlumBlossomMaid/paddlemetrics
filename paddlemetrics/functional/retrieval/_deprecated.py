@@ -2,18 +2,15 @@ from typing import Optional
 
 import paddle
 
-from paddlemetrics.functional.retrieval.average_precision import \
-    retrieval_average_precision
+from paddlemetrics.functional.retrieval.average_precision import retrieval_average_precision
 from paddlemetrics.functional.retrieval.fall_out import retrieval_fall_out
 from paddlemetrics.functional.retrieval.hit_rate import retrieval_hit_rate
 from paddlemetrics.functional.retrieval.ndcg import retrieval_normalized_dcg
 from paddlemetrics.functional.retrieval.precision import retrieval_precision
-from paddlemetrics.functional.retrieval.precision_recall_curve import \
-    retrieval_precision_recall_curve
+from paddlemetrics.functional.retrieval.precision_recall_curve import retrieval_precision_recall_curve
 from paddlemetrics.functional.retrieval.r_precision import retrieval_r_precision
 from paddlemetrics.functional.retrieval.recall import retrieval_recall
-from paddlemetrics.functional.retrieval.reciprocal_rank import \
-    retrieval_reciprocal_rank
+from paddlemetrics.functional.retrieval.reciprocal_rank import retrieval_reciprocal_rank
 from paddlemetrics.utils.prints import _deprecated_root_import_func
 
 
@@ -33,9 +30,7 @@ def _retrieval_average_precision(
     return retrieval_average_precision(preds=preds, target=target, top_k=top_k)
 
 
-def _retrieval_fall_out(
-    preds: paddle.Tensor, target: paddle.Tensor, top_k: Optional[int] = None
-) -> paddle.Tensor:
+def _retrieval_fall_out(preds: paddle.Tensor, target: paddle.Tensor, top_k: Optional[int] = None) -> paddle.Tensor:
     """Wrapper for deprecated import.
 
     >>> from paddle import tensor
@@ -49,9 +44,7 @@ def _retrieval_fall_out(
     return retrieval_fall_out(preds=preds, target=target, top_k=top_k)
 
 
-def _retrieval_hit_rate(
-    preds: paddle.Tensor, target: paddle.Tensor, top_k: Optional[int] = None
-) -> paddle.Tensor:
+def _retrieval_hit_rate(preds: paddle.Tensor, target: paddle.Tensor, top_k: Optional[int] = None) -> paddle.Tensor:
     """Wrapper for deprecated import.
 
     >>> from paddle import tensor
@@ -97,9 +90,7 @@ def _retrieval_precision(
 
     """
     _deprecated_root_import_func("retrieval_precision", "retrieval")
-    return retrieval_precision(
-        preds=preds, target=target, top_k=top_k, adaptive_k=adaptive_k
-    )
+    return retrieval_precision(preds=preds, target=target, top_k=top_k, adaptive_k=adaptive_k)
 
 
 def _retrieval_precision_recall_curve(
@@ -123,14 +114,10 @@ def _retrieval_precision_recall_curve(
 
     """
     _deprecated_root_import_func("retrieval_precision_recall_curve", "retrieval")
-    return retrieval_precision_recall_curve(
-        preds=preds, target=target, max_k=max_k, adaptive_k=adaptive_k
-    )
+    return retrieval_precision_recall_curve(preds=preds, target=target, max_k=max_k, adaptive_k=adaptive_k)
 
 
-def _retrieval_r_precision(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> paddle.Tensor:
+def _retrieval_r_precision(preds: paddle.Tensor, target: paddle.Tensor) -> paddle.Tensor:
     """Wrapper for deprecated import.
 
     >>> from paddle import tensor
@@ -144,9 +131,7 @@ def _retrieval_r_precision(
     return retrieval_r_precision(preds=preds, target=target)
 
 
-def _retrieval_recall(
-    preds: paddle.Tensor, target: paddle.Tensor, top_k: Optional[int] = None
-) -> paddle.Tensor:
+def _retrieval_recall(preds: paddle.Tensor, target: paddle.Tensor, top_k: Optional[int] = None) -> paddle.Tensor:
     """Wrapper for deprecated import.
 
     >>> from paddle import tensor
@@ -160,9 +145,7 @@ def _retrieval_recall(
     return retrieval_recall(preds=preds, target=target, top_k=top_k)
 
 
-def _retrieval_reciprocal_rank(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> paddle.Tensor:
+def _retrieval_reciprocal_rank(preds: paddle.Tensor, target: paddle.Tensor) -> paddle.Tensor:
     """Wrapper for deprecated import.
 
     >>> from paddle import tensor

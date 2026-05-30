@@ -1,7 +1,6 @@
 from typing import Union
 
 import paddle
-from paddle import Tensor
 
 from paddlemetrics.utils.checks import _check_same_shape
 
@@ -48,11 +47,7 @@ def _mean_squared_error_compute(
         tensor(0.2500)
 
     """
-    return (
-        sum_squared_error / num_obs
-        if squared
-        else paddle.sqrt(sum_squared_error / num_obs)
-    )
+    return sum_squared_error / num_obs if squared else paddle.sqrt(sum_squared_error / num_obs)
 
 
 def mean_squared_error(
@@ -80,7 +75,5 @@ def mean_squared_error(
         tensor(0.2500)
 
     """
-    sum_squared_error, num_obs = _mean_squared_error_update(
-        preds, target, num_outputs=num_outputs
-    )
+    sum_squared_error, num_obs = _mean_squared_error_update(preds, target, num_outputs=num_outputs)
     return _mean_squared_error_compute(sum_squared_error, num_obs, squared=squared)

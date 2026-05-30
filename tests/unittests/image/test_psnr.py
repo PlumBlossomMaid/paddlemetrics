@@ -3,25 +3,20 @@ from functools import partial
 import numpy as np
 import paddle
 import pytest
-from skimage.metrics import \
-    peak_signal_noise_ratio as skimage_peak_signal_noise_ratio
-from unittests import BATCH_SIZE, NUM_BATCHES, _Input
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
+from skimage.metrics import peak_signal_noise_ratio as skimage_peak_signal_noise_ratio
 
 from paddlemetrics.functional import peak_signal_noise_ratio
 from paddlemetrics.image import PeakSignalNoiseRatio
+from unittests import BATCH_SIZE, NUM_BATCHES, _Input
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
 
 seed_all(42)
 _input_size = NUM_BATCHES, BATCH_SIZE, 32, 32
 _inputs = [
     _Input(
-        preds=paddle.randint(
-            low=0, high=n_cls_pred, shape=_input_size, dtype=paddle.float32
-        ),
-        target=paddle.randint(
-            low=0, high=n_cls_target, shape=_input_size, dtype=paddle.float32
-        ),
+        preds=paddle.randint(low=0, high=n_cls_pred, shape=_input_size).cast(paddle.float32),
+        target=paddle.randint(low=0, high=n_cls_target, shape=_input_size).cast(paddle.float32),
     )
     for n_cls_pred, n_cls_target in [(10, 10), (5, 10), (10, 5)]
 ]
@@ -60,9 +55,7 @@ def _reference_skimage_psnr(preds, target, data_range, reduction, dim):
 
 
 def _reference_sklearn_psnr_log(preds, target, data_range, reduction, dim):
-    return _reference_skimage_psnr(preds, target, data_range, reduction, dim) * np.log(
-        10
-    )
+    return _reference_skimage_psnr(preds, target, data_range, reduction, dim) * np.log(10)
 
 
 @pytest.mark.parametrize(
@@ -85,9 +78,7 @@ class TestPSNR(MetricTester):
     """Test class for `PeakSignalNoiseRatio` metric."""
 
     @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
-    def test_psnr(
-        self, preds, target, data_range, base, reduction, dim, ref_metric, ddp
-    ):
+    def test_psnr(self, preds, target, data_range, base, reduction, dim, ref_metric, ddp):
         """Test class implementation of metric."""
         _args = {
             "data_range": data_range,
@@ -100,15 +91,11 @@ class TestPSNR(MetricTester):
             preds,
             target,
             metric_class=PeakSignalNoiseRatio,
-            reference_metric=partial(
-                ref_metric, data_range=data_range, reduction=reduction, axis=dim
-            ),
+            reference_metric=partial(ref_metric, data_range=data_range, reduction=reduction, axis=dim),
             metric_args=_args,
         )
 
-    def test_psnr_functional(
-        self, preds, target, ref_metric, data_range, base, reduction, dim
-    ):
+    def test_psnr_functional(self, preds, target, ref_metric, data_range, base, reduction, dim):
         """Test functional implementation of metric."""
         _args = {
             "data_range": data_range,
@@ -120,9 +107,7 @@ class TestPSNR(MetricTester):
             preds,
             target,
             metric_functional=peak_signal_noise_ratio,
-            reference_metric=partial(
-                ref_metric, data_range=data_range, reduction=reduction, axis=dim
-            ),
+            reference_metric=partial(ref_metric, data_range=data_range, reduction=reduction, axis=dim),
             metric_args=_args,
         )
 
@@ -130,9 +115,7 @@ class TestPSNR(MetricTester):
         not True,
         reason="Pytoch below 2.1 does not support cpu + half precision used in PSNR metric",
     )
-    def test_psnr_half_cpu(
-        self, preds, target, data_range, reduction, dim, base, ref_metric
-    ):
+    def test_psnr_half_cpu(self, preds, target, data_range, reduction, dim, base, ref_metric):
         """Test dtype support of the metric on CPU."""
         self.run_precision_test_cpu(
             preds,
@@ -148,9 +131,7 @@ class TestPSNR(MetricTester):
         )
 
     @pytest.mark.skipif(not paddle.cuda.is_available(), reason="test requires cuda")
-    def test_psnr_half_gpu(
-        self, preds, target, data_range, reduction, dim, base, ref_metric
-    ):
+    def test_psnr_half_gpu(self, preds, target, data_range, reduction, dim, base, ref_metric):
         """Test dtype support of the metric on GPU."""
         self.run_precision_test_gpu(
             preds,
@@ -177,7 +158,8 @@ def test_reduction_for_dim_none(reduction):
             _inputs[0].preds,
             _inputs[0].target,
             data_range=10.0,
-            reduction=reduction, axis=None,
+            reduction=reduction,
+            axis=None,
         )
 
 

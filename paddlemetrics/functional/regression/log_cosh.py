@@ -1,14 +1,10 @@
 import paddle
-from paddle import Tensor
 
-from paddlemetrics.functional.regression.utils import \
-    _check_data_shape_to_num_outputs
+from paddlemetrics.functional.regression.utils import _check_data_shape_to_num_outputs
 from paddlemetrics.utils.checks import _check_same_shape
 
 
-def _unsqueeze_tensors(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> tuple[paddle.Tensor, paddle.Tensor]:
+def _unsqueeze_tensors(preds: paddle.Tensor, target: paddle.Tensor) -> tuple[paddle.Tensor, paddle.Tensor]:
     if preds.ndim == 2:
         return preds, target
     return preds.unsqueeze(1), target.unsqueeze(1)
@@ -34,16 +30,12 @@ def _log_cosh_error_update(
     _check_data_shape_to_num_outputs(preds, target, num_outputs)
     preds, target = _unsqueeze_tensors(preds, target)
     diff = preds - target
-    sum_log_cosh_error = (
-        paddle.log((paddle.exp(diff) + paddle.exp(-diff)) / 2).sum(0).squeeze()
-    )
+    sum_log_cosh_error = paddle.log((paddle.exp(diff) + paddle.exp(-diff)) / 2).sum(0).squeeze()
     num_obs = paddle.tensor(target.shape[0], device=preds.place)
     return sum_log_cosh_error, num_obs
 
 
-def _log_cosh_error_compute(
-    sum_log_cosh_error: paddle.Tensor, num_obs: paddle.Tensor
-) -> paddle.Tensor:
+def _log_cosh_error_compute(sum_log_cosh_error: paddle.Tensor, num_obs: paddle.Tensor) -> paddle.Tensor:
     """Compute Mean Squared Error.
 
     Args:

@@ -6,9 +6,7 @@ from typing import Any, List, Optional, Union, no_type_check
 import numpy as np
 import paddle
 
-from paddlemetrics.utils.imports import (_LATEX_AVAILABLE,
-                                        _MATPLOTLIB_AVAILABLE,
-                                        _SCIENCEPLOT_AVAILABLE)
+from paddlemetrics.utils.imports import _LATEX_AVAILABLE, _MATPLOTLIB_AVAILABLE, _SCIENCEPLOT_AVAILABLE
 
 if _MATPLOTLIB_AVAILABLE:
     import matplotlib
@@ -32,7 +30,6 @@ else:
 
 
 if _SCIENCEPLOT_AVAILABLE:
-    import scienceplots
 
     _style = ["science", "no-latex"]
 _style = ["science"] if _SCIENCEPLOT_AVAILABLE and _LATEX_AVAILABLE else ["default"]
@@ -102,9 +99,7 @@ def plot_single_or_multi_val(
     elif isinstance(val, dict):
         for i, (k, v) in enumerate(val.items()):
             if v.size != 1:
-                ax.plot(
-                    v.detach().cpu(), marker="o", markersize=10, linestyle="-", label=k
-                )
+                ax.plot(v.detach().cpu(), marker="o", markersize=10, linestyle="-", label=k)
                 ax.get_xaxis().set_visible(True)
                 ax.set_xlabel("Step")
                 ax.set_xticks(paddle.arange(len(v)))
@@ -115,19 +110,13 @@ def plot_single_or_multi_val(
         if isinstance(val[0], dict):
             val = {k: paddle.stack([val[i][k] for i in range(n_steps)]) for k in val[0]}
             for k, v in val.items():
-                ax.plot(
-                    v.detach().cpu(), marker="o", markersize=10, linestyle="-", label=k
-                )
+                ax.plot(v.detach().cpu(), marker="o", markersize=10, linestyle="-", label=k)
         else:
             val = paddle.stack(val, 0)
             multi_series = val.ndim != 1
             val = val.T if multi_series else val.unsqueeze(0)
             for i, v in enumerate(val):
-                label = (
-                    (f"{legend_name} {i}" if legend_name else f"{i}")
-                    if multi_series
-                    else ""
-                )
+                label = (f"{legend_name} {i}" if legend_name else f"{i}") if multi_series else ""
                 ax.plot(
                     v.detach().cpu(),
                     marker="o",
@@ -212,9 +201,7 @@ def _get_text_color(patch_color: tuple[float, float, float, float]) -> str:
 
     """
     r, g, b, a = patch_color
-    r, g, b = (
-        c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in (r, g, b)
-    )
+    r, g, b = (c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in (r, g, b))
     y = 0.2126 * r + 0.7152 * g + 0.0722 * b
     return ".1" if y > 0.4 else "white"
 
@@ -280,11 +267,7 @@ def plot_confusion_matrix(
     else:
         fig_label = None
         labels = labels or np.arange(n_classes).tolist()
-    fig, axs = (
-        plt.subplots(nrows=rows, ncols=cols, constrained_layout=True)
-        if ax is None
-        else (ax.get_figure(), ax)
-    )
+    fig, axs = plt.subplots(nrows=rows, ncols=cols, constrained_layout=True) if ax is None else (ax.get_figure(), ax)
     axs = trim_axs(axs, nb)
     for i in range(nb):
         ax = axs[i] if rows != 1 or cols != 1 else axs
@@ -360,16 +343,9 @@ def plot_curve(
     x, y = curve[:2]
     _error_on_missing_matplotlib()
     fig, ax = plt.subplots() if ax is None else (None, ax)
-    if (
-        isinstance(x, paddle.Tensor)
-        and isinstance(y, paddle.Tensor)
-        and x.ndim == 1
-        and y.ndim == 1
-    ):
+    if isinstance(x, paddle.Tensor) and isinstance(y, paddle.Tensor) and x.ndim == 1 and y.ndim == 1:
         label = f"AUC={score.item():0.3f}" if score is not None else None
-        ax.plot(
-            x.detach().cpu(), y.detach().cpu(), linestyle="-", linewidth=2, label=label
-        )
+        ax.plot(x.detach().cpu(), y.detach().cpu(), linestyle="-", linewidth=2, label=label)
         if label is not None:
             ax.legend()
     elif (
@@ -386,13 +362,7 @@ def plot_curve(
                 f"Expected number of elements in arg `labels` to match number of labels in roc curves but got {len(labels)} and {n_classes}"
             )
         for i, (x_, y_) in enumerate(zip(x, y)):
-            label = (
-                f"{legend_name}_{i}"
-                if legend_name is not None
-                else str(i)
-                if labels is None
-                else str(labels[i])
-            )
+            label = f"{legend_name}_{i}" if legend_name is not None else str(i) if labels is None else str(labels[i])
             label += f" AUC={score[i].item():0.3f}" if score is not None else ""
             ax.plot(
                 x_.detach().cpu(),

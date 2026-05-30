@@ -1,4 +1,3 @@
-import sys
 
 from typing import Optional, Union
 
@@ -23,7 +22,7 @@ def is_nonnegative(x: paddle.Tensor, atol: float = 1e-05) -> paddle.Tensor:
 
 
 def _validate_average_method_arg(
-    average_method: Literal["min", "geometric", "arithmetic", "max"] = "arithmetic"
+    average_method: Literal["min", "geometric", "arithmetic", "max"] = "arithmetic",
 ) -> None:
     if average_method not in ("min", "geometric", "arithmetic", "max"):
         raise ValueError(
@@ -88,13 +87,13 @@ def calculate_generalized_mean(
         raise ValueError("`x` must contain positive real numbers")
     if isinstance(p, str):
         if p == "min":
-            return x._min()
+            return x.amin()
         if p == "geometric":
             return paddle.exp(paddle.mean(x.log()))
         if p == "arithmetic":
             return x.mean()
         if p == "max":
-            return x._max()
+            return x.amax()
         raise ValueError("'method' must be 'min', 'geometric', 'arirthmetic', or 'max'")
     return paddle.mean(paddle.pow(x, p)) ** (1.0 / p)
 
@@ -131,18 +130,14 @@ def calculate_contingency_matrix(
     if eps is not None and sparse is True:
         raise ValueError("Cannot specify `eps` and return sparse tensor.")
     if preds.ndim != 1 or target.ndim != 1:
-        raise ValueError(
-            f"Expected 1d `preds` and `target` but got {preds.ndim} and {target.dim}."
-        )
+        raise ValueError(f"Expected 1d `preds` and `target` but got {preds.ndim} and {target.dim}.")
     preds_classes, preds_idx = paddle.unique(preds, return_inverse=True)
     target_classes, target_idx = paddle.unique(target, return_inverse=True)
     num_classes_preds = preds_classes.size(0)
     num_classes_target = target_classes.size(0)
     contingency = paddle.sparse.sparse_coo_tensor(
         indices=paddle.stack((target_idx, preds_idx)),
-        values=paddle.ones(
-            target_idx.shape[0], dtype=preds_idx.dtype, device=preds_idx.device
-        ),
+        values=paddle.ones(target_idx.shape[0], dtype=preds_idx.dtype, device=preds_idx.device),
         shape=(num_classes_target, num_classes_preds),
     )
     if not sparse:
@@ -155,9 +150,7 @@ def calculate_contingency_matrix(
 def _is_real_discrete_label(x: paddle.Tensor) -> bool:
     """Check if tensor of labels is real and discrete."""
     if x.ndim != 1:
-        raise ValueError(
-            f"Expected arguments to be 1-d tensors but got {x.ndim}-d tensors."
-        )
+        raise ValueError(f"Expected arguments to be 1-d tensors but got {x.ndim}-d tensors.")
     return not (paddle.is_floating_point(x) or paddle.is_complex(x))
 
 
@@ -171,14 +164,10 @@ def check_cluster_labels(preds: paddle.Tensor, target: paddle.Tensor) -> None:
     """
     _check_same_shape(preds, target)
     if not (_is_real_discrete_label(preds) and _is_real_discrete_label(target)):
-        raise ValueError(
-            f"Expected real, discrete values for x but received {preds.dtype} and {target.dtype}."
-        )
+        raise ValueError(f"Expected real, discrete values for x but received {preds.dtype} and {target.dtype}.")
 
 
-def _validate_intrinsic_cluster_data(
-    data: paddle.Tensor, labels: paddle.Tensor
-) -> None:
+def _validate_intrinsic_cluster_data(data: paddle.Tensor, labels: paddle.Tensor) -> None:
     """Validate that the input data and labels have correct shape and type."""
     if data.ndim != 2:
         raise ValueError(f"Expected 2D data, got {data.ndim}D data instead")
@@ -245,15 +234,11 @@ def calculate_pair_cluster_confusion_matrix(
     if preds is None and target is None and contingency is None:
         raise ValueError("Must provide either `preds` and `target` or `contingency`.")
     if preds is not None and target is not None and contingency is not None:
-        raise ValueError(
-            "Must provide either `preds` and `target` or `contingency`, not both."
-        )
+        raise ValueError("Must provide either `preds` and `target` or `contingency`, not both.")
     if preds is not None and target is not None:
         contingency = calculate_contingency_matrix(preds, target)
     if contingency is None:
-        raise ValueError(
-            "Must provide `contingency` if `preds` and `target` are not provided."
-        )
+        raise ValueError("Must provide `contingency` if `preds` and `target` are not provided.")
     num_samples = contingency.sum()
     sum_c = contingency.sum(dim=1)
     sum_k = contingency.sum(dim=0)
@@ -262,7 +247,5 @@ def calculate_pair_cluster_confusion_matrix(
     pair_matrix[1, 1] = sum_squared - num_samples
     pair_matrix[1, 0] = (contingency * sum_k).sum() - sum_squared
     pair_matrix[0, 1] = (contingency.T * sum_c).sum() - sum_squared
-    pair_matrix[0, 0] = (
-        num_samples**2 - pair_matrix[0, 1] - pair_matrix[1, 0] - sum_squared
-    )
+    pair_matrix[0, 0] = num_samples**2 - pair_matrix[0, 1] - pair_matrix[1, 0] - sum_squared
     return pair_matrix

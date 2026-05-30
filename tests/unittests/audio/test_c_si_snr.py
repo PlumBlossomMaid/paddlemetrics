@@ -1,14 +1,13 @@
 import paddle
 import pytest
 from scipy.io import wavfile
+
+from paddlemetrics.audio import ComplexScaleInvariantSignalNoiseRatio
+from paddlemetrics.functional.audio import complex_scale_invariant_signal_noise_ratio
 from unittests import BATCH_SIZE, NUM_BATCHES, _Input
 from unittests._helpers import seed_all
 from unittests._helpers.testers import MetricTester
 from unittests.audio import _SAMPLE_AUDIO_SPEECH, _SAMPLE_AUDIO_SPEECH_BAB_DB
-
-from paddlemetrics.audio import ComplexScaleInvariantSignalNoiseRatio
-from paddlemetrics.functional.audio import \
-    complex_scale_invariant_signal_noise_ratio
 
 seed_all(42)
 inputs = _Input(
@@ -20,7 +19,7 @@ inputs = _Input(
 @pytest.mark.parametrize(
     ("preds", "target", "ref_metric", "zero_mean"),
     [
-        (inputs.preds, inputs.target, None),
+        (inputs.preds, inputs.target, None, True),
         (inputs.preds, inputs.target, None, False),
     ],
 )
@@ -57,13 +56,9 @@ def test_on_real_audio():
     ref_stft = paddle.signal.stft(x=ref, n_fft=256, hop_length=128)
     deg_stft = paddle.signal.stft(x=deg, n_fft=256, hop_length=128)
     v = complex_scale_invariant_signal_noise_ratio(deg_stft, ref_stft, zero_mean=False)
-    assert paddle.allclose(
-        x=v, y=paddle.tensor(0.03019072115421295, dtype=v.dtype), atol=0.0001
-    ).item(), v
+    assert paddle.allclose(x=v, y=paddle.tensor(0.03019072115421295, dtype=v.dtype), atol=0.0001).item(), v
     v = complex_scale_invariant_signal_noise_ratio(deg_stft, ref_stft, zero_mean=True)
-    assert paddle.allclose(
-        x=v, y=paddle.tensor(0.030391741544008255, dtype=v.dtype), atol=0.0001
-    ).item(), v
+    assert paddle.allclose(x=v, y=paddle.tensor(0.030391741544008255, dtype=v.dtype), atol=0.0001).item(), v
 
 
 def test_error_on_incorrect_shape(metric_class=ComplexScaleInvariantSignalNoiseRatio):

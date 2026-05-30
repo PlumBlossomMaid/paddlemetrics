@@ -3,15 +3,15 @@ from typing import NamedTuple, Optional
 
 import numpy as np
 import paddle
-from paddle import Tensor
 import pytest
+from paddle import Tensor
 from scipy.stats import entropy
-from unittests import BATCH_SIZE, EXTRA_DIM, NUM_BATCHES
-from unittests._helpers import seed_all
-from unittests._helpers.testers import MetricTester
 
 from paddlemetrics.functional.regression.kl_divergence import kl_divergence
 from paddlemetrics.regression.kl_divergence import KLDivergence
+from unittests import BATCH_SIZE, EXTRA_DIM, NUM_BATCHES
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester
 
 seed_all(42)
 
@@ -53,7 +53,7 @@ def _wrap_reduction(
     ("p", "q", "log_prob"),
     [
         (_probs_inputs.p, _probs_inputs.q, False),
-        (_log_probs_inputs.p, _log_probs_inputs.q),
+        (_log_probs_inputs.p, _log_probs_inputs.q, True),
     ],
 )
 class TestKLDivergence(MetricTester):

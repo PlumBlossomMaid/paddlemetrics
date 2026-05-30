@@ -12,7 +12,6 @@ from paddlemetrics.functional.text.ter import translation_edit_rate
 from paddlemetrics.functional.text.wer import word_error_rate
 from paddlemetrics.functional.text.wil import word_information_lost
 from paddlemetrics.functional.text.wip import word_information_preserved
-from paddlemetrics.utils.imports import _TRANSFORMERS_GREATER_EQUAL_4_4
 
 __all__ = [
     "bleu_score",
@@ -30,8 +29,3 @@ __all__ = [
     "word_information_lost",
     "word_information_preserved",
 ]
-if _TRANSFORMERS_GREATER_EQUAL_4_4:
-    from paddlemetrics.functional.text.bert import bert_score
-    from paddlemetrics.functional.text.infolm import infolm
-
-    __all__ += ["bert_score", "infolm"]

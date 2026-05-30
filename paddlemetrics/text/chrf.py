@@ -5,9 +5,7 @@ from typing import Any, List, Optional, Union
 import paddle
 
 from paddlemetrics import Metric
-from paddlemetrics.functional.text.chrf import (_chrf_score_compute,
-                                               _chrf_score_update,
-                                               _prepare_n_grams_dicts)
+from paddlemetrics.functional.text.chrf import _chrf_score_compute, _chrf_score_update, _prepare_n_grams_dicts
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
 
@@ -97,14 +95,10 @@ class CHRFScore(Metric):
     ) -> None:
         super().__init__(**kwargs)
         if not isinstance(n_char_order, int) or n_char_order < 1:
-            raise ValueError(
-                "Expected argument `n_char_order` to be an integer greater than or equal to 1."
-            )
+            raise ValueError("Expected argument `n_char_order` to be an integer greater than or equal to 1.")
         self.n_char_order = n_char_order
         if not isinstance(n_word_order, int) or n_word_order < 0:
-            raise ValueError(
-                "Expected argument `n_word_order` to be an integer greater than or equal to 0."
-            )
+            raise ValueError("Expected argument `n_word_order` to be an integer greater than or equal to 0.")
         self.n_word_order = n_word_order
         if beta < 0:
             raise ValueError("Expected argument `beta` to be greater than 0.")
@@ -141,12 +135,10 @@ class CHRFScore(Metric):
     def compute(self) -> Union[paddle.Tensor, tuple[paddle.Tensor, paddle.Tensor]]:
         """Calculate chrF/chrF++ score."""
         if self.sentence_chrf_score is not None:
-            return _chrf_score_compute(
-                *self._convert_states_to_dicts(), self.n_order, self.beta
-            ), paddle.concat(self.sentence_chrf_score)
-        return _chrf_score_compute(
-            *self._convert_states_to_dicts(), self.n_order, self.beta
-        )
+            return _chrf_score_compute(*self._convert_states_to_dicts(), self.n_order, self.beta), paddle.concat(
+                self.sentence_chrf_score
+            )
+        return _chrf_score_compute(*self._convert_states_to_dicts(), self.n_order, self.beta)
 
     def _convert_states_to_dicts(self) -> _DICT_STATES_TYPES:
         """Convert global metric states to the n-gram dictionaries to be passed in ``_chrf_score_update``."""
@@ -163,9 +155,7 @@ class CHRFScore(Metric):
                 n_grams_dicts[dict_name][n] = getattr(self, state_name)
         return tuple(n_grams_dicts.values())
 
-    def _update_states_from_dicts(
-        self, n_grams_dicts_tuple: _DICT_STATES_TYPES
-    ) -> None:
+    def _update_states_from_dicts(self, n_grams_dicts_tuple: _DICT_STATES_TYPES) -> None:
         """Update global metric states based on the n-gram dictionaries calculated on the current batch."""
         n_grams_dicts = dict(zip(_DICT_STATES_NAMES, n_grams_dicts_tuple))
         for (n_gram_level, n_gram_order), text in self._get_text_n_gram_iterator():
@@ -186,9 +176,7 @@ class CHRFScore(Metric):
 
     def _get_text_n_gram_iterator(self) -> Iterator[tuple[tuple[str, int], str]]:
         """Get iterator over char/word and reference/hypothesis/matching n-gram level."""
-        return itertools.product(
-            zip(_N_GRAM_LEVELS, [self.n_char_order, self.n_word_order]), _TEXT_LEVELS
-        )
+        return itertools.product(zip(_N_GRAM_LEVELS, [self.n_char_order, self.n_word_order]), _TEXT_LEVELS)
 
     def plot(
         self,

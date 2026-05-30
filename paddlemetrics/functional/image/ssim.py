@@ -1,22 +1,16 @@
-import sys
 
 from collections.abc import Sequence
 from typing import List, Optional, Union
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
-from paddlemetrics.functional.image.utils import (_gaussian_kernel_2d,
-                                                 _gaussian_kernel_3d,
-                                                 _reflection_pad_3d)
+from paddlemetrics.functional.image.utils import _gaussian_kernel_2d, _gaussian_kernel_3d, _reflection_pad_3d
 from paddlemetrics.utils.checks import _check_same_shape
 from paddlemetrics.utils.distributed import reduce
 
 
-def _ssim_check_inputs(
-    preds: paddle.Tensor, target: paddle.Tensor
-) -> tuple[paddle.Tensor, paddle.Tensor]:
+def _ssim_check_inputs(preds: paddle.Tensor, target: paddle.Tensor) -> tuple[paddle.Tensor, paddle.Tensor]:
     """Update and returns variables required to compute Structural Similarity Index Measure.
 
     Args:
@@ -88,17 +82,13 @@ def _ssim_update(
             f"Expected `kernel_size` dimension to be 2 or 3. `kernel_size` dimensionality: {len(kernel_size)}"
         )
     if return_full_image and return_contrast_sensitivity:
-        raise ValueError(
-            "Arguments `return_full_image` and `return_contrast_sensitivity` are mutually exclusive."
-        )
+        raise ValueError("Arguments `return_full_image` and `return_contrast_sensitivity` are mutually exclusive.")
     if any(x % 2 == 0 or x <= 0 for x in kernel_size):
-        raise ValueError(
-            f"Expected `kernel_size` to have odd positive number. Got {kernel_size}."
-        )
+        raise ValueError(f"Expected `kernel_size` to have odd positive number. Got {kernel_size}.")
     if any(y <= 0 for y in sigma):
         raise ValueError(f"Expected `sigma` to have positive number. Got {sigma}.")
     if data_range is None:
-        data_range = max(preds._max() - preds._min(), target._max() - target._min())
+        data_range = max(preds.amax() - preds.amin(), target.amax() - target.amin())
     elif isinstance(data_range, tuple):
         preds = paddle.clamp(preds, min=data_range[0], max=data_range[1])
         target = paddle.clamp(target, min=data_range[0], max=data_range[1])
@@ -120,27 +110,17 @@ def _ssim_update(
         preds = _reflection_pad_3d(preds, pad_d, pad_w, pad_h)
         target = _reflection_pad_3d(target, pad_d, pad_w, pad_h)
         if gaussian_kernel:
-            kernel = _gaussian_kernel_3d(
-                channel, gauss_kernel_size, sigma, dtype, device
-            )
+            kernel = _gaussian_kernel_3d(channel, gauss_kernel_size, sigma, dtype, device)
     else:
-        preds = paddle.nn.functional.pad(
-            preds, (pad_w, pad_w, pad_h, pad_h), mode="reflect"
-        )
-        target = paddle.nn.functional.pad(
-            target, (pad_w, pad_w, pad_h, pad_h), mode="reflect"
-        )
+        preds = paddle.nn.functional.pad(preds, (pad_w, pad_w, pad_h, pad_h), mode="reflect")
+        target = paddle.nn.functional.pad(target, (pad_w, pad_w, pad_h, pad_h), mode="reflect")
         if gaussian_kernel:
-            kernel = _gaussian_kernel_2d(
-                channel, gauss_kernel_size, sigma, dtype, device
-            )
+            kernel = _gaussian_kernel_2d(channel, gauss_kernel_size, sigma, dtype, device)
     if not gaussian_kernel:
-        kernel = paddle.ones(
-            (channel, 1, *kernel_size), dtype=dtype, device=device
-        ) / paddle.prod(paddle.tensor(kernel_size, dtype=dtype, device=device))
-    input_list = paddle.concat(
-        (preds, target, preds * preds, target * target, preds * target)
-    )
+        kernel = paddle.ones((channel, 1, *kernel_size), dtype=dtype, device=device) / paddle.prod(
+            paddle.tensor(kernel_size, dtype=dtype, device=device)
+        )
+    input_list = paddle.concat((preds, target, preds * preds, target * target, preds * target))
     outputs = (
         paddle.nn.functional.conv3d(input_list, kernel, groups=channel)
         if is_3d
@@ -155,20 +135,16 @@ def _ssim_update(
     sigma_pred_target = output_list[4] - mu_pred_target
     upper = 2 * sigma_pred_target.to(dtype) + c2
     lower = (sigma_pred_sq + sigma_target_sq).to(dtype) + c2
-    ssim_idx_full_image = (
-        (2 * mu_pred_target + c1) * upper / ((mu_pred_sq + mu_target_sq + c1) * lower)
-    )
+    ssim_idx_full_image = (2 * mu_pred_target + c1) * upper / ((mu_pred_sq + mu_target_sq + c1) * lower)
     if return_contrast_sensitivity:
         contrast_sensitivity = upper / lower
         if is_3d:
-            contrast_sensitivity = contrast_sensitivity[
-                ..., pad_h:-pad_h, pad_w:-pad_w, pad_d:-pad_d
-            ]
+            contrast_sensitivity = contrast_sensitivity[..., pad_h:-pad_h, pad_w:-pad_w, pad_d:-pad_d]
         else:
             contrast_sensitivity = contrast_sensitivity[..., pad_h:-pad_h, pad_w:-pad_w]
-        return ssim_idx_full_image.reshape(ssim_idx_full_image.shape[0], -1).mean(
-            -1
-        ), contrast_sensitivity.reshape(contrast_sensitivity.shape[0], -1).mean(-1)
+        return ssim_idx_full_image.reshape(ssim_idx_full_image.shape[0], -1).mean(-1), contrast_sensitivity.reshape(
+            contrast_sensitivity.shape[0], -1
+        ).mean(-1)
     if return_full_image:
         return (
             ssim_idx_full_image.reshape(ssim_idx_full_image.shape[0], -1).mean(-1),
@@ -394,19 +370,11 @@ def _multiscale_ssim_update(
         )
         mcs_list.append(contrast_sensitivity)
         if len(kernel_size) == 2:
-            preds = paddle.nn.functional.avg_pool2d(
-                x=preds, kernel_size=(2, 2), exclusive=False
-            )
-            target = paddle.nn.functional.avg_pool2d(
-                x=target, kernel_size=(2, 2), exclusive=False
-            )
+            preds = paddle.nn.functional.avg_pool2d(x=preds, kernel_size=(2, 2), exclusive=False)
+            target = paddle.nn.functional.avg_pool2d(x=target, kernel_size=(2, 2), exclusive=False)
         elif len(kernel_size) == 3:
-            preds = paddle.nn.functional.avg_pool3d(
-                x=preds, kernel_size=(2, 2, 2), exclusive=False
-            )
-            target = paddle.nn.functional.avg_pool3d(
-                x=target, kernel_size=(2, 2, 2), exclusive=False
-            )
+            preds = paddle.nn.functional.avg_pool3d(x=preds, kernel_size=(2, 2, 2), exclusive=False)
+            target = paddle.nn.functional.avg_pool3d(x=target, kernel_size=(2, 2, 2), exclusive=False)
         else:
             raise ValueError("length of kernel_size is neither 2 nor 3")
     mcs_list[-1] = sim
@@ -513,9 +481,7 @@ def multiscale_structural_similarity_index_measure(
     if isinstance(betas, tuple) and not all(isinstance(beta, float) for beta in betas):
         raise ValueError("Argument `betas` is expected to be a tuple of floats.")
     if normalize and normalize not in ("relu", "simple"):
-        raise ValueError(
-            "Argument `normalize` to be expected either `None` or one of 'relu' or 'simple'"
-        )
+        raise ValueError("Argument `normalize` to be expected either `None` or one of 'relu' or 'simple'")
     preds, target = _ssim_check_inputs(preds, target)
     mcs_per_image = _multiscale_ssim_update(
         preds,

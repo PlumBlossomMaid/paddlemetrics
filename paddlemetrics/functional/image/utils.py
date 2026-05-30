@@ -65,9 +65,7 @@ def _gaussian_kernel_2d(
     return kernel.expand(channel, 1, kernel_size[0], kernel_size[1])
 
 
-def _uniform_weight_bias_conv2d(
-    inputs: paddle.Tensor, window_size: int
-) -> tuple[paddle.Tensor, paddle.Tensor]:
+def _uniform_weight_bias_conv2d(inputs: paddle.Tensor, window_size: int) -> tuple[paddle.Tensor, paddle.Tensor]:
     """Construct uniform weight and bias for a 2d convolution.
 
     Args:
@@ -78,17 +76,13 @@ def _uniform_weight_bias_conv2d(
         The weight and bias for 2d convolution
 
     """
-    kernel_weight = paddle.ones(
-        1, 1, window_size, window_size, dtype=inputs.dtype, device=inputs.device
-    )
+    kernel_weight = paddle.ones(1, 1, window_size, window_size, dtype=inputs.dtype, device=inputs.device)
     kernel_weight /= window_size**2
     kernel_bias = paddle.zeros(1, dtype=inputs.dtype, device=inputs.place)
     return kernel_weight, kernel_bias
 
 
-def _single_dimension_pad(
-    inputs: paddle.Tensor, dim: int, pad: int, outer_pad: int = 0
-) -> paddle.Tensor:
+def _single_dimension_pad(inputs: paddle.Tensor, dim: int, pad: int, outer_pad: int = 0) -> paddle.Tensor:
     """Apply single-dimension reflection padding to match scipy implementation.
 
     Args:
@@ -102,9 +96,7 @@ def _single_dimension_pad(
 
     """
     _max = inputs.shape[dim]
-    x = paddle.index_select(
-        inputs, dim, paddle.arange(pad - 1, -1, -1).to(inputs.place)
-    )
+    x = paddle.index_select(inputs, dim, paddle.arange(pad - 1, -1, -1).to(inputs.place))
     y = paddle.index_select(
         inputs,
         dim,
@@ -113,9 +105,7 @@ def _single_dimension_pad(
     return paddle.concat((x, inputs, y), dim)
 
 
-def _reflection_pad_2d(
-    inputs: paddle.Tensor, pad: int, outer_pad: int = 0
-) -> paddle.Tensor:
+def _reflection_pad_2d(inputs: paddle.Tensor, pad: int, outer_pad: int = 0) -> paddle.Tensor:
     """Apply reflection padding to the input image.
 
     Args:
@@ -147,11 +137,10 @@ def _uniform_filter(inputs: paddle.Tensor, window_size: int) -> paddle.Tensor:
     kernel_weight, kernel_bias = _uniform_weight_bias_conv2d(inputs, window_size)
     return paddle.concat(
         [
-            paddle.nn.functional.conv2d(
-                inputs[:, channel].unsqueeze(1), kernel_weight, kernel_bias, padding=0
-            )
+            paddle.nn.functional.conv2d(inputs[:, channel].unsqueeze(1), kernel_weight, kernel_bias, padding=0)
             for channel in range(inputs.shape[1])
-        ], axis=1,
+        ],
+        axis=1,
     )
 
 
@@ -183,9 +172,7 @@ def _gaussian_kernel_3d(
     return kernel.expand(channel, 1, kernel_size[0], kernel_size[1], kernel_size[2])
 
 
-def _reflection_pad_3d(
-    inputs: paddle.Tensor, pad_h: int, pad_w: int, pad_d: int
-) -> paddle.Tensor:
+def _reflection_pad_3d(inputs: paddle.Tensor, pad_h: int, pad_w: int, pad_d: int) -> paddle.Tensor:
     """Reflective padding of 3d input.
 
     Args:
@@ -198,6 +185,4 @@ def _reflection_pad_3d(
         padded input tensor
 
     """
-    return paddle.nn.functional.pad(
-        inputs, (pad_h, pad_h, pad_w, pad_w, pad_d, pad_d), mode="reflect"
-    )
+    return paddle.nn.functional.pad(inputs, (pad_h, pad_h, pad_w, pad_w, pad_d, pad_d), mode="reflect")

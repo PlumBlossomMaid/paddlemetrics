@@ -1,11 +1,9 @@
 from typing import Optional
 
 import paddle
-from paddle import Tensor
 from typing_extensions import Literal
 
-from paddlemetrics.functional.pairwise.helpers import (_check_input,
-                                                      _reduce_distance_matrix)
+from paddlemetrics.functional.pairwise.helpers import _check_input, _reduce_distance_matrix
 
 
 def _pairwise_manhattan_distance_update(
@@ -22,9 +20,7 @@ def _pairwise_manhattan_distance_update(
 
     """
     x, y, zero_diagonal = _check_input(x, y, zero_diagonal)
-    distance = (
-        (x.unsqueeze(1) - y.unsqueeze(0).repeat(x.shape[0], 1, 1)).abs().sum(dim=-1)
-    )
+    distance = (x.unsqueeze(1) - y.unsqueeze(0).repeat(x.shape[0], 1, 1)).abs().sum(dim=-1)
     if zero_diagonal:
         distance.fill_diagonal_(value=0)
     return distance

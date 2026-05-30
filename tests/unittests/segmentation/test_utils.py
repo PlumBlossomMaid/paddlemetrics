@@ -1,22 +1,23 @@
 import paddle
-from paddle import Tensor
 import pytest
 from monai.metrics.utils import get_code_to_measure_table
-from monai.metrics.utils import \
-    get_edge_surface_distance as monai_get_edge_surface_distance
+from monai.metrics.utils import get_edge_surface_distance as monai_get_edge_surface_distance
 from monai.metrics.utils import get_mask_edges as monai_get_mask_edges
-from monai.metrics.utils import \
-    get_surface_distance as monai_get_surface_distance
+from monai.metrics.utils import get_surface_distance as monai_get_surface_distance
 from scipy.ndimage import binary_erosion as scibinary_erosion
 from scipy.ndimage import distance_transform_cdt as scidistance_transform_cdt
 from scipy.ndimage import distance_transform_edt as scidistance_transform_edt
-from scipy.ndimage import \
-    generate_binary_structure as scigenerate_binary_structure
+from scipy.ndimage import generate_binary_structure as scigenerate_binary_structure
 
 from paddlemetrics.functional.segmentation.utils import (
-    binary_erosion, distance_transform, edge_surface_distance,
-    generate_binary_structure, get_neighbour_tables, mask_edges,
-    surface_distance)
+    binary_erosion,
+    distance_transform,
+    edge_surface_distance,
+    generate_binary_structure,
+    get_neighbour_tables,
+    mask_edges,
+    surface_distance,
+)
 
 
 @pytest.mark.parametrize("rank", [2, 3, 4])
@@ -96,12 +97,8 @@ def test_binary_erosion(case, border_value, device):
     if device == "cuda" and not paddle.cuda.is_available():
         pytest.skip("CUDA device not available.")
     scierosion = scibinary_erosion(case, border_value=border_value)
-    erosion = binary_erosion(
-        case.unsqueeze(0).unsqueeze(0).to(device), border_value=border_value
-    )
-    assert paddle.allclose(
-        x=erosion.cpu(), y=paddle.from_numpy(scierosion).byte()
-    ).item()
+    erosion = binary_erosion(case.unsqueeze(0).unsqueeze(0).to(device), border_value=border_value)
+    assert paddle.allclose(x=erosion.cpu(), y=paddle.from_numpy(scierosion).byte()).item()
 
 
 @pytest.mark.parametrize(
@@ -185,9 +182,7 @@ def test_distance_transform(case, metric, device):
         scidistance = scidistance_transform_edt(case)
     else:
         scidistance = scidistance_transform_cdt(case, metric=metric)
-    assert paddle.allclose(
-        x=distance.cpu(), y=paddle.from_numpy(scidistance).to(distance.dtype)
-    ).item()
+    assert paddle.allclose(x=distance.cpu(), y=paddle.from_numpy(scidistance).to(distance.dtype)).item()
 
 
 @pytest.mark.parametrize("dim", [2, 3])
@@ -227,12 +222,12 @@ def test_neighbour_table(dim, spacing):
             ),
         ),
         (
-            paddle.randint(low=0, high=2, shape=(5, 5), dtype=paddle.bool),
-            paddle.randint(low=0, high=2, shape=(5, 5), dtype=paddle.bool),
+            paddle.randint(low=0, high=2, shape=(5, 5)).cast(paddle.bool),
+            paddle.randint(low=0, high=2, shape=(5, 5)).cast(paddle.bool),
         ),
         (
-            paddle.randint(low=0, high=2, shape=(50, 50), dtype=paddle.bool),
-            paddle.randint(low=0, high=2, shape=(50, 50), dtype=paddle.bool),
+            paddle.randint(low=0, high=2, shape=(50, 50)).cast(paddle.bool),
+            paddle.randint(low=0, high=2, shape=(50, 50)).cast(paddle.bool),
         ),
     ],
 )
@@ -244,9 +239,7 @@ def test_surface_distance(cases, distance_metric, spacing, device):
     if device == "cuda" and not paddle.cuda.is_available():
         pytest.skip("CUDA device not available.")
     if spacing != 1 and distance_metric != "euclidean":
-        pytest.skip(
-            "Only euclidean distance is supported for spacing != 1 in reference"
-        )
+        pytest.skip("Only euclidean distance is supported for spacing != 1 in reference")
     preds, target = cases
     spacing = 2 * [spacing]
     res = surface_distance(
@@ -258,25 +251,23 @@ def test_surface_distance(cases, distance_metric, spacing, device):
     reference_res = monai_get_surface_distance(
         preds.numpy(), target.numpy(), distance_metric=distance_metric, spacing=spacing
     )
-    assert paddle.allclose(
-        x=res.cpu(), y=paddle.from_numpy(reference_res).to(res.dtype)
-    ).item()
+    assert paddle.allclose(x=res.cpu(), y=paddle.from_numpy(reference_res).to(res.dtype)).item()
 
 
 @pytest.mark.parametrize(
     "cases",
     [
         (
-            paddle.randint(low=0, high=2, shape=(5, 5), dtype=paddle.bool),
-            paddle.randint(low=0, high=2, shape=(5, 5), dtype=paddle.bool),
+            paddle.randint(low=0, high=2, shape=(5, 5)).cast(paddle.bool),
+            paddle.randint(low=0, high=2, shape=(5, 5)).cast(paddle.bool),
         ),
         (
-            paddle.randint(low=0, high=2, shape=(50, 50), dtype=paddle.bool),
-            paddle.randint(low=0, high=2, shape=(50, 50), dtype=paddle.bool),
+            paddle.randint(low=0, high=2, shape=(50, 50)).cast(paddle.bool),
+            paddle.randint(low=0, high=2, shape=(50, 50)).cast(paddle.bool),
         ),
         (
-            paddle.randint(low=0, high=2, shape=(50, 50, 50), dtype=paddle.bool),
-            paddle.randint(low=0, high=2, shape=(50, 50, 50), dtype=paddle.bool),
+            paddle.randint(low=0, high=2, shape=(50, 50, 50)).cast(paddle.bool),
+            paddle.randint(low=0, high=2, shape=(50, 50, 50)).cast(paddle.bool),
         ),
     ],
 )
@@ -293,9 +284,7 @@ def test_mask_edges(cases, spacing, crop, device):
     res = mask_edges(preds.to(device), target.to(device), spacing=spacing, crop=crop)
     reference_res = monai_get_mask_edges(preds, target, spacing=spacing, crop=crop)
     for r1, r2 in zip(res, reference_res):
-        assert paddle.allclose(
-            x=r1.cpu().float(), y=paddle.from_numpy(r2).float()
-        ).item()
+        assert paddle.allclose(x=r1.cpu().float(), y=paddle.from_numpy(r2).float()).item()
 
 
 @pytest.mark.parametrize(
@@ -324,12 +313,12 @@ def test_mask_edges(cases, spacing, crop, device):
             ),
         ),
         (
-            paddle.randint(low=0, high=2, shape=(5, 5), dtype=paddle.bool),
-            paddle.randint(low=0, high=2, shape=(5, 5), dtype=paddle.bool),
+            paddle.randint(low=0, high=2, shape=(5, 5)).cast(paddle.bool),
+            paddle.randint(low=0, high=2, shape=(5, 5)).cast(paddle.bool),
         ),
         (
-            paddle.randint(low=0, high=2, shape=(50, 50), dtype=paddle.bool),
-            paddle.randint(low=0, high=2, shape=(50, 50), dtype=paddle.bool),
+            paddle.randint(low=0, high=2, shape=(50, 50)).cast(paddle.bool),
+            paddle.randint(low=0, high=2, shape=(50, 50)).cast(paddle.bool),
         ),
     ],
 )
@@ -342,9 +331,7 @@ def test_edge_surface_distance(cases, distance_metric, symmetric, spacing, devic
     if device == "cuda" and not paddle.cuda.is_available():
         pytest.skip("CUDA device not available.")
     if spacing == 2 and distance_metric != "euclidean":
-        pytest.skip(
-            "Only euclidean distance is supported for spacing != 1 in reference"
-        )
+        pytest.skip("Only euclidean distance is supported for spacing != 1 in reference")
     preds, target = cases
     if spacing is not None:
         spacing = preds.ndim * [spacing]
@@ -363,11 +350,7 @@ def test_edge_surface_distance(cases, distance_metric, symmetric, spacing, devic
         symmetric=symmetric,
     )
     if symmetric:
-        assert paddle.allclose(
-            x=res[0].cpu(), y=reference_res[0].to(res[0].dtype)
-        ).item()
-        assert paddle.allclose(
-            x=res[1].cpu(), y=reference_res[1].to(res[1].dtype)
-        ).item()
+        assert paddle.allclose(x=res[0].cpu(), y=reference_res[0].to(res[0].dtype)).item()
+        assert paddle.allclose(x=res[1].cpu(), y=reference_res[1].to(res[1].dtype)).item()
     else:
         assert paddle.allclose(x=res.cpu(), y=reference_res[0].to(res.dtype)).item()

@@ -69,10 +69,8 @@ class ErrorRelativeGlobalDimensionlessSynthesis(Metric):
     def __init__(
         self,
         ratio: float = 4,
-        reduction: Literal[
-            "elementwise_mean", "sum", "none", None
-        ] = "elementwise_mean",
-        **kwargs: Any
+        reduction: Literal["elementwise_mean", "sum", "none", None] = "elementwise_mean",
+        **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
         rank_zero_warn(

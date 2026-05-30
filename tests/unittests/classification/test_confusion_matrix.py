@@ -5,39 +5,36 @@ import paddle
 import pytest
 from scipy.special import expit as sigmoid
 from sklearn.metrics import confusion_matrix as sk_confusion_matrix
-from unittests import NUM_CLASSES, THRESHOLD
-from unittests._helpers import seed_all
-from unittests._helpers.testers import (MetricTester, inject_ignore_index,
-                                        remove_ignore_index)
-from unittests.classification._inputs import (_binary_cases, _multiclass_cases,
-                                              _multilabel_cases)
 
 from paddlemetrics.classification.confusion_matrix import (
-    BinaryConfusionMatrix, ConfusionMatrix, MulticlassConfusionMatrix,
-    MultilabelConfusionMatrix)
+    BinaryConfusionMatrix,
+    ConfusionMatrix,
+    MulticlassConfusionMatrix,
+    MultilabelConfusionMatrix,
+)
 from paddlemetrics.functional.classification.confusion_matrix import (
-    binary_confusion_matrix, multiclass_confusion_matrix,
-    multilabel_confusion_matrix)
+    binary_confusion_matrix,
+    multiclass_confusion_matrix,
+    multilabel_confusion_matrix,
+)
 from paddlemetrics.metric import Metric
+from unittests import NUM_CLASSES, THRESHOLD
+from unittests._helpers import seed_all
+from unittests._helpers.testers import MetricTester, inject_ignore_index, remove_ignore_index
+from unittests.classification._inputs import _binary_cases, _multiclass_cases, _multilabel_cases
 
 seed_all(42)
 
 
-def _reference_sklearn_confusion_matrix_binary(
-    preds, target, normalize=None, ignore_index=None
-):
+def _reference_sklearn_confusion_matrix_binary(preds, target, normalize=None, ignore_index=None):
     preds = preds.view(-1).numpy()
     target = target.view(-1).numpy()
     if np.issubdtype(preds.dtype, np.floating):
         if not ((preds > 0) & (preds < 1)).all():
             preds = sigmoid(preds)
         preds = (preds >= THRESHOLD).astype(np.uint8)
-    target, preds = remove_ignore_index(
-        target=target, preds=preds, ignore_index=ignore_index
-    )
-    return sk_confusion_matrix(
-        y_true=target, y_pred=preds, labels=[0, 1], normalize=normalize
-    )
+    target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
+    return sk_confusion_matrix(y_true=target, y_pred=preds, labels=[0, 1], normalize=normalize)
 
 
 @pytest.mark.parametrize("inputs", _binary_cases)
@@ -107,14 +104,8 @@ class TestBinaryConfusionMatrix(MetricTester):
     def test_binary_confusion_matrix_dtype_cpu(self, inputs, dtype):
         """Test dtype support of the metric on CPU."""
         preds, target = inputs
-        if (
-            not True
-            and (preds < 0).any()
-            and dtype == paddle.float16
-        ):
-            pytest.xfail(
-                reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1"
-            )
+        if not True and (preds < 0).any() and dtype == paddle.float16:
+            pytest.xfail(reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1")
         self.run_precision_test_cpu(
             preds=preds,
             target=target,
@@ -139,18 +130,14 @@ class TestBinaryConfusionMatrix(MetricTester):
         )
 
 
-def _reference_sklearn_confusion_matrix_multiclass(
-    preds, target, normalize=None, ignore_index=None
-):
+def _reference_sklearn_confusion_matrix_multiclass(preds, target, normalize=None, ignore_index=None):
     preds = preds.numpy()
     target = target.numpy()
     if np.issubdtype(preds.dtype, np.floating):
         preds = np.argmax(preds, axis=1)
     preds = preds.flatten()
     target = target.flatten()
-    target, preds = remove_ignore_index(
-        target=target, preds=preds, ignore_index=ignore_index
-    )
+    target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
     return sk_confusion_matrix(
         y_true=target,
         y_pred=preds,
@@ -190,9 +177,7 @@ class TestMulticlassConfusionMatrix(MetricTester):
 
     @pytest.mark.parametrize("normalize", ["true", "pred", "all", None])
     @pytest.mark.parametrize("ignore_index", [None, -1, 0])
-    def test_multiclass_confusion_matrix_functional(
-        self, inputs, normalize, ignore_index
-    ):
+    def test_multiclass_confusion_matrix_functional(self, inputs, normalize, ignore_index):
         """Test functional implementation of metric."""
         preds, target = inputs
         if ignore_index is not None:
@@ -284,9 +269,7 @@ class TestMulticlassConfusionMatrix(MetricTester):
 def test_raises_error_on_too_many_classes(preds, target, ignore_index, error_message):
     """Test that an error is raised if the number of classes in preds or target is larger than expected."""
     with pytest.raises(RuntimeError, match=error_message):
-        multiclass_confusion_matrix(
-            preds, target, num_classes=NUM_CLASSES, ignore_index=ignore_index
-        )
+        multiclass_confusion_matrix(preds, target, num_classes=NUM_CLASSES, ignore_index=ignore_index)
 
 
 def test_multiclass_overflow():
@@ -299,9 +282,7 @@ def test_multiclass_overflow():
     assert paddle.allclose(x=res, y=paddle.tensor(compare)).item()
 
 
-def _reference_sklearn_confusion_matrix_multilabel(
-    preds, target, normalize=None, ignore_index=None
-):
+def _reference_sklearn_confusion_matrix_multilabel(preds, target, normalize=None, ignore_index=None):
     preds = preds.numpy()
     target = target.numpy()
     if np.issubdtype(preds.dtype, np.floating):
@@ -313,12 +294,8 @@ def _reference_sklearn_confusion_matrix_multilabel(
     confmat = []
     for i in range(preds.shape[1]):
         pred, true = preds[:, i], target[:, i]
-        true, pred = remove_ignore_index(
-            target=true, preds=pred, ignore_index=ignore_index
-        )
-        confmat.append(
-            sk_confusion_matrix(true, pred, normalize=normalize, labels=[0, 1])
-        )
+        true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
+        confmat.append(sk_confusion_matrix(true, pred, normalize=normalize, labels=[0, 1]))
     return np.stack(confmat, axis=0)
 
 
@@ -353,9 +330,7 @@ class TestMultilabelConfusionMatrix(MetricTester):
 
     @pytest.mark.parametrize("normalize", ["true", "pred", "all", None])
     @pytest.mark.parametrize("ignore_index", [None, -1, 0])
-    def test_multilabel_confusion_matrix_functional(
-        self, inputs, normalize, ignore_index
-    ):
+    def test_multilabel_confusion_matrix_functional(self, inputs, normalize, ignore_index):
         """Test functional implementation of metric."""
         preds, target = inputs
         if ignore_index is not None:
@@ -391,14 +366,8 @@ class TestMultilabelConfusionMatrix(MetricTester):
     def test_multilabel_confusion_matrix_dtype_cpu(self, inputs, dtype):
         """Test dtype support of the metric on CPU."""
         preds, target = inputs
-        if (
-            not True
-            and (preds < 0).any()
-            and dtype == paddle.float16
-        ):
-            pytest.xfail(
-                reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1"
-            )
+        if not True and (preds < 0).any() and dtype == paddle.float16:
+            pytest.xfail(reason="paddle.sigmoid in metric does not support cpu + half precision for torch<2.1")
         self.run_precision_test_cpu(
             preds=preds,
             target=target,

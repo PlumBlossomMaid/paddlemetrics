@@ -1,4 +1,3 @@
-import sys
 
 import paddle
 
@@ -15,15 +14,13 @@ def _cluster_accuracy_compute(confmat: paddle.Tensor) -> paddle.Tensor:
     from torch_linear_assignment import batch_linear_assignment
 
     confmat = confmat[None]
-    assignment = batch_linear_assignment(confmat._max() - confmat)
+    assignment = batch_linear_assignment(confmat.amax() - confmat)
     confmat = confmat[0]
     tps = confmat[paddle.arange(confmat.shape[0]), assignment.flatten()]
     return tps.sum() / confmat.sum()
 
 
-def cluster_accuracy(
-    preds: paddle.Tensor, target: paddle.Tensor, num_classes: int
-) -> paddle.Tensor:
+def cluster_accuracy(preds: paddle.Tensor, target: paddle.Tensor, num_classes: int) -> paddle.Tensor:
     """Computes the clustering accuracy between the predicted and target clusters.
 
     Args:
