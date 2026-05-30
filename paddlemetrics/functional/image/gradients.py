@@ -16,10 +16,10 @@ def _compute_image_gradients(img: paddle.Tensor) -> tuple[paddle.Tensor, paddle.
     dx = img[..., :, 1:] - img[..., :, :-1]
     shapey = [batch_size, channels, 1, width]
     dy = paddle.concat([dy, paddle.zeros(shapey, device=img.device, dtype=img.dtype)], axis=2)
-    dy = dy.view(img.shape)
+    dy = dy.reshape(img.shape)
     shapex = [batch_size, channels, height, 1]
     dx = paddle.concat([dx, paddle.zeros(shapex, device=img.device, dtype=img.dtype)], axis=3)
-    dx = dx.view(img.shape)
+    dx = dx.reshape(img.shape)
     return dy, dx
 
 

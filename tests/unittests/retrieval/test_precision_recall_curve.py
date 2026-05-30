@@ -86,8 +86,8 @@ def _compute_precision_recall_curve(
             precisions.append(p)
     if not recalls:
         return paddle.zeros(max_k), paddle.zeros(max_k), top_k
-    recalls = _retrieval_aggregate(paddle.tensor(recalls), aggregation=aggregation, axis=0)
-    precisions = _retrieval_aggregate(paddle.tensor(precisions), aggregation=aggregation, axis=0)
+    recalls = _retrieval_aggregate(paddle.tensor(recalls), aggregation=aggregation, dim=0)
+    precisions = _retrieval_aggregate(paddle.tensor(precisions), aggregation=aggregation, dim=0)
     return precisions, recalls, top_k
 
 

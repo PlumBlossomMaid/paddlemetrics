@@ -126,7 +126,7 @@ def _ssim_update(
         if is_3d
         else paddle.nn.functional.conv2d(input_list, kernel, groups=channel)
     )
-    output_list = outputs.split(preds.shape[0])
+    output_list = outputs.split(5)
     mu_pred_sq = output_list[0].pow(2)
     mu_target_sq = output_list[1].pow(2)
     mu_pred_target = output_list[0] * output_list[1]
@@ -381,7 +381,7 @@ def _multiscale_ssim_update(
     mcs_stack = paddle.stack(mcs_list)
     if normalize == "simple":
         mcs_stack = (mcs_stack + 1) / 2
-    betas = paddle.tensor(betas, device=mcs_stack.place).view(-1, 1)
+    betas = paddle.tensor(betas, device=mcs_stack.place).reshape(-1, 1)
     mcs_weighted = mcs_stack**betas
     return paddle.prod(mcs_weighted, axis=0)
 

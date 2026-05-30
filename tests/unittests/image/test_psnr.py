@@ -43,8 +43,8 @@ def _reference_skimage_psnr(preds, target, data_range, reduction, dim):
         preds = preds.clamp(min=data_range[0], max=data_range[1])
         target = target.clamp(min=data_range[0], max=data_range[1])
         data_range = data_range[1] - data_range[0]
-    sk_preds_lists = _to_sk_peak_signal_noise_ratio_inputs(preds, axis=dim)
-    sk_target_lists = _to_sk_peak_signal_noise_ratio_inputs(target, axis=dim)
+    sk_preds_lists = _to_sk_peak_signal_noise_ratio_inputs(preds, dim=dim)
+    sk_target_lists = _to_sk_peak_signal_noise_ratio_inputs(target, dim=dim)
     np_reduce_map = {"elementwise_mean": np.mean, "none": np.array, "sum": np.sum}
     return np_reduce_map[reduction](
         [
@@ -91,7 +91,7 @@ class TestPSNR(MetricTester):
             preds,
             target,
             metric_class=PeakSignalNoiseRatio,
-            reference_metric=partial(ref_metric, data_range=data_range, reduction=reduction, axis=dim),
+            reference_metric=partial(ref_metric, data_range=data_range, reduction=reduction, dim=dim),
             metric_args=_args,
         )
 
@@ -107,7 +107,7 @@ class TestPSNR(MetricTester):
             preds,
             target,
             metric_functional=peak_signal_noise_ratio,
-            reference_metric=partial(ref_metric, data_range=data_range, reduction=reduction, axis=dim),
+            reference_metric=partial(ref_metric, data_range=data_range, reduction=reduction, dim=dim),
             metric_args=_args,
         )
 

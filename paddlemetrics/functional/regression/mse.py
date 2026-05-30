@@ -20,8 +20,8 @@ def _mean_squared_error_update(
     """
     _check_same_shape(preds, target)
     if num_outputs == 1:
-        preds = preds.view(-1)
-        target = target.view(-1)
+        preds = preds.reshape(-1)
+        target = target.reshape(-1)
     diff = preds - target
     sum_squared_error = paddle.sum(diff * diff, axis=0)
     return sum_squared_error, target.shape[0]

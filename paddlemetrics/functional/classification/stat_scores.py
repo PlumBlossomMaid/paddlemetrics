@@ -337,7 +337,7 @@ def _refine_preds_oh(preds: paddle.Tensor, preds_oh: paddle.Tensor, target: padd
     top_1_indices = top_k_indices[:, 0]
     target_in_topk = paddle.any(top_k_indices == target.unsqueeze(1), axis=1)
     result = paddle.where(target_in_topk, target, top_1_indices)
-    return paddle.zeros_like(preds_oh, dtype=paddle.int32).scatter_(-1, result.unsqueeze(-1), 1)
+    return paddle.zeros_like(preds_oh, dtype=paddle.int64).scatter_(-1, result.unsqueeze(-1), 1)
 
 
 def _multiclass_stat_scores_update(
@@ -380,6 +380,8 @@ def _multiclass_stat_scores_update(
             target.long(),
             num_classes + 1 if ignore_index is not None and not ignore_in else num_classes,
         )
+        if preds_oh.dtype != target_oh.dtype:
+            preds_oh = preds_oh.cast(target_oh.dtype)
         if ignore_index is not None:
             if 0 <= ignore_index <= num_classes - 1:
                 target_oh[target == ignore_index, :] = -1
@@ -440,10 +442,10 @@ def _multiclass_stat_scores_compute(
     if average == "macro":
         return res.float().mean(sum_dim)
     if average == "weighted":
-        weight = tp + fn
+        weight = (tp + fn).cast("float32")
         if multidim_average == "global":
-            return (res * (weight / weight.sum()).reshape(*weight.shape, 1)).sum(sum_dim)
-        return (res * (weight / weight.sum(-1, keepdim=True)).reshape(*weight.shape, 1)).sum(sum_dim)
+            return (res.cast("float32") * (weight / weight.sum()).reshape(*weight.shape, 1)).sum(sum_dim)
+        return (res.cast("float32") * (weight / weight.sum(-1, keepdim=True)).reshape(*weight.shape, 1)).sum(sum_dim)
     if average is None or average == "none":
         return res
     return None
@@ -671,6 +673,8 @@ def _multilabel_stat_scores_update(
     multidim_average: Literal["global", "samplewise"] = "global",
 ) -> tuple[paddle.Tensor, paddle.Tensor, paddle.Tensor, paddle.Tensor]:
     """Compute the statistics."""
+    if preds.dtype != target.dtype:
+        preds = preds.cast(target.dtype)
     sum_dim = [0, -1] if multidim_average == "global" else [-1]
     tp = ((target == preds) & (target == 1)).sum(sum_dim).squeeze()
     fn = ((target != preds) & (target == 1)).sum(sum_dim).squeeze()
@@ -699,8 +703,8 @@ def _multilabel_stat_scores_compute(
     if average == "macro":
         return res.float().mean(sum_dim)
     if average == "weighted":
-        w = tp + fn
-        return (res * (w / w.sum()).reshape(*w.shape, 1)).sum(sum_dim)
+        w = (tp + fn).cast("float32")
+        return (res.cast("float32") * (w / w.sum()).reshape(*w.shape, 1)).sum(sum_dim)
     if average is None or average == "none":
         return res
     return None

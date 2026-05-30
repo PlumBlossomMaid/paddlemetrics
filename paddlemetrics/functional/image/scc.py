@@ -58,15 +58,15 @@ def _scc_update(
 
 def _symmetric_reflect_pad_2d(input_img: paddle.Tensor, pad: Union[int, tuple[int, ...]]) -> paddle.Tensor:
     """Applies symmetric padding to the 2D image tensor input using ``reflect`` mode (d c b a | a b c d | d c b a)."""
-    if isinstance(paddle.nn.functional.pad, int):
-        pad = pad, pad, pad, pad
+    if isinstance(pad, int):
+        pad = (pad, pad, pad, pad)
     if len(pad) != 4:
         raise ValueError(f"Expected padding to have length 4, but got {len(pad)}")
-    left_pad = input_img[:, :, :, 0 : paddle.nn.functional.pad[0]].flip(axis=[3])
-    right_pad = input_img[:, :, :, -paddle.nn.functional.pad[1] :].flip(axis=[3])
+    left_pad = input_img[:, :, :, 0 : pad[0]].flip(axis=[3])
+    right_pad = input_img[:, :, :, -pad[1] :].flip(axis=[3])
     padded = paddle.concat([left_pad, input_img, right_pad], axis=3)
-    top_pad = padded[:, :, 0 : paddle.nn.functional.pad[2], :].flip(axis=[2])
-    bottom_pad = padded[:, :, -paddle.nn.functional.pad[3] :, :].flip(axis=[2])
+    top_pad = padded[:, :, 0 : pad[2], :].flip(axis=[2])
+    bottom_pad = padded[:, :, -pad[3] :, :].flip(axis=[2])
     return paddle.concat([top_pad, padded, bottom_pad], axis=2)
 
 

@@ -158,7 +158,7 @@ def _isin(arr: paddle.Tensor, values: list) -> paddle.Tensor:
         position whether the element of the tensor is in :param:`values`
 
     """
-    return (arr[..., None] == arr.new(values)).any(-1)
+    return (arr[..., None] == paddle.to_tensor(values, dtype=arr.dtype)).any(-1)
 
 
 def _prepocess_inputs(
@@ -193,7 +193,7 @@ def _prepocess_inputs(
     out[mask_stuffs_instance] = 0
     if not allow_unknown_category and not paddle.all(mask_things | mask_stuffs):
         raise ValueError(f"Unknown categories found: {out[~(mask_things | mask_stuffs)]}")
-    out[~(mask_things | mask_stuffs)] = out.new(void_color)
+    out[~(mask_things | mask_stuffs)] = paddle.to_tensor(void_color, dtype=out.dtype)
     return out
 
 

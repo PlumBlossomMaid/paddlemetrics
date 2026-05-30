@@ -60,8 +60,8 @@ def _final_aggregation(
         _temp = (total_2 + 1) * mean - total_2 * mean_val_2
         var_val_2 += (_temp - mean_val_2) * (_temp - mean) - (_temp - mean) ** 2
         var = var_val_1 + var_val_2
-        min_val = paddle.min(min_val_1, min_val_2)
-        max_val = paddle.max(max_val_1, max_val_2)
+        min_val = paddle.minimum(min_val_1, min_val_2)
+        max_val = paddle.maximum(max_val_1, max_val_2)
         target_squared = target_squared_1 + target_squared_2
     if normalization == "mean":
         return mean
@@ -182,7 +182,7 @@ class NormalizedRootMeanSquaredError(Metric):
         """
         sum_squared_error, num_obs = _mean_squared_error_update(preds, target, self.num_outputs)
         self.sum_squared_error += sum_squared_error
-        target = target.view(-1) if self.num_outputs == 1 else target
+        target = target.reshape(-1) if self.num_outputs == 1 else target
         self.min_val = paddle.minimum(target.min(axis=0)[0], self.min_val)
         self.max_val = paddle.maximum(target.max(axis=0)[0], self.max_val)
         self.target_squared += (target**2).sum(dim=0)

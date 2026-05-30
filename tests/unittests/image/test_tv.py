@@ -1,6 +1,7 @@
 from functools import partial
 from typing import Any
 
+import numpy as np
 import paddle
 import pytest
 
@@ -28,9 +29,15 @@ def _total_variaion_wrapped(preds, target, reduction="mean"):
 def _reference_kornia_tv(preds, target, reduction):
     """Reference implementation for total variation using numpy."""
     preds_np = preds.cpu().numpy()
+    pixel_dif1 = np.abs(preds_np[..., 1:, :] - preds_np[..., :-1, :])
+    pixel_dif2 = np.abs(preds_np[..., :, 1:] - preds_np[..., :, :-1])
+    score = pixel_dif1.sum(axis=(-2, -1)) + pixel_dif2.sum(axis=(-2, -1))
+    score = score.reshape(score.shape[0], -1).sum(axis=-1)
     if reduction == "sum":
-        return preds_np.sum()
-    return preds_np.mean()
+        return score.sum()
+    if reduction == "mean":
+        return score.mean()
+    return score
 
 
 _inputs = []

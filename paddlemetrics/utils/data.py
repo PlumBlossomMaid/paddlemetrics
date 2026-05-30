@@ -131,14 +131,14 @@ def select_topk(prob_tensor: paddle.Tensor, topk: int = 1, axis: int = 1) -> pad
     Returns:
         A binary tensor of the same shape as the input tensor of type ``int32``
     """
-    topk_tensor = paddle.zeros_like(prob_tensor, dtype=paddle.int32)
+    topk_tensor = paddle.zeros_like(prob_tensor, dtype=paddle.int64)
     if topk == 1:
         indices = prob_tensor.argmax(axis=axis, keepdim=True)
-        topk_tensor = topk_tensor.put_along_axis(indices, 1, axis=axis)
+        topk_tensor = topk_tensor.put_along_axis(indices, paddle.to_tensor(1, dtype=paddle.int64), axis=axis)
     else:
         indices = _top_k_with_half_precision_support(prob_tensor, k=topk, axis=axis)
-        topk_tensor = topk_tensor.put_along_axis(indices, 1, axis=axis)
-    return topk_tensor.cast("int32")
+        topk_tensor = topk_tensor.put_along_axis(indices, paddle.to_tensor(1, dtype=paddle.int64), axis=axis)
+    return topk_tensor
 
 
 def to_categorical(x: paddle.Tensor, argmax_dim: int = 1) -> paddle.Tensor:

@@ -20,8 +20,10 @@ def _retrieval_aggregate(
         return values.mean() if dim is None else values.mean(dim=dim)
     if aggregation == "median":
         flat = values.flatten()
-        sorted_vals = paddle.sort(flat)[0]
-        n = sorted_vals.numel().item()
+        n = flat.numel().item()
+        if n == 0:
+            return paddle.to_tensor(0.0, dtype=values.dtype)
+        sorted_vals = paddle.sort(flat)
         if n % 2 == 1:
             return sorted_vals[n // 2]
         return (sorted_vals[n // 2 - 1] + sorted_vals[n // 2]) / 2.0

@@ -233,7 +233,7 @@ class PanopticQuality(Metric):
         if self.return_per_class:
             if self.return_sq_and_rq:
                 return paddle.stack((pq, sq, rq), axis=-1)
-            return pq.view(1, -1)
+            return pq.reshape(1, -1)
         if self.return_sq_and_rq:
             return paddle.stack((pq_avg, sq_avg, rq_avg), axis=0)
         return pq_avg

@@ -342,11 +342,15 @@ class TestMulticlassAccuracy(MetricTester):
         preds, target = inputs
 
         def wrapped_multiclass_accuracy(preds: paddle.Tensor, target: paddle.Tensor, num_classes: int) -> paddle.Tensor:
-            prev_sync_debug_mode = paddle.cuda.get_sync_debug_mode()
-            paddle.cuda.set_sync_debug_mode("error")
+            _get_sync = getattr(paddle.cuda, 'get_sync_debug_mode', None)
+            _set_sync = getattr(paddle.cuda, 'set_sync_debug_mode', None)
+            prev_sync_debug_mode = _get_sync() if _get_sync else 0
+            if _set_sync:
+                _set_sync("error")
             try:
                 validate_args = False
-                paddle.use_deterministic_algorithms(mode=use_deterministic_algorithms)
+                if hasattr(paddle, 'use_deterministic_algorithms'):
+                    paddle.use_deterministic_algorithms(mode=use_deterministic_algorithms)
                 return multiclass_accuracy(
                     preds,
                     target,
@@ -355,7 +359,8 @@ class TestMulticlassAccuracy(MetricTester):
                     average=average,
                 )
             finally:
-                paddle.cuda.set_sync_debug_mode(prev_sync_debug_mode)
+                if _set_sync:
+                    _set_sync(prev_sync_debug_mode)
 
         self.run_precision_test_gpu(
             preds=preds,
@@ -368,6 +373,10 @@ class TestMulticlassAccuracy(MetricTester):
 
     @pytest.mark.skipif(not paddle.cuda.is_available(), reason="test requires cuda")
     @pytest.mark.parametrize("dtype", [paddle.float16, paddle.float64])
+    @pytest.mark.skipif(
+        not hasattr(paddle.cuda, 'set_sync_debug_mode'),
+        reason="paddle.cuda.set_sync_debug_mode not available",
+    )
     @pytest.mark.parametrize(
         ("average", "use_deterministic_algorithms"),
         [(None, False), ("macro", False), ("weighted", False)],

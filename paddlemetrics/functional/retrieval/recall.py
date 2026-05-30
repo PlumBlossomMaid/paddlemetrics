@@ -43,4 +43,4 @@ def retrieval_recall(preds: paddle.Tensor, target: paddle.Tensor, top_k: Optiona
         return paddle.tensor(0.0, device=preds.place)
     target_filtered = paddle.where(preds > 0, target, paddle.zeros_like(target))
     relevant = target_filtered[paddle.argsort(preds, axis=-1, descending=True)][:top_k].sum().float()
-    return relevant / target.sum()
+    return relevant / target.sum().cast("float32")

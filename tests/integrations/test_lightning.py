@@ -1,16 +1,18 @@
 from unittest import mock
 
 import paddle
+import pytest
 from lightning_utilities import module_available
 
 if module_available("lightning"):
-    pass
-from integrations.lightning.boring_model import BoringModel
+    from integrations.lightning.boring_model import BoringModel
 from paddlemetrics import MetricCollection
 from paddlemetrics.aggregation import SumMetric
 from paddlemetrics.classification import BinaryAccuracy, BinaryAveragePrecision, MulticlassAccuracy
 from paddlemetrics.regression import MeanAbsoluteError, MeanSquaredError
 from paddlemetrics.wrappers import ClasswiseWrapper, MinMaxMetric, MultitaskWrapper
+
+pytestmark = pytest.mark.skipif(not module_available("lightning"), reason="lightning not available")
 
 
 class DiffMetric(SumMetric):

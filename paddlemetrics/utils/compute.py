@@ -57,7 +57,7 @@ def _adjust_weights_safe_divide(
     if average is None or average == "none":
         return score
     if average == "weighted":
-        weights = tp + fn
+        weights = (tp + fn).cast("float32")
     else:
         weights = paddle.ones_like(score)
         if not multilabel:

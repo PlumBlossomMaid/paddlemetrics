@@ -37,14 +37,11 @@ def _reference_skimage_uqi(preds, target, multichannel, kernel_size):
     c, h, w = preds.shape[-3:]
     sk_preds = preds.view(-1, c, h, w).permute(0, 2, 3, 1).numpy()
     sk_target = target.view(-1, c, h, w).permute(0, 2, 3, 1).numpy()
-    if not multichannel:
-        sk_preds = sk_preds[:, :, :, 0]
-        sk_target = sk_target[:, :, :, 0]
     return skimage_uqi(
         sk_target,
         sk_preds,
         data_range=1.0,
-        multichannel=multichannel,
+        multichannel=True,
         gaussian_weights=True,
         win_size=kernel_size,
         sigma=1.5,

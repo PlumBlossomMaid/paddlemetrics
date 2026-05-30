@@ -81,8 +81,8 @@ def _binary_auroc_compute(
     stop = paddle.bucketize(max_area, fpr, out_int32=True, right=True)
     weight = (max_area - fpr[stop - 1]) / (fpr[stop] - fpr[stop - 1])
     interp_tpr: Tensor = paddle.lerp(x=tpr[stop - 1], y=tpr[stop], weight=weight)
-    tpr = paddle.concat([tpr[:stop], interp_tpr.view(1)])
-    fpr = paddle.concat([fpr[:stop], max_area.view(1)])
+    tpr = paddle.concat([tpr[:stop], interp_tpr.reshape([1])])
+    fpr = paddle.concat([fpr[:stop], max_area.reshape([1])])
     partial_auc = _auc_compute_without_check(fpr, tpr, 1.0)
     min_area: Tensor = 0.5 * max_area**2
     return 0.5 * (1 + (partial_auc - min_area) / (max_area - min_area))

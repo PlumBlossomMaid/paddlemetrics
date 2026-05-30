@@ -45,7 +45,7 @@ def _dcg_sample_scores(target: paddle.Tensor, preds: paddle.Tensor, top_k: int, 
     discount[top_k:] = 0.0
     if ignore_ties:
         ranking = preds.argsort(descending=True)
-        ranked = target[ranking]
+        ranked = target[ranking].cast("float32")
         cumulative_gain = (discount * ranked).sum()
     else:
         discount_cumsum = discount.cumsum(dim=-1)
@@ -87,6 +87,8 @@ def retrieval_normalized_dcg(preds: paddle.Tensor, target: paddle.Tensor, top_k:
     gain = _dcg_sample_scores(target, preds, top_k, ignore_ties=False)
     normalized_gain = _dcg_sample_scores(target, target, top_k, ignore_ties=True)
     all_irrelevant = normalized_gain == 0
+    gain = gain.cast("float32")
+    normalized_gain = normalized_gain.cast("float32")
     gain[all_irrelevant] = 0
     gain[~all_irrelevant] /= normalized_gain[~all_irrelevant]
     return gain.mean()

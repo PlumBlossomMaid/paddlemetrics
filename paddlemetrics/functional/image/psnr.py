@@ -61,15 +61,15 @@ def _psnr_update(
         target = target.to(paddle.float32)
     if dim is None:
         sum_squared_error = paddle.sum(paddle.pow(preds - target, 2))
-        num_obs = paddle.tensor(target.size, device=target.place)
+        num_obs = paddle.tensor(target.size, dtype="float32", device=target.place)
         return sum_squared_error, num_obs
     diff = preds - target
     sum_squared_error = paddle.sum(diff * diff, axis=dim)
     dim_list = [dim] if isinstance(dim, int) else list(dim)
     if not dim_list:
-        num_obs = paddle.tensor(target.size, device=target.place)
+        num_obs = paddle.tensor(target.size, dtype="float32", device=target.place)
     else:
-        num_obs = paddle.tensor(target.size(), device=target.place)[dim_list].prod()
+        num_obs = paddle.to_tensor(target.shape, dtype="float32")[dim_list].prod()
         num_obs = num_obs.expand_as(sum_squared_error)
     return sum_squared_error, num_obs
 
@@ -123,5 +123,5 @@ def peak_signal_noise_ratio(
         data_range_val = paddle.tensor(data_range[1] - data_range[0])
     else:
         data_range_val = paddle.tensor(float(data_range))
-    sum_squared_error, num_obs = _psnr_update(preds, target, axis=dim)
+    sum_squared_error, num_obs = _psnr_update(preds, target, dim=dim)
     return _psnr_compute(sum_squared_error, num_obs, data_range_val, base=base, reduction=reduction)

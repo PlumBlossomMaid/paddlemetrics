@@ -20,8 +20,8 @@ def _mean_absolute_error_update(
     """
     _check_same_shape(preds, target)
     if num_outputs == 1:
-        preds = preds.view(-1)
-        target = target.view(-1)
+        preds = preds.reshape(-1)
+        target = target.reshape(-1)
     preds = preds if preds.is_floating_point else preds.float()
     target = target if target.is_floating_point else target.float()
     sum_abs_error = paddle.sum(paddle.abs(preds - target), axis=0)

@@ -105,7 +105,7 @@ class PeakSignalNoiseRatio(Metric):
         if self.clamping_fn is not None:
             preds = self.clamping_fn(preds)
             target = self.clamping_fn(target)
-        sum_squared_error, num_obs = _psnr_update(preds, target, axis=self.dim)
+        sum_squared_error, num_obs = _psnr_update(preds, target, dim=self.dim)
         if self.dim is None:
             if not isinstance(self.sum_squared_error, paddle.Tensor):
                 raise TypeError(

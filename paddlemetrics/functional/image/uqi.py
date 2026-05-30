@@ -76,7 +76,7 @@ def _uqi_compute(
     target = paddle.nn.functional.pad(target, (pad_h, pad_h, pad_w, pad_w), mode="reflect")
     input_list = paddle.concat((preds, target, preds * preds, target * target, preds * target))
     outputs = paddle.nn.functional.conv2d(input_list, kernel, groups=channel)
-    output_list = outputs.split(preds.shape[0])
+    output_list = outputs.split(5)
     mu_pred_sq = output_list[0].pow(2)
     mu_target_sq = output_list[1].pow(2)
     mu_pred_target = output_list[0] * output_list[1]

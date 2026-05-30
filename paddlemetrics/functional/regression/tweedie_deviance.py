@@ -24,6 +24,8 @@ def _tweedie_deviance_score_update(
 
     """
     _check_same_shape(preds, targets)
+    if preds.dtype != targets.dtype:
+        targets = targets.cast(preds.dtype)
     zero_tensor = paddle.zeros(preds.shape, device=preds.place)
     if 0 < power < 1:
         raise ValueError(f"Deviance Score is not defined for power={power}.")
@@ -50,7 +52,7 @@ def _tweedie_deviance_score_update(
                 )
         elif paddle.any(preds <= 0) or paddle.any(targets <= 0):
             raise ValueError(f"For power={power}, both 'preds' and 'targets' have to be strictly positive.")
-        term_1 = paddle.pow(paddle.max(targets, zero_tensor), 2 - power) / ((1 - power) * (2 - power))
+        term_1 = paddle.pow(paddle.maximum(targets, zero_tensor), 2 - power) / ((1 - power) * (2 - power))
         term_2 = targets * paddle.pow(preds, 1 - power) / (1 - power)
         term_3 = paddle.pow(preds, 2 - power) / (2 - power)
         deviance_score = 2 * (term_1 - term_2 + term_3)

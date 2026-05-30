@@ -36,7 +36,21 @@ def _retrieval_aggregate(
     if aggregation == "mean":
         return values.mean() if dim is None else values.mean(dim=dim)
     if aggregation == "median":
-        """Not Support auto convert *.median, please judge whether it is Pytorch API and convert by yourself"""
+        flat = values.flatten()
+        n = flat.numel().item()
+        if n == 0:
+            return paddle.to_tensor(0.0, dtype=values.dtype)
+        sorted_vals = paddle.sort(flat)
+        if n % 2 == 1:
+            return sorted_vals[n // 2]
+        return (sorted_vals[n // 2 - 1] + sorted_vals[n // 2]) / 2.0
+    if aggregation == "max":
+        return values.max() if dim is None else values.max(axis=dim)
+    if aggregation == "min":
+        return values.min() if dim is None else values.min(axis=dim)
+    if callable(aggregation):
+        return aggregation(values)
+    raise ValueError(f"Unknown aggregation: {aggregation}")
 
 
 def get_group_indexes(indexes: Union[paddle.Tensor, np.ndarray]) -> list[Union[paddle.Tensor, np.ndarray]]:

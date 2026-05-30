@@ -53,4 +53,4 @@ def retrieval_precision(
         return paddle.tensor(0.0, device=preds.place)
     target_filtered = paddle.where(preds > 0, target, paddle.zeros_like(target))
     relevant = target_filtered[preds.topk(min(top_k, preds.shape[-1]), axis=-1)[1]].sum().float()
-    return relevant / top_k
+    return relevant / float(top_k)

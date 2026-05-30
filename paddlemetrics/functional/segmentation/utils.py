@@ -301,19 +301,19 @@ def distance_transform(
         x = x.float()
         i0, j0 = paddle.where(x == 0)
         i1, j1 = paddle.where(x == 1)
-        dis_row = (i1.view(-1, 1) - i0.view(1, -1)).abs()
-        dis_col = (j1.view(-1, 1) - j0.view(1, -1)).abs()
+        dis_row = (i1.reshape(-1, 1) - i0.reshape(1, -1)).abs()
+        dis_col = (j1.reshape(-1, 1) - j0.reshape(1, -1)).abs()
         h, _ = x.shape
         if metric == "euclidean":
             dis = ((sampling[0] * dis_row) ** 2 + (sampling[1] * dis_col) ** 2).sqrt()
         if metric == "chessboard":
-            dis = paddle.max(sampling[0] * dis_row, sampling[1] * dis_col).float()
+            dis = paddle.maximum(sampling[0] * dis_row, sampling[1] * dis_col).float()
         if metric == "taxicab":
             dis = (sampling[0] * dis_row + sampling[1] * dis_col).float()
         mindis, _ = paddle.min(dis, axis=1)
-        z = paddle.zeros_like(x).view(-1)
+        z = paddle.zeros_like(x).reshape(-1)
         z[i1 * h + j1] = mindis
-        return z.view(x.shape)
+        return z.reshape(x.shape)
     if not _SCIPY_AVAILABLE:
         raise ValueError(
             "The `scipy` engine requires `scipy` to be installed. Either install `scipy` or use the `pytorch` engine."
@@ -374,8 +374,8 @@ def mask_edges(
     all_ones = len(table) - 1
     edges_preds = (code_preds != 0) & (code_preds != all_ones)
     edges_target = (code_target != 0) & (code_target != all_ones)
-    areas_preds = paddle.index_select(table, 0, code_preds.view(-1).int()).view_as(code_preds)
-    areas_target = paddle.index_select(table, 0, code_target.view(-1).int()).view_as(code_target)
+    areas_preds = paddle.index_select(table, 0, code_preds.reshape(-1).int()).reshape(code_preds.shape)
+    areas_target = paddle.index_select(table, 0, code_target.reshape(-1).int()).reshape(code_target.shape)
     return edges_preds[0], edges_target[0], areas_preds[0], areas_target[0]
 
 

@@ -42,4 +42,4 @@ def retrieval_fall_out(preds: paddle.Tensor, target: paddle.Tensor, top_k: Optio
     if not target.sum():
         return paddle.tensor(0.0, device=preds.place)
     relevant = target[paddle.argsort(preds, axis=-1, descending=True)][:top_k].sum().float()
-    return relevant / target.sum()
+    return relevant / target.sum().cast("float32")

@@ -20,7 +20,7 @@ def _rank_data(data: paddle.Tensor) -> paddle.Tensor:
     uniq, inv, counts = paddle.unique(data, sorted=True, return_inverse=True, return_counts=True)
     sum_ranks = paddle.zeros_like(uniq, dtype=paddle.int32)
     sum_ranks.scatter_add_(0, inv, rank.to(paddle.int32))
-    mean_ranks = sum_ranks / counts
+    mean_ranks = sum_ranks.cast("float32") / counts.cast("float32")
     return mean_ranks[inv]
 
 

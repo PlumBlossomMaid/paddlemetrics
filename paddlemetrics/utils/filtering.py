@@ -297,12 +297,12 @@ def biquad(
     """
     device = waveform.device
     dtype = waveform.dtype
-    b0 = paddle.as_tensor(b0, dtype=dtype, device=device).view(1)
-    b1 = paddle.as_tensor(b1, dtype=dtype, device=device).view(1)
-    b2 = paddle.as_tensor(b2, dtype=dtype, device=device).view(1)
-    a0 = paddle.as_tensor(a0, dtype=dtype, device=device).view(1)
-    a1 = paddle.as_tensor(a1, dtype=dtype, device=device).view(1)
-    a2 = paddle.as_tensor(a2, dtype=dtype, device=device).view(1)
+    b0 = paddle.as_tensor(b0, dtype=dtype, device=device).reshape([1])
+    b1 = paddle.as_tensor(b1, dtype=dtype, device=device).reshape([1])
+    b2 = paddle.as_tensor(b2, dtype=dtype, device=device).reshape([1])
+    a0 = paddle.as_tensor(a0, dtype=dtype, device=device).reshape([1])
+    a1 = paddle.as_tensor(a1, dtype=dtype, device=device).reshape([1])
+    a2 = paddle.as_tensor(a2, dtype=dtype, device=device).reshape([1])
     output_waveform = lfilter(waveform, paddle.concat([a0, a1, a2]), paddle.concat([b0, b1, b2]))
     return output_waveform
 
@@ -660,7 +660,7 @@ def flanger(
     device, dtype = waveform.device, waveform.dtype
     if actual_shape[-2] > 4:
         raise ValueError("Max 4 channels allowed")
-    waveform = waveform.view(-1, actual_shape[-2], actual_shape[-1])
+    waveform = waveform.reshape(-1, actual_shape[-2], actual_shape[-1])
     feedback_gain = regen / 100
     delay_gain = width / 100
     channel_phase = phase / 100
@@ -720,7 +720,7 @@ def flanger(
         delay_last = delayed
         output_waveform[:, :, i] = waveform[:, :, i] * in_gain + delayed * delay_gain
         lfo_pos = (lfo_pos + 1) % lfo_length
-    return output_waveform.clamp(min=-1, max=1).view(actual_shape)
+    return output_waveform.clamp(min=-1, max=1).reshape(actual_shape)
 
 
 def gain(waveform: paddle.Tensor, gain_db: float = 1.0) -> paddle.Tensor:
@@ -806,11 +806,11 @@ class DifferentiableFIR(paddle.autograd.PyLayer):
         n_order = b_coeffs.size(1)
         db = (
             paddle.nn.functional.conv1d(
-                paddle.nn.functional.pad(x, (n_order - 1, 0)).view(1, n_batch * n_channel, -1),
-                dy.view(n_batch * n_channel, 1, -1),
+                paddle.nn.functional.pad(x, (n_order - 1, 0)).reshape(1, n_batch * n_channel, -1),
+                dy.reshape(n_batch * n_channel, 1, -1),
                 groups=n_batch * n_channel,
             )
-            .view(n_batch, n_channel, -1)
+            .reshape(n_batch, n_channel, -1)
             .sum(0)
             .flip(axis=1)
             if b_coeffs.requires_grad
@@ -1010,7 +1010,7 @@ def overdrive(waveform: paddle.Tensor, gain: float = 20, colour: float = 20) -> 
     """
     actual_shape = waveform.shape
     device, dtype = waveform.device, waveform.dtype
-    waveform = waveform.view(-1, actual_shape[-1])
+    waveform = waveform.reshape(-1, actual_shape[-1])
     gain = _dB2Linear(gain)
     colour = colour / 200
     last_in = paddle.zeros(waveform.shape[:-1], dtype=dtype, device=device)
@@ -1024,7 +1024,7 @@ def overdrive(waveform: paddle.Tensor, gain: float = 20, colour: float = 20) -> 
     temp[mask3] = temp[mask3] - temp[mask3] ** 3 * (1.0 / 3)
     output_waveform = paddle.zeros_like(waveform, dtype=dtype, device=device)
     _overdrive_core_loop_cpu(waveform, temp, last_in, last_out, output_waveform)
-    return output_waveform.clamp(min=-1, max=1).view(actual_shape)
+    return output_waveform.clamp(min=-1, max=1).reshape(actual_shape)
 
 
 def phaser(
@@ -1072,7 +1072,7 @@ def phaser(
     """
     actual_shape = waveform.shape
     device, dtype = waveform.device, waveform.dtype
-    waveform = waveform.view(-1, actual_shape[-1])
+    waveform = waveform.reshape(-1, actual_shape[-1])
     delay_buf_len = int(delay_ms * 0.001 * sample_rate + 0.5)
     delay_buf = paddle.zeros(waveform.shape[0], delay_buf_len, dtype=dtype, device=device)
     mod_buf_len = int(sample_rate / mod_speed + 0.5)
@@ -1106,7 +1106,7 @@ def phaser(
         output_waveform_pre_gain_list.append(temp)
     output_waveform = paddle.stack(output_waveform_pre_gain_list, axis=1).to(dtype=dtype, device=device)
     output_waveform.mul_(gain_out)
-    return output_waveform.clamp(min=-1, max=1).view(actual_shape)
+    return output_waveform.clamp(min=-1, max=1).reshape(actual_shape)
 
 
 def riaa_biquad(waveform: paddle.Tensor, sample_rate: int) -> paddle.Tensor:
@@ -1392,7 +1392,7 @@ def vad(
     boot_count_max = int(boot_time * measure_freq - 0.5)
     boot_count = measures_index = flushedLen_ns = 0
     shape = waveform.size()
-    waveform = waveform.view(-1, shape[-1])
+    waveform = waveform.reshape(-1, shape[-1])
     n_channels, ilen = waveform.size()
     mean_meas = paddle.zeros(n_channels, device=device)
     spectrum = paddle.zeros(n_channels, dft_len_ws, device=device)
@@ -1445,6 +1445,6 @@ def vad(
             flushedLen_ns = (measures_len - num_measures_to_flush) * measure_period_ns
             break
     if not has_triggered and shape[-1] >= fixed_pre_trigger_len_ns:
-        return waveform[..., :fixed_pre_trigger_len_ns].view(shape[:-1] + paddle.Size([fixed_pre_trigger_len_ns]))
+        return waveform[..., :fixed_pre_trigger_len_ns].reshape(shape[:-1] + paddle.Size([fixed_pre_trigger_len_ns]))
     res = waveform[:, max(pos - samplesLen_ns + flushedLen_ns, 0) :]
-    return res.view(shape[:-1] + res.shape[-1:])
+    return res.reshape(shape[:-1] + res.shape[-1:])
