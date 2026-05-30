@@ -117,7 +117,7 @@ def _multilabel_exact_match_update(
     if multidim_average == "global":
         preds = paddle.moveaxis(x=preds, source=1, destination=-1).reshape(-1, num_labels)
         target = paddle.moveaxis(x=target, source=1, destination=-1).reshape(-1, num_labels)
-    correct = ((preds == target).sum(1) == num_labels).sum(dim=-1)
+    correct = ((preds.cast(target.dtype) == target).sum(1) == num_labels).sum(dim=-1)
     total = paddle.tensor(preds.shape[0 if multidim_average == "global" else 2], device=correct.device)
     return correct, total
 

@@ -124,7 +124,7 @@ def _binary_confusion_matrix_format(
 
 def _binary_confusion_matrix_update(preds: paddle.Tensor, target: paddle.Tensor) -> paddle.Tensor:
     """Compute the bins to update the confusion matrix with."""
-    unique_mapping = (target * 2 + preds).to(paddle.long)
+    unique_mapping = (target * 2 + preds.cast(target.dtype)).to(paddle.long)
     bins = _bincount(unique_mapping, minlength=4)
     return bins.reshape(2, 2)
 
@@ -477,7 +477,7 @@ def _multilabel_confusion_matrix_format(
 
 def _multilabel_confusion_matrix_update(preds: paddle.Tensor, target: paddle.Tensor, num_labels: int) -> paddle.Tensor:
     """Compute the bins to update the confusion matrix with."""
-    unique_mapping = (2 * target + preds + 4 * paddle.arange(num_labels, device=preds.place)).flatten()
+    unique_mapping = (2 * target + preds.cast(target.dtype) + 4 * paddle.arange(num_labels, dtype=target.dtype, device=preds.place)).flatten()
     unique_mapping = unique_mapping[unique_mapping >= 0]
     bins = _bincount(unique_mapping, minlength=4 * num_labels)
     return bins.reshape(num_labels, 2, 2)
