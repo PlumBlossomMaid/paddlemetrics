@@ -42,6 +42,10 @@ def _final_aggregation(
     matter, as if `n1` and `n2` are both zero, all the states will also be zero.
 
     """
+    # Cast nbs to float32 to avoid type promotion issues in paddle.logical_or
+    # (after the first iteration n1 becomes float32 via the .cast below,
+    #  so n2 must also be float32 to keep logical_or happy)
+    nbs = nbs.cast("float32")
     if len(means_x) == 1:
         return (
             means_x[0],
@@ -70,7 +74,7 @@ def _final_aggregation(
         vy2 = vars_y[i]
         cxy2 = corrs_xy[i]
         n2 = nbs[i]
-        nb = paddle.where(paddle.logical_or(n1, n2), n1 + n2, eps)
+        nb = paddle.where(paddle.logical_or(n1, n2), (n1 + n2).cast("float32"), eps)
         mean_x = (n1 * mx1 + n2 * mx2) / nb
         mean_y = (n1 * my1 + n2 * my2) / nb
         n12_b = n1 * n2 / nb

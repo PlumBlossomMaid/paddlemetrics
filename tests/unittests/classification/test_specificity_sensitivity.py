@@ -3,8 +3,16 @@ from functools import partial
 import numpy as np
 import paddle
 import pytest
-from scipy.special import expit as sigmoid
-from scipy.special import softmax
+from scipy.special import expit as _np_sigmoid
+def sigmoid(x):
+    if isinstance(x, paddle.Tensor):
+        return paddle.nn.functional.sigmoid(x)
+    return _np_sigmoid(x)
+from scipy.special import softmax as _np_softmax
+def softmax(x, axis=None):
+    if isinstance(x, paddle.Tensor):
+        return paddle.nn.functional.softmax(x, axis=axis)
+    return _np_softmax(x, axis=axis)
 from sklearn.metrics import roc_curve as sk_roc_curve
 
 from paddlemetrics.classification.specificity_sensitivity import (

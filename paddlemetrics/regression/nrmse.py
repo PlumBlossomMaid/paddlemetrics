@@ -183,8 +183,8 @@ class NormalizedRootMeanSquaredError(Metric):
         sum_squared_error, num_obs = _mean_squared_error_update(preds, target, self.num_outputs)
         self.sum_squared_error += sum_squared_error
         target = target.reshape(-1) if self.num_outputs == 1 else target
-        self.min_val = paddle.minimum(target.min(axis=0)[0], self.min_val)
-        self.max_val = paddle.maximum(target.max(axis=0)[0], self.max_val)
+        self.min_val = paddle.minimum(target.min(axis=0), self.min_val)
+        self.max_val = paddle.maximum(target.max(axis=0), self.max_val)
         self.target_squared += (target**2).sum(dim=0)
         new_mean = (self.total * self.mean_val + target.sum(dim=0)) / (self.total + num_obs)
         self.total += num_obs

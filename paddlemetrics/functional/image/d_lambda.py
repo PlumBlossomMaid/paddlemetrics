@@ -61,21 +61,9 @@ def _spectral_distortion_index_compute(
     m1 = paddle.zeros((length, length), device=preds.place)
     m2 = paddle.zeros((length, length), device=preds.place)
     for k in range(length):
-        num = length - (k + 1)
-        if num == 0:
-            continue
-        stack1 = target[:, k : k + 1, :, :].repeat(num, 1, 1, 1)
-        stack2 = paddle.concat([target[:, r : r + 1, :, :] for r in range(k + 1, length)], axis=0)
-        score = [
-            s.mean() for s in universal_image_quality_index(stack1, stack2, reduction="none").split(preds.shape[0])
-        ]
-        m1[k, k + 1 :] = paddle.stack(score, 0)
-        stack1 = preds[:, k : k + 1, :, :].repeat(num, 1, 1, 1)
-        stack2 = paddle.concat([preds[:, r : r + 1, :, :] for r in range(k + 1, length)], axis=0)
-        score = [
-            s.mean() for s in universal_image_quality_index(stack1, stack2, reduction="none").split(preds.shape[0])
-        ]
-        m2[k, k + 1 :] = paddle.stack(score, 0)
+        for r in range(k + 1, length):
+            m1[k, r] = universal_image_quality_index(target[:, k : k + 1, :, :], target[:, r : r + 1, :, :])
+            m2[k, r] = universal_image_quality_index(preds[:, k : k + 1, :, :], preds[:, r : r + 1, :, :])
     m1 = m1 + m1.T
     m2 = m2 + m2.T
     diff = paddle.pow(paddle.abs(m1 - m2), p)

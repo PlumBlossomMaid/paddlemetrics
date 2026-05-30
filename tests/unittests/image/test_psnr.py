@@ -152,14 +152,14 @@ def test_reduction_for_dim_none(reduction):
     """Test that warnings are raised when then reduction parameter is combined with no dim provided arg."""
     match = f"The `reduction={reduction}` will not have any effect when `dim` is None."
     with pytest.warns(UserWarning, match=match):
-        PeakSignalNoiseRatio(data_range=10.0, reduction=reduction, axis=None)
+        PeakSignalNoiseRatio(data_range=10.0, reduction=reduction, dim=None)
     with pytest.warns(UserWarning, match=match):
         peak_signal_noise_ratio(
             _inputs[0].preds,
             _inputs[0].target,
             data_range=10.0,
             reduction=reduction,
-            axis=None,
+            dim=None,
         )
 
 
@@ -169,8 +169,8 @@ def test_psnr_uint_dtype():
     See issue: https://github.com/Lightning-AI/paddlemetrics/issues/2787
 
     """
-    preds = paddle.randint(low=0, high=255, shape=_input_size, dtype=paddle.uint8)
-    target = paddle.randint(low=0, high=255, shape=_input_size, dtype=paddle.uint8)
+    preds = paddle.randint(low=0, high=255, shape=_input_size, dtype=paddle.int32).cast(paddle.uint8)
+    target = paddle.randint(low=0, high=255, shape=_input_size, dtype=paddle.int32).cast(paddle.uint8)
     psnr = peak_signal_noise_ratio(preds, target, data_range=255.0)
     prnr2 = peak_signal_noise_ratio(preds.float(), target.float(), data_range=255.0)
     assert paddle.allclose(x=psnr, y=prnr2).item()

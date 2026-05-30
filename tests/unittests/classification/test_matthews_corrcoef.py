@@ -3,7 +3,11 @@ from functools import partial
 import numpy as np
 import paddle
 import pytest
-from scipy.special import expit as sigmoid
+from scipy.special import expit as _np_sigmoid
+def sigmoid(x):
+    if isinstance(x, paddle.Tensor):
+        return paddle.nn.functional.sigmoid(x)
+    return _np_sigmoid(x)
 from sklearn.metrics import matthews_corrcoef as sk_matthews_corrcoef
 
 from paddlemetrics.classification.matthews_corrcoef import (

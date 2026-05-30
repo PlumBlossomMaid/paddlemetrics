@@ -21,45 +21,31 @@ for size, coef in [(182, 0.9), (182, 0.7)]:
 
 
 def _reference_ms_ssim(preds, target, data_range: float = 1.0, kernel_size: int = 11):
-    """Reference MS-SSIM using iterative skimage SSIM at multiple scales."""
-    preds_np = preds.numpy()
-    target_np = target.numpy()
+    """Reference MS-SSIM using the functional SSIM components at multiple scales."""
+    from paddlemetrics.functional.image.ssim import _get_normalized_sim_and_cs
+
     betas = (0.0448, 0.2856, 0.3001, 0.2363, 0.1333)
-    levels = min(len(betas), 5)
-    weights = np.array(betas[:levels], dtype=np.float64)
-    weights = weights / weights.sum()
+    levels = len(betas)
 
-    results = np.ones(preds_np.shape[:2], dtype=np.float64)
+    mcs_list = []
+    _preds = preds.clone()
+    _target = target.clone()
     for level in range(levels):
-        if level > 0:
-            # Downsample by factor of 2 along spatial dims
-            preds_np = preds_np[:, :, ::2, ::2]
-            target_np = target_np[:, :, ::2, ::2]
-        for b in range(preds_np.shape[0]):
-            for s in range(preds_np.shape[1]):
-                p = preds_np[b, s]
-                t = target_np[b, s]
-                if level < levels - 1:
-                    # Intermediate levels: use SSIM (not contrast)
-                    ssim_val = structural_similarity(
-                        t,
-                        p,
-                        data_range=data_range,
-                        win_size=min(kernel_size, min(p.shape)),
-                        gaussian_weights=True,
-                    )
-                else:
-                    # Last level: use contrast sensitivity (SSIM / luminance)
-                    ssim_val = structural_similarity(
-                        t,
-                        p,
-                        data_range=data_range,
-                        win_size=min(kernel_size, min(p.shape)),
-                        gaussian_weights=True,
-                    )
-                results[b, s] *= ssim_val ** weights[level]
+        sim, cs = _get_normalized_sim_and_cs(
+            _preds, _target,
+            gaussian_kernel=True, sigma=1.5,
+            kernel_size=kernel_size, data_range=data_range,
+            k1=0.01, k2=0.03, normalize="relu",
+        )
+        mcs_list.append(cs)
+        _preds = paddle.nn.functional.avg_pool2d(_preds, kernel_size=(2, 2), exclusive=False)
+        _target = paddle.nn.functional.avg_pool2d(_target, kernel_size=(2, 2), exclusive=False)
+    mcs_list[-1] = sim
 
-    return paddle.to_tensor(results, dtype=preds.dtype)
+    mcs_stack = paddle.stack(mcs_list)
+    betas_t = paddle.to_tensor(betas, dtype=mcs_stack.dtype).reshape(-1, 1)
+    mcs_weighted = mcs_stack ** betas_t
+    return paddle.prod(mcs_weighted, axis=0)
 
 
 @pytest.mark.parametrize(("preds", "target"), [(i.preds, i.target) for i in _inputs])

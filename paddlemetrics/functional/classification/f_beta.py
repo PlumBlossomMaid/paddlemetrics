@@ -33,6 +33,9 @@ def _fbeta_reduce(
     zero_division: float = 0,
 ) -> paddle.Tensor:
     beta2 = beta**2
+    tp = tp.cast("float32")
+    fp = fp.cast("float32")
+    fn = fn.cast("float32")
     if average == "binary":
         return _safe_divide((1 + beta2) * tp, (1 + beta2) * tp + beta2 * fn + fp, zero_division)
     if average == "micro":

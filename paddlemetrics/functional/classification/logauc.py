@@ -30,8 +30,8 @@ def _binary_logauc_compute(
             "At least two values on for the fpr and tpr are required to compute the log AUC. Returns 0 score."
         )
         return paddle.tensor(0.0, device=fpr.place)
-    tpr = paddle.concat([tpr, interp(fpr_range, fpr, tpr)]).sort()[0]
-    fpr = paddle.sort(x=paddle.concat([fpr, fpr_range]))[0]
+    tpr = paddle.concat([tpr, interp(fpr_range, fpr, tpr)]).sort()
+    fpr = paddle.sort(x=paddle.concat([fpr, fpr_range]))
     log_fpr = paddle.log10(x=fpr)
     bounds = paddle.log10(x=fpr_range.detach().clone())
     lower_bound_idx = paddle.where(log_fpr == bounds[0])[0][-1]

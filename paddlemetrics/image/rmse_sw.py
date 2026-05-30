@@ -61,22 +61,24 @@ class RootMeanSquaredErrorUsingSlidingWindow(Metric):
 
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update state with predictions and targets."""
-        if self.rmse_map is None:
+        if self.__dict__.get("rmse_map") is None:
             _img_shape = target.shape[1:]
-            self.rmse_map = paddle.zeros(_img_shape, dtype=target.dtype, device=target.device)
-        self.rmse_val_sum, self.rmse_map, self.total_images = _rmse_sw_update(
+            self.__dict__["rmse_map"] = paddle.zeros(_img_shape, dtype=target.dtype, device=target.device)
+        self.rmse_val_sum, self.__dict__["rmse_map"], self.total_images = _rmse_sw_update(
             preds,
             target,
             self.window_size,
             self.rmse_val_sum,
-            self.rmse_map,
+            self.__dict__["rmse_map"],
             self.total_images,
         )
 
     def compute(self) -> Optional[paddle.Tensor]:
         """Compute Root Mean Squared Error (using sliding window) and potentially return RMSE map."""
-        assert self.rmse_map is not None
-        rmse, _ = _rmse_sw_compute(self.rmse_val_sum, self.rmse_map, self.total_images)
+        rmse_map = self.__dict__.get("rmse_map")
+        if rmse_map is None:
+            return paddle.tensor(0.0)
+        rmse, _ = _rmse_sw_compute(self.rmse_val_sum, rmse_map, self.total_images)
         return rmse
 
     def plot(

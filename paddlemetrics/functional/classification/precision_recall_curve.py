@@ -532,9 +532,9 @@ def _multiclass_precision_recall_curve_compute(
         tensor_state = False
     if average == "macro":
         thres = thres.repeat(num_classes) if tensor_state else paddle.concat(thres_list, 0)
-        thres = paddle.sort(x=thres)[0]
+        thres = paddle.sort(x=thres)
         mean_precision = precision.flatten() if tensor_state else paddle.concat(precision_list, 0)
-        mean_precision = paddle.sort(x=mean_precision)[0]
+        mean_precision = paddle.sort(x=mean_precision)
         mean_recall = paddle.zeros_like(mean_precision)
         for i in range(num_classes):
             mean_recall += interp(

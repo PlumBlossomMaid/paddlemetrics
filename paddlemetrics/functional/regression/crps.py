@@ -22,7 +22,7 @@ def _crps_update(preds: paddle.Tensor, target: paddle.Tensor) -> Tuple[int, padd
     batch_size, n_ensemble_members = preds.shape
     if n_ensemble_members < 2:
         raise ValueError(f"CRPS requires at least 2 ensemble members, but you provided {preds.shape}.")
-    preds = paddle.sort(preds, axis=1)[0]
+    preds = paddle.sort(preds, axis=1)
     observation_inflated = target.unsqueeze(1).expand_as(preds)
     diff = paddle.sum(paddle.abs(preds - observation_inflated), axis=1) / n_ensemble_members
     ensemble_diffs = paddle.abs(preds.unsqueeze(2) - preds.unsqueeze(1))

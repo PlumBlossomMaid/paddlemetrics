@@ -74,22 +74,24 @@ def _count_discordant_pairs(preds: paddle.Tensor, target: paddle.Tensor) -> padd
 def _convert_sequence_to_dense_rank(x: paddle.Tensor, sort: bool = False) -> paddle.Tensor:
     """Convert a sequence to the rank tensor."""
     if sort:
-        x = paddle.sort(x, axis=0)[0]
+        x = paddle.sort(x, axis=0)
     _ones = paddle.zeros(1, x.shape[1], dtype=paddle.int32, device=x.place)
     return _cumsum(paddle.concat([_ones, (x[1:] != x[:-1]).int()], axis=0), axis=0)
 
 
 def _get_ties(x: paddle.Tensor) -> tuple[paddle.Tensor, paddle.Tensor, paddle.Tensor]:
     """Get a total number of ties and staistics for p-value calculation for  a given sequence."""
-    ties = paddle.zeros(x.shape[1], dtype=x.dtype, device=x.place)
-    ties_p1 = paddle.zeros(x.shape[1], dtype=x.dtype, device=x.place)
-    ties_p2 = paddle.zeros(x.shape[1], dtype=x.dtype, device=x.place)
+    # Use float32 for all ties tensors to avoid Paddle int/float type promotion errors
+    ties = paddle.zeros(x.shape[1], dtype=paddle.float32, device=x.place)
+    ties_p1 = paddle.zeros(x.shape[1], dtype=paddle.float32, device=x.place)
+    ties_p2 = paddle.zeros(x.shape[1], dtype=paddle.float32, device=x.place)
     for dim in range(x.shape[1]):
         n_ties = _bincount(x[:, dim])
         n_ties = n_ties[n_ties > 1]
-        ties[dim] = (n_ties * (n_ties - 1) // 2).sum()
-        ties_p1[dim] = (n_ties * (n_ties - 1.0) * (n_ties - 2)).sum()
-        ties_p2[dim] = (n_ties * (n_ties - 1.0) * (2 * n_ties + 5)).sum()
+        n_ties_f = n_ties.cast("float32")
+        ties[dim] = (n_ties_f * (n_ties_f - 1) / 2).sum()
+        ties_p1[dim] = (n_ties_f * (n_ties_f - 1.0) * (n_ties_f - 2)).sum()
+        ties_p2[dim] = (n_ties_f * (n_ties_f - 1.0) * (2 * n_ties_f + 5)).sum()
     return ties, ties_p1, ties_p2
 
 
@@ -110,7 +112,8 @@ def _get_metric_metadata(
     preds, target = _sort_on_first_sequence(preds, target)
     concordant_pairs = _count_concordant_pairs(preds, target)
     discordant_pairs = _count_discordant_pairs(preds, target)
-    n_total = paddle.tensor(preds.shape[0], device=preds.place)
+    # Use float32 to avoid Paddle int/float type promotion errors downstream
+    n_total = paddle.tensor(preds.shape[0], dtype=paddle.float32, device=preds.place)
     preds_ties = target_ties = None
     preds_ties_p1 = preds_ties_p2 = target_ties_p1 = target_ties_p2 = None
     if variant != _MetricVariant.A:
@@ -165,11 +168,15 @@ def _get_p_value_for_t_value_from_dist(t_value: paddle.Tensor) -> paddle.Tensor:
     When t-value is ``nan``, a resulted p-value should be alson ``nan``.
 
     """
-    device = t_value
-    normal_dist = paddle.distribution.Normal(loc=paddle.tensor([0.0]).to(device), scale=paddle.tensor([1.0]).to(device))
+    import math
+
     is_nan = t_value.isnan()
     t_value = t_value.nan_to_num()
-    """Not Support auto convert *.cdf, please judge whether it is Pytorch API and convert by yourself"""
+    # Standard normal CDF: Phi(x) = 0.5 * (1 + erf(x / sqrt(2)))
+    p_value = 0.5 * (1 + paddle.erf(t_value / math.sqrt(2)))
+    # Restore NaN where the original t_value was NaN
+    p_value = paddle.where(is_nan, paddle.full_like(p_value, float("nan")), p_value)
+    return p_value
 
 
 def _calculate_p_value(
@@ -276,6 +283,9 @@ def _kendall_corrcoef_compute(
         target_ties_p2,
         n_total,
     ) = _get_metric_metadata(preds, target, variant)
+    # Cast to float32 to avoid Paddle int/float type promotion errors downstream
+    concordant_pairs = concordant_pairs.cast("float32")
+    discordant_pairs = discordant_pairs.cast("float32")
     con_min_dis_pairs = concordant_pairs - discordant_pairs
     tau = _calculate_tau(
         preds,

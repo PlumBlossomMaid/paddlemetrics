@@ -139,7 +139,7 @@ def panoptic_quality(
     void_color = _get_void_color(things, stuffs)
     cat_id_to_continuous_id = _get_category_id_to_continuous_id(things, stuffs)
     flatten_preds = _prepocess_inputs(things, stuffs, preds, void_color, allow_unknown_preds_category)
-    flatten_target = _prepocess_inputs(things, stuffs, target, void_color)
+    flatten_target = _prepocess_inputs(things, stuffs, target, void_color, True)
     (
         iou_sum,
         true_positives,
@@ -223,7 +223,7 @@ def modified_panoptic_quality(
     void_color = _get_void_color(things, stuffs)
     cat_id_to_continuous_id = _get_category_id_to_continuous_id(things, stuffs)
     flatten_preds = _prepocess_inputs(things, stuffs, preds, void_color, allow_unknown_preds_category)
-    flatten_target = _prepocess_inputs(things, stuffs, target, void_color)
+    flatten_target = _prepocess_inputs(things, stuffs, target, void_color, True)
     (
         iou_sum,
         true_positives,

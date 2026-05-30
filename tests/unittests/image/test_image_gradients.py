@@ -31,10 +31,10 @@ def test_multi_batch_image_gradients(batch_size=5, height=5, width=5, channels=1
         [5.0, 5.0, 5.0, 5.0, 5.0],
         [0.0, 0.0, 0.0, 0.0, 0.0],
     ]
-    true_dy = paddle.Tensor(true_dy)
+    true_dy = paddle.Tensor(true_dy).reshape(channels, height, width)
     dy, dx = image_gradients(image)
     for batch_id in range(batch_size):
-        assert paddle.allclose(x=dy[batch_id, 0, :, :], y=true_dy).item()
+        assert paddle.allclose(x=dy[batch_id], y=true_dy).item()
     assert dy.shape == (batch_size, 1, height, width)
     assert dx.shape == (batch_size, 1, height, width)
 
@@ -61,8 +61,8 @@ def test_image_gradients(batch_size=1, height=5, width=5, channels=1):
         [1.0, 1.0, 1.0, 1.0, 0.0],
         [1.0, 1.0, 1.0, 1.0, 0.0],
     ]
-    true_dy = paddle.Tensor(true_dy)
-    true_dx = paddle.Tensor(true_dx)
+    true_dy = paddle.Tensor(true_dy).reshape(image.shape)
+    true_dx = paddle.Tensor(true_dx).reshape(image.shape)
     dy, dx = image_gradients(image)
     assert paddle.allclose(x=dy, y=true_dy).item(), "dy fails test"
     assert paddle.allclose(x=dx, y=true_dx).item(), "dx fails tests"

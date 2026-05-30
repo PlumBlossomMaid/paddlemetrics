@@ -3,7 +3,11 @@ from functools import partial
 import numpy as np
 import paddle
 import pytest
-from scipy.special import expit as sigmoid
+from scipy.special import expit as _np_sigmoid
+def sigmoid(x):
+    if isinstance(x, paddle.Tensor):
+        return paddle.nn.functional.sigmoid(x)
+    return _np_sigmoid(x)
 from sklearn.metrics import coverage_error as sk_coverage_error
 from sklearn.metrics import label_ranking_average_precision_score as sk_label_ranking
 from sklearn.metrics import label_ranking_loss as sk_label_ranking_loss

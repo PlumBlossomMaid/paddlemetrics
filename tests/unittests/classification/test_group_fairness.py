@@ -8,7 +8,11 @@ import paddle
 import pandas as pd
 import pytest
 from fairlearn.metrics import MetricFrame, selection_rate, true_positive_rate
-from scipy.special import expit as sigmoid
+from scipy.special import expit as _np_sigmoid
+def sigmoid(x):
+    if isinstance(x, paddle.Tensor):
+        return paddle.nn.functional.sigmoid(x)
+    return _np_sigmoid(x)
 
 from paddlemetrics import Metric
 from paddlemetrics.classification.group_fairness import BinaryFairness

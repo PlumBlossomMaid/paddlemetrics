@@ -193,7 +193,9 @@ def _prepocess_inputs(
     out[mask_stuffs_instance] = 0
     if not allow_unknown_category and not paddle.all(mask_things | mask_stuffs):
         raise ValueError(f"Unknown categories found: {out[~(mask_things | mask_stuffs)]}")
-    out[~(mask_things | mask_stuffs)] = paddle.to_tensor(void_color, dtype=out.dtype)
+    unknown_mask = ~(mask_things | mask_stuffs)
+    if paddle.any(unknown_mask):
+        out[unknown_mask] = paddle.to_tensor(void_color, dtype=out.dtype)
     return out
 
 
@@ -450,9 +452,12 @@ def _panoptic_quality_compute(
         A tuple containing the per-class panoptic, segmentation and recognition quality followed by the averages
 
     """
-    sq: Tensor = paddle.where(true_positives > 0.0, iou_sum / true_positives, 0.0)
-    denominator: Tensor = true_positives + 0.5 * false_positives + 0.5 * false_negatives
-    rq: Tensor = paddle.where(denominator > 0.0, true_positives / denominator, 0.0)
+    tp_f64 = true_positives.cast(paddle.float64)
+    fp_f64 = false_positives.cast(paddle.float64)
+    fn_f64 = false_negatives.cast(paddle.float64)
+    sq: Tensor = paddle.where(true_positives > 0.0, iou_sum / tp_f64, 0.0)
+    denominator: Tensor = tp_f64 + 0.5 * fp_f64 + 0.5 * fn_f64
+    rq: Tensor = paddle.where(denominator > 0.0, tp_f64 / denominator, 0.0)
     pq: Tensor = sq * rq
     pq_avg: Tensor = paddle.mean(pq[denominator > 0])
     sq_avg: Tensor = paddle.mean(sq[denominator > 0])

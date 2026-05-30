@@ -169,9 +169,9 @@ def _multiclass_roc_compute(
         tensor_state = False
     if average == "macro":
         thres = thres.repeat(num_classes) if tensor_state else paddle.concat(thres_list, axis=0)
-        thres = paddle.sort(descending=True, x=thres)[0]
+        thres = paddle.sort(descending=True, x=thres)
         mean_fpr = fpr.flatten() if tensor_state else paddle.concat(fpr_list, axis=0)
-        mean_fpr = paddle.sort(x=mean_fpr)[0]
+        mean_fpr = paddle.sort(x=mean_fpr)
         mean_tpr = paddle.zeros_like(mean_fpr)
         for i in range(num_classes):
             mean_tpr += interp(

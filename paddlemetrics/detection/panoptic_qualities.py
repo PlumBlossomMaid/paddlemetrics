@@ -210,7 +210,7 @@ class PanopticQuality(Metric):
             self.void_color,
             self.allow_unknown_preds_category,
         )
-        flatten_target = _prepocess_inputs(self.things, self.stuffs, target, self.void_color)
+        flatten_target = _prepocess_inputs(self.things, self.stuffs, target, self.void_color, True)
         (
             iou_sum,
             true_positives,
@@ -422,7 +422,7 @@ class ModifiedPanopticQuality(Metric):
             self.void_color,
             self.allow_unknown_preds_category,
         )
-        flatten_target = _prepocess_inputs(self.things, self.stuffs, target, self.void_color)
+        flatten_target = _prepocess_inputs(self.things, self.stuffs, target, self.void_color, True)
         (
             iou_sum,
             true_positives,
