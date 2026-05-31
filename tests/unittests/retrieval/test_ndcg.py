@@ -202,7 +202,9 @@ def test_corner_case_with_tied_scores():
     target = paddle.tensor([[10, 0, 0, 1, 5]])
     preds = paddle.tensor([[0.1, 0, 0, 0, 0.1]])
     for k in [1, 3, 5]:
+        result = retrieval_normalized_dcg(preds, target, top_k=k)
+        expected = paddle.to_tensor(ndcg_score(target, preds, k=k), dtype=paddle.float32)
         assert paddle.allclose(
-            x=retrieval_normalized_dcg(preds, target, top_k=k),
-            y=paddle.tensor([ndcg_score(target, preds, k=k)], dtype=paddle.float32),
+            x=result.reshape([1]),
+            y=expected.reshape([1]),
         ).item()
