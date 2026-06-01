@@ -38,7 +38,10 @@ class _AbstractStatScores(Metric):
             default = list
             dist_reduce_fx = "cat"
         else:
-            default = lambda: paddle.zeros(size, dtype=paddle.long)
+
+            def default():
+                return paddle.zeros(size, dtype=paddle.long)
+
             dist_reduce_fx = "sum"
         self.add_state("tp", default(), dist_reduce_fx=dist_reduce_fx)
         self.add_state("fp", default(), dist_reduce_fx=dist_reduce_fx)

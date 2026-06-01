@@ -102,10 +102,13 @@ SQuAD Format: {SQuAD_FORMAT}"""
 SQuAD Format: {SQuAD_FORMAT}"""
             )
     preds_dict = {prediction["id"]: prediction["prediction_text"] for prediction in preds}
-    _fn_answer = lambda tgt: {
-        "answers": [{"text": txt} for txt in tgt["answers"]["text"]],
-        "id": tgt["id"],
-    }
+
+    def _fn_answer(tgt):
+        return {
+            "answers": [{"text": txt} for txt in tgt["answers"]["text"]],
+            "id": tgt["id"],
+        }
+
     targets_dict = [{"paragraphs": [{"qas": [_fn_answer(target) for target in targets]}]}]
     return preds_dict, targets_dict
 

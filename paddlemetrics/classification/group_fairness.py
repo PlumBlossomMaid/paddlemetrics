@@ -29,11 +29,13 @@ class _AbstractGroupStatScores(Metric):
     fn: Tensor
 
     def _create_states(self, num_groups: int) -> None:
-        default = lambda: paddle.zeros(num_groups, dtype=paddle.long)
-        self.add_state("tp", default(), dist_reduce_fx="sum")
-        self.add_state("fp", default(), dist_reduce_fx="sum")
-        self.add_state("tn", default(), dist_reduce_fx="sum")
-        self.add_state("fn", default(), dist_reduce_fx="sum")
+        def _default():
+            return paddle.zeros(num_groups, dtype=paddle.long)
+
+        self.add_state("tp", _default(), dist_reduce_fx="sum")
+        self.add_state("fp", _default(), dist_reduce_fx="sum")
+        self.add_state("tn", _default(), dist_reduce_fx="sum")
+        self.add_state("fn", _default(), dist_reduce_fx="sum")
 
     def _update_states(
         self,

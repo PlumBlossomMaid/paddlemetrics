@@ -207,7 +207,7 @@ class ClasswiseWrapper(WrapperMetric):
         """
         return self._plot(val, ax)
 
-    def __getattr__(self, name: str) -> Union[paddle.Tensor, "Module"]:
+    def __getattr__(self, name: str) -> Union[paddle.Tensor, "paddle.nn.Layer"]:
         """Get attribute from classwise wrapper."""
         if name == "metric" or name in self.__dict__ and name not in self.metric.__dict__:
             return super().__getattr__(name)

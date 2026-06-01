@@ -560,7 +560,6 @@ def _get_safe_item_values(
         tensor representation, and the second element contains additional metadata if applicable.
 
     """
-    output = [None, None]
     if "bbox" in iou_type:
         boxes = _fix_empty_tensors(item["boxes"])
         if boxes.size > 0:

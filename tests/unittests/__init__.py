@@ -50,8 +50,11 @@ warnings.filterwarnings("ignore", category=FutureWarning, module="sklearn.*")
 warnings.filterwarnings("ignore", category=FutureWarning, module="transformers.*")
 warnings.filterwarnings("ignore", category=UserWarning, module="sklearn.*")
 
-# Suppress TF32 for reproducibility
-paddle.set_flags({"FLAGS_cudnn_deterministic": True})
+# Suppress TF32 for reproducibility (only available with CUDA)
+try:
+    paddle.set_flags({"FLAGS_cudnn_deterministic": True})
+except ValueError:
+    pass
 
 
 class _Input(NamedTuple):

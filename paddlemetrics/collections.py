@@ -247,7 +247,7 @@ class MetricCollection(paddle.nn.LayerDict):
         for key in metric1._defaults:
             state1 = getattr(metric1, key)
             state2 = getattr(metric2, key)
-            if type(state1) != type(state2):
+            if not isinstance(state1, type(state2)):
                 return False
             if isinstance(state1, paddle.Tensor) and isinstance(state2, paddle.Tensor):
                 if not (state1.shape == state2.shape and allclose(state1, state2)):
