@@ -1,6 +1,6 @@
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from copy import deepcopy
-from typing import Any, cast
+from typing import Any, Optional, Union, cast
 
 import paddle
 from paddle import Tensor
@@ -8,6 +8,7 @@ from paddle import Tensor
 from paddlemetrics.metric import Metric
 from paddlemetrics.utils.data import apply_to_collection
 from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
+from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
 from paddlemetrics.wrappers.abstract import WrapperMetric
 
 if not _MATPLOTLIB_AVAILABLE:
@@ -100,14 +101,14 @@ class MultioutputWrapper(WrapperMetric):
                 Tensor,
                 paddle.index_select,
                 axis=self.output_dim,
-                index=paddle.tensor(i, device=self.place),
+                index=paddle.to_tensor([i]),
             )
             selected_kwargs = apply_to_collection(
                 kwargs,
                 Tensor,
                 paddle.index_select,
                 axis=self.output_dim,
-                index=paddle.tensor(i, device=self.place),
+                index=paddle.to_tensor([i]),
             )
             if self.remove_nans:
                 args_kwargs = selected_args + tuple(selected_kwargs.values())
@@ -126,6 +127,45 @@ class MultioutputWrapper(WrapperMetric):
         for metric, (selected_args, selected_kwargs) in zip(self.metrics, reshaped_args_kwargs):
             cast(Metric, metric).update(*selected_args, **cast(Mapping, selected_kwargs))
 
+    def forward(self, *args: Any, **kwargs: Any) -> Any:
+        """Call underlying forward methods and aggregate the results if they're non-null."""
+        reshaped_args_kwargs = self._get_args_kwargs_by_output(*args, **kwargs)
+        results = [
+            metric(*selected_args, **cast(Mapping, selected_kwargs))
+            for metric, (selected_args, selected_kwargs) in zip(self.metrics, reshaped_args_kwargs)
+        ]
+        if results[0] is None:
+            return None
+        return paddle.stack(results, 0)
+
+    def reset(self) -> None:
+        """Reset all underlying metrics."""
+        for metric in self.metrics:
+            cast(Metric, metric).reset()
+        super().reset()
+
     def compute(self) -> paddle.Tensor:
         """Compute metrics."""
         return paddle.stack([cast(Metric, m).compute() for m in self.metrics], 0)
+
+    def plot(
+        self,
+        val: Optional[Union[paddle.Tensor, Sequence[paddle.Tensor]]] = None,
+        ax: Optional[_AX_TYPE] = None,
+    ) -> _PLOT_OUT_TYPE:
+        """Plot a single or multiple values from the metric.
+
+        Args:
+            val: Either a single result from calling `metric.forward` or `metric.compute` or a list of these results.
+                If no value is provided, will automatically call `metric.compute` and plot that result.
+            ax: An matplotlib axis object. If provided will add plot to that axis
+
+        Returns:
+            Figure and Axes object
+
+        Raises:
+            ModuleNotFoundError:
+                If `matplotlib` is not installed
+
+        """
+        return self._plot(val, ax)

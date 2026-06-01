@@ -60,9 +60,14 @@ def _mean_iou_update(
     preds, target = _mean_iou_reshape_args(preds, target, input_format)
     preds, target = _segmentation_inputs_format(preds, target, include_background, num_classes, input_format)
     reduce_axis = list(range(2, preds.ndim))
-    intersection = paddle.sum(preds & target, axis=reduce_axis)
-    target_sum = paddle.sum(target, axis=reduce_axis)
-    pred_sum = paddle.sum(preds, axis=reduce_axis)
+    # Cast to float32 for computation - Paddle's one_hot returns different dtypes
+    preds_f = preds.cast(paddle.float32)
+    target_f = target.cast(paddle.float32)
+    preds_int = preds_f.cast(paddle.int32)
+    target_int = target_f.cast(paddle.int32)
+    intersection = paddle.sum(preds_int & target_int, axis=reduce_axis).cast(paddle.float32)
+    target_sum = paddle.sum(target_f, axis=reduce_axis)
+    pred_sum = paddle.sum(preds_f, axis=reduce_axis)
     union = target_sum + pred_sum - intersection
     return intersection, union
 
@@ -135,4 +140,4 @@ def mean_iou(
     intersection, union = _mean_iou_update(preds, target, num_classes, include_background, input_format)
     scores = _mean_iou_compute(intersection, union, zero_division="nan")
     valid_classes = union > 0
-    return scores.nan_to_num(-1.0) if per_class else scores.nansum(axis=-1) / valid_classes.sum(dim=-1)
+    return scores.nan_to_num(-1.0) if per_class else scores.nansum(axis=-1) / valid_classes.sum(axis=-1).cast(paddle.float32)

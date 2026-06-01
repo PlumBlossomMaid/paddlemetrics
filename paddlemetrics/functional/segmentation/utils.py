@@ -3,6 +3,7 @@ import math
 from typing import Optional, Union
 
 import paddle
+import paddle.nn.functional as F
 from typing_extensions import Literal
 
 from paddlemetrics.utils.checks import _check_same_shape
@@ -77,7 +78,12 @@ def _segmentation_inputs_format(
 def _format_logits(tensor: paddle.Tensor, num_classes: int) -> paddle.Tensor:
     """Transform logits or probabilities into integer one-hot encodings."""
     if paddle.is_floating_point(tensor):
-        tensor = tensor.argmax(dim=1)
+        # In Paddle, one_hot returns float32 (unlike PyTorch's int64), so
+        # is_floating_point is True even for already one-hot encoded tensors.
+        # Detect already one-hot by checking all values are exactly 0 or 1.
+        if paddle.all((tensor == 0) | (tensor == 1)):
+            return tensor
+        tensor = tensor.argmax(axis=1)
         tensor = paddle.nn.functional.one_hot(tensor, num_classes=num_classes).moveaxis(-1, 1)
     return tensor
 
@@ -102,7 +108,8 @@ def check_if_binarized(x: paddle.Tensor) -> None:
         >>> check_if_binarized(paddle.to_tensor([0, 1, 1, 0]))
 
     """
-    if not paddle.all(x.bool() == x):
+    # Use (x == 0) | (x == 1) to avoid bool/int type promotion error in Paddle
+    if not paddle.all((x == 0) | (x == 1)):
         raise ValueError("Input x should be binarized")
 
 
@@ -222,16 +229,16 @@ def binary_erosion(
     if origin is None:
         origin = structure.ndim * (1,)
     image_pad = paddle.nn.functional.pad(
-        image,
+        image.cast(paddle.int32),
         [x for i in range(len(origin)) for x in [origin[i], structure.shape[i] - origin[i] - 1]],
         mode="constant",
         value=border_value,
-    )
+    ).cast(paddle.bool)
     image_unfold = _unfold(image_pad.float(), kernel_size=structure.shape)
     strel_flatten = paddle.flatten(structure).unsqueeze(0).unsqueeze(-1)
-    sums = image_unfold - strel_flatten.int()
+    sums = image_unfold - strel_flatten.float()
     result, _ = sums.min(axis=1), sums.argmin(axis=1)
-    return (paddle.reshape(result, image.shape) + 1).byte()
+    return (paddle.reshape(result, image.shape) + 1).cast(paddle.bool)
 
 
 def distance_transform(
@@ -310,7 +317,7 @@ def distance_transform(
             dis = paddle.maximum(sampling[0] * dis_row, sampling[1] * dis_col).float()
         if metric == "taxicab":
             dis = (sampling[0] * dis_row + sampling[1] * dis_col).float()
-        mindis, _ = paddle.min(dis, axis=1)
+        mindis = paddle.min(dis, axis=1)
         z = paddle.zeros_like(x).reshape(-1)
         z[i1 * h + j1] = mindis
         return z.reshape(x.shape)
@@ -353,14 +360,17 @@ def mask_edges(
         raise ValueError(f"Expected argument `preds` to be of rank 2 or 3 but got rank `{preds.ndim}`.")
     check_if_binarized(preds)
     check_if_binarized(target)
+    # Cast to bool for bitwise operations - Paddle's one_hot returns float32
+    preds = preds.cast(paddle.bool)
+    target = target.cast(paddle.bool)
     if crop:
         or_val = preds | target
         if not or_val.any():
             p, t = paddle.zeros_like(preds), paddle.zeros_like(target)
             return p, t, p, t
         preds, target = (
-            paddle.nn.functional.pad(preds, preds.ndim * [1, 1]),
-            paddle.nn.functional.pad(target, target.ndim * [1, 1]),
+            paddle.nn.functional.pad(preds.cast(paddle.int32), preds.ndim * [1, 1]).cast(paddle.bool),
+            paddle.nn.functional.pad(target.cast(paddle.int32), target.ndim * [1, 1]).cast(paddle.bool),
         )
     if spacing is None:
         be_pred = binary_erosion(preds.unsqueeze(0).unsqueeze(0)).squeeze() ^ preds
@@ -368,9 +378,10 @@ def mask_edges(
         return be_pred, be_target
     table, kernel = get_neighbour_tables(spacing, device=preds.place)
     spatial_dims = len(spacing)
-    conv_operator = conv2d if spatial_dims == 2 else conv3d
+    conv_operator = F.conv2d if spatial_dims == 2 else F.conv3d
     volume = paddle.stack([preds.unsqueeze(0), target.unsqueeze(0)], axis=0).float()
-    code_preds, code_target = conv_operator(volume, kernel.to(volume))
+    conv_result = conv_operator(volume, kernel.to(volume))
+    code_preds, code_target = conv_result[0], conv_result[1]
     all_ones = len(table) - 1
     edges_preds = (code_preds != 0) & (code_preds != all_ones)
     edges_target = (code_target != 0) & (code_target != all_ones)

@@ -152,7 +152,7 @@ class ROUGEScore(Metric):
         for rouge_key, metrics in output.items():
             for metric in metrics:
                 for tp, value in metric.items():
-                    getattr(self, f"rouge{rouge_key}_{tp}").append(value.to(self.place))
+                    getattr(self, f"rouge{rouge_key}_{tp}").append(value)
 
     def compute(self) -> dict[str, paddle.Tensor]:
         """Calculate (Aggregate and provide confidence intervals) ROUGE score."""

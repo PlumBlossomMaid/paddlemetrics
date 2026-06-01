@@ -51,6 +51,10 @@ def _binary_stat_scores_tensor_validation(
 
     """
     _check_same_shape(preds, target)
+    if target.dtype == paddle.uint8:
+        target = target.cast("int32")
+    if preds.dtype == paddle.uint8:
+        preds = preds.cast("int32")
     unique_values = paddle.unique(target, axis=None)
     if ignore_index is None:
         check = paddle.any((unique_values != 0) & (unique_values != 1))
@@ -292,10 +296,11 @@ def _multiclass_stat_scores_tensor_validation(
     if num_classes is not None:
         check_value = num_classes if ignore_index is None else num_classes + 1
         for t, name in ((target, "target"),) + ((preds, "preds"),) if not preds.is_floating_point() else ():
-            num_unique_values = len(paddle.unique(t, axis=None))
+            t_fixed = t.cast("int32") if t.dtype == paddle.uint8 else t
+            num_unique_values = len(paddle.unique(t_fixed, axis=None))
             if num_unique_values > check_value:
                 raise RuntimeError(
-                    f"Detected more unique values in `{name}` than expected. Expected only {check_value} but found {num_unique_values} in `{name}`. Found values: {paddle.unique(t, axis=None)}."
+                    f"Detected more unique values in `{name}` than expected. Expected only {check_value} but found {num_unique_values} in `{name}`. Found values: {paddle.unique(t_fixed, axis=None)}."
                 )
 
 
@@ -337,7 +342,7 @@ def _refine_preds_oh(preds: paddle.Tensor, preds_oh: paddle.Tensor, target: padd
     top_1_indices = top_k_indices[:, 0]
     target_in_topk = paddle.any(top_k_indices == target.unsqueeze(1), axis=1)
     result = paddle.where(target_in_topk, target, top_1_indices)
-    return paddle.zeros_like(preds_oh, dtype=paddle.int64).scatter_(-1, result.unsqueeze(-1), 1)
+    return paddle.zeros_like(preds_oh).scatter_(-1, result.unsqueeze(-1), 1)
 
 
 def _multiclass_stat_scores_update(
@@ -622,6 +627,10 @@ def _multilabel_stat_scores_tensor_validation(
         raise ValueError(
             f"Expected both `target.shape[1]` and `preds.shape[1]` to be equal to the number of labels but got {preds.shape[1]} and expected {num_labels}"
         )
+    if target.dtype == paddle.uint8:
+        target = target.cast("int32")
+    if preds.dtype == paddle.uint8:
+        preds = preds.cast("int32")
     unique_values = paddle.unique(target, axis=None)
     if ignore_index is None:
         check = paddle.any((unique_values != 0) & (unique_values != 1))

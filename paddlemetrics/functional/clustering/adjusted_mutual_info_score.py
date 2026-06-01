@@ -47,7 +47,8 @@ def adjusted_mutual_info_score(
         denominator = paddle.min(paddle.tensor([denominator, -paddle.finfo(denominator.dtype).eps]))
     else:
         denominator = paddle.max(paddle.tensor([denominator, paddle.finfo(denominator.dtype).eps]))
-    return (mutual_info - expected_mutual_info) / denominator
+    result = (mutual_info - expected_mutual_info) / denominator
+    return result.cast("float32")
 
 
 def expected_mutual_info_score(contingency: paddle.Tensor, n_samples: int) -> paddle.Tensor:
@@ -64,6 +65,7 @@ def expected_mutual_info_score(contingency: paddle.Tensor, n_samples: int) -> pa
 
     """
     n_rows, n_cols = contingency.shape
+    contingency = contingency.cast("float64")
     a = paddle.ravel(contingency.sum(dim=1))
     b = paddle.ravel(contingency.sum(dim=0))
     if a.size == 1 or b.size == 1:

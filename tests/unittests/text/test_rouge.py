@@ -72,6 +72,7 @@ def _reference_rouge_score(
 
 
 @pytest.mark.skipif(not _NLTK_AVAILABLE, reason="metric requires nltk")
+@pytest.mark.skipif(not _ROUGE_SCORE_AVAILABLE, reason="test requires rouge_score package")
 @pytest.mark.parametrize(
     ("pl_rouge_metric_key", "use_stemmer"),
     [
@@ -184,6 +185,7 @@ def test_rouge_metric_wrong_key_value_error():
     ],
 )
 @skip_on_connection_issues(reason="could not download nltk relevant data")
+@pytest.mark.skipif(not _ROUGE_SCORE_AVAILABLE, reason="test requires rouge_score package")
 def test_rouge_metric_normalizer_tokenizer(pl_rouge_metric_key):
     """Test that rouge metric works for different rouge levels."""
     normalizer: Callable[[str], str] = lambda text: re.sub("[^a-z0-9]+", " ", text.lower())
@@ -225,6 +227,7 @@ def test_rouge_metric_normalizer_tokenizer(pl_rouge_metric_key):
 )
 @pytest.mark.parametrize("use_stemmer", [False])
 @skip_on_connection_issues(reason="could not download nltk relevant data")
+@pytest.mark.skipif(not _ROUGE_SCORE_AVAILABLE, reason="test requires rouge_score package")
 def test_rouge_lsum_score(pl_rouge_metric_key, use_stemmer):
     """Specific tests to verify the correctness of Rouge-L and Rouge-LSum metric."""
     rouge_level, metric = pl_rouge_metric_key.split("_")

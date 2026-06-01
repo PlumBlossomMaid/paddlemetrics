@@ -136,7 +136,7 @@ class GeneralizedDiceScore(Metric):
             self.weight_type,
             self.input_format,
         )
-        self.score += _generalized_dice_compute(numerator, denominator, self.per_class).sum(dim=0)
+        self.score += _generalized_dice_compute(numerator, denominator, self.per_class).sum(axis=0)
         self.samples += preds.shape[0]
 
     def compute(self) -> paddle.Tensor:

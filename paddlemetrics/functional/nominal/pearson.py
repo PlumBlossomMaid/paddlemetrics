@@ -54,7 +54,10 @@ def _pearsons_contingency_coefficient_compute(confmat: paddle.Tensor) -> paddle.
     chi_squared = _compute_chi_squared(confmat, bias_correction=False)
     phi_squared = chi_squared / cm_sum
     tschuprows_t_value = paddle.sqrt(phi_squared / (1 + phi_squared))
-    return tschuprows_t_value.clamp(0.0, 1.0)
+    return tschuprows_t_value.clamp(
+        paddle.to_tensor(0.0, place=tschuprows_t_value.place),
+        paddle.to_tensor(1.0, place=tschuprows_t_value.place),
+    )
 
 
 def pearsons_contingency_coefficient(

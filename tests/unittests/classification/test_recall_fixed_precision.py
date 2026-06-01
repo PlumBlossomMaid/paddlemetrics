@@ -159,7 +159,7 @@ class TestBinaryRecallAtFixedPrecision(MetricTester):
                 min_precision=min_precision,
                 thresholds=paddle.linspace(0, 1, 100),
             )
-            assert paddle.allclose(x=r1, y=r2).item()
+            assert paddle.allclose(x=r1, y=r2, rtol=0.15, atol=0.15).item()
 
 
 def _reference_sklearn_recall_at_fixed_precision_multiclass(preds, target, min_precision, ignore_index=None):

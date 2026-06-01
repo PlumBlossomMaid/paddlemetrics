@@ -3,6 +3,7 @@ from typing import Optional
 
 import paddle
 import pytest
+import torch
 from monai.metrics.meaniou import compute_iou
 
 from paddlemetrics.functional.segmentation.mean_iou import mean_iou
@@ -43,7 +44,8 @@ def _reference_mean_iou(
                 target = target.argmax(dim=1)
                 target = paddle.nn.functional.one_hot(target, num_classes=NUM_CLASSES).moveaxis(-1, 1)
             preds = paddle.nn.functional.one_hot(preds, num_classes=NUM_CLASSES).moveaxis(-1, 1)
-    val = compute_iou(preds, target, include_background=include_background)
+    val = compute_iou(torch.from_numpy(preds.numpy()), torch.from_numpy(target.numpy()), include_background=include_background)
+    val = paddle.to_tensor(val.detach().cpu().numpy())
     val[paddle.isnan(val)] = 0.0
     if reduce:
         return paddle.mean(val, 0) if per_class else paddle.mean(val)

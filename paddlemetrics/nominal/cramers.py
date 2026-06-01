@@ -93,7 +93,7 @@ class CramersV(Metric):
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update state with predictions and targets."""
         confmat = _cramers_v_update(preds, target, self.num_classes, self.nan_strategy, self.nan_replace_value)
-        self.confmat += confmat
+        self.confmat += confmat.cast(self.confmat.dtype)
 
     def compute(self) -> paddle.Tensor:
         """Compute Cramer's V statistic."""

@@ -135,15 +135,19 @@ def calculate_contingency_matrix(
     target_classes, target_idx = paddle.unique(target, return_inverse=True)
     num_classes_preds = preds_classes.size(0)
     num_classes_target = target_classes.size(0)
-    contingency = paddle.sparse.sparse_coo_tensor(
-        indices=paddle.stack((target_idx, preds_idx)),
-        values=paddle.ones(target_idx.shape[0], dtype=preds_idx.dtype, device=preds_idx.device),
-        shape=(num_classes_target, num_classes_preds),
+    # Paddle's sparse_coo_tensor.to_dense() does NOT sum duplicate indices,
+    # so we use scatter_nd_add instead to correctly accumulate counts.
+    indices = paddle.stack((target_idx, preds_idx), axis=1)
+    updates = paddle.ones([target_idx.shape[0]], dtype=preds_idx.dtype)
+    contingency = paddle.scatter_nd_add(
+        paddle.zeros([num_classes_target, num_classes_preds], dtype=preds_idx.dtype),
+        indices,
+        updates,
     )
-    if not sparse:
-        contingency = contingency.to_dense()
-        if eps:
-            contingency = contingency + eps
+    if sparse:
+        contingency = contingency.to_sparse_coo(contingency.ndim)
+    if eps:
+        contingency = contingency.cast("float32") + eps
     return contingency
 
 

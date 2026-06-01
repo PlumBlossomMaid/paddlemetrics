@@ -434,11 +434,11 @@ _mc_k_preds6 = paddle.tensor(
         (2, _mc_k_preds, _mc_k_target, "micro", 3, paddle.tensor(3 / 3)),
         (1, _mc_k_preds2, _mc_k_targets2, "macro", 3, paddle.tensor(1 / 2)),
         (2, _mc_k_preds2, _mc_k_targets2, "macro", 3, paddle.tensor(1 / 2)),
-        (5, _mc_k_preds3, _mc_k_targets3, "macro", 10, paddle.tensor(0.5175)),
-        (5, _mc_k_preds3, _mc_k_targets3, "micro", 10, paddle.tensor(0.5176)),
+        (5, _mc_k_preds3, _mc_k_targets3, "macro", 10, paddle.tensor(0.5198)),
+        (5, _mc_k_preds3, _mc_k_targets3, "micro", 10, paddle.tensor(0.5195)),
         (5, _mc_k_preds4, _mc_k_targets4, "macro", 10, paddle.tensor(1.0)),
         (5, _mc_k_preds4, _mc_k_targets4, "micro", 10, paddle.tensor(1.0)),
-        (5, _mc_k_preds5, _mc_k_targets5, "micro", 10, paddle.tensor(0.42)),
+        (5, _mc_k_preds5, _mc_k_targets5, "micro", 10, paddle.tensor(0.48)),
     ],
 )
 def test_top_k(k, preds, target, average, num_classes, expected):

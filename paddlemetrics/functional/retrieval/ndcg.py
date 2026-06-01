@@ -17,6 +17,8 @@ def _tie_average_dcg(target: paddle.Tensor, preds: paddle.Tensor, discount_cumsu
         The cumulative gain of the tied elements.
 
     """
+    target = target.flatten()
+    preds = preds.flatten()
     _, inv, counts = paddle.unique(-preds, return_inverse=True, return_counts=True)
     ranked = paddle.zeros_like(counts, dtype=paddle.float32)
     ranked.scatter_add_(0, inv, target.to(dtype=ranked.dtype))

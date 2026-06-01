@@ -2,6 +2,7 @@ from functools import partial
 
 import paddle
 import pytest
+import torch
 from lightning_utilities.core.imports import RequirementCache
 from monai.metrics.generalized_dice import compute_generalized_dice
 
@@ -46,10 +47,10 @@ def _reference_generalized_dice(
                 target = paddle.nn.functional.one_hot(target, num_classes=NUM_CLASSES).moveaxis(-1, 1)
             preds = paddle.nn.functional.one_hot(preds, num_classes=NUM_CLASSES).moveaxis(-1, 1)
     monai_extra_arg = {"sum_over_classes": True} if RequirementCache("monai>=1.4.0") else {}
-    val = compute_generalized_dice(preds, target, include_background=include_background, **monai_extra_arg)
+    val = compute_generalized_dice(torch.from_numpy(preds.numpy()), torch.from_numpy(target.numpy()), include_background=include_background, **monai_extra_arg)
     if reduce:
         val = val.mean()
-    return val.squeeze()
+    return paddle.to_tensor(val.detach().cpu().numpy().squeeze())
 
 
 @pytest.mark.parametrize(

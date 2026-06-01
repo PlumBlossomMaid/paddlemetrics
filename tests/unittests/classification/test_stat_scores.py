@@ -390,7 +390,7 @@ def test_refine_preds_oh(top_k, expected_result):
     preds_oh = paddle.tensor([[[1, 0, 1]], [[1, 0, 1]], [[0, 1, 1]], [[1, 0, 1]]], dtype=paddle.int32)
     target = paddle.tensor([[0], [1], [1], [2]])
     result = _refine_preds_oh(preds, preds_oh, target, top_k)
-    assert paddle.equal(result, expected_result), (
+    assert paddle.all(paddle.equal(result, expected_result)), (
         f"Test failed for top_k={top_k}. Expected result: {expected_result}, but got: {result}"
     )
 
@@ -506,7 +506,7 @@ def test_top_k_ignore_index_multiclass():
     preds_without = paddle.randn(10, 3).softmax(dim=-1)
     target_without = paddle.randint(low=0, high=3, shape=(10,))
     preds_with = paddle.concat([preds_without, paddle.randn(10, 3).softmax(dim=-1)], 0)
-    target_with = paddle.concat([target_without, -100 * paddle.ones(10)], 0).long()
+    target_with = paddle.concat([target_without, -100 * paddle.ones(10, dtype=target_without.dtype)], 0).long()
     res_without = multiclass_stat_scores(preds_without, target_without, num_classes=3, average="micro", top_k=2)
     res_with = multiclass_stat_scores(
         preds_with,

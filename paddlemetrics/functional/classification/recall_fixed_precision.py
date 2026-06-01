@@ -52,11 +52,14 @@ def _recall_at_precision(
     max_recall = paddle.tensor(0.0, device=recall.device, dtype=recall.dtype)
     best_threshold = paddle.tensor(0)
     zipped_len = min(t.shape[0] for t in (recall, precision, thresholds))
-    zipped = paddle.vstack(x=(recall[:zipped_len], precision[:zipped_len], thresholds[:zipped_len])).T
+    common_dtype = paddle.float64 if (recall.dtype == paddle.float64 or thresholds.dtype == paddle.float64) else recall.dtype
+    zipped = paddle.vstack(x=(recall[:zipped_len].cast(common_dtype), precision[:zipped_len].cast(common_dtype), thresholds[:zipped_len].cast(common_dtype))).T
     zipped_masked = zipped[zipped[:, 1] >= min_precision]
     if zipped_masked.shape[0] > 0:
         idx = _lexargmax(zipped_masked)[0]
-        max_recall, _, best_threshold = zipped_masked[idx]
+        max_recall_val, _, best_threshold_val = zipped_masked[idx]
+        max_recall = max_recall_val.cast(recall.dtype)
+        best_threshold = best_threshold_val.cast(thresholds.dtype)
     if max_recall == 0.0:
         best_threshold = paddle.tensor(float("nan"), device=thresholds.device, dtype=thresholds.dtype)
     return max_recall, best_threshold

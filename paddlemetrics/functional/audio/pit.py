@@ -69,7 +69,12 @@ def _find_best_perm_by_exhaustive_method(
     bps = ps.T[None, ...].expand([batch_size, spk_num, perm_num])
     metric_of_ps_details = paddle.gather(metric_mtx, 2, bps)
     metric_of_ps = metric_of_ps_details.mean(axis=1)
-    best_metric, best_indexes = eval_func(metric_of_ps, axis=1)
+    if eval_func == paddle.max:
+        best_metric = paddle.max(metric_of_ps, axis=1)
+        best_indexes = paddle.argmax(metric_of_ps, axis=1)
+    else:
+        best_metric = paddle.min(metric_of_ps, axis=1)
+        best_indexes = paddle.argmin(metric_of_ps, axis=1)
     best_indexes = best_indexes.detach()
     best_perm = ps[best_indexes, :]
     return best_metric, best_perm
@@ -146,7 +151,12 @@ def permutation_invariant_training(
         ptarget = target.repeat_interleave(repeats=perm_num, axis=0)
         metric_of_ps = metric_func(ppreds, ptarget, **kwargs)
         metric_of_ps = paddle.mean(metric_of_ps.reshape([batch_size, len(perms), -1]), axis=-1)
-        best_metric, best_indexes = eval_op(metric_of_ps, axis=1)
+        if eval_func == paddle.max:
+            best_metric = paddle.max(metric_of_ps, axis=1)
+            best_indexes = paddle.argmax(metric_of_ps, axis=1)
+        else:
+            best_metric = paddle.min(metric_of_ps, axis=1)
+            best_indexes = paddle.argmin(metric_of_ps, axis=1)
         best_indexes = best_indexes.detach()
         best_perm = perms[best_indexes, :]
         return best_metric, best_perm

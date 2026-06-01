@@ -128,7 +128,7 @@ def test_check_full_state_update_fn(capsys, metric_class, expected):
 @pytest.mark.parametrize(
     ("inputs", "expected"),
     [
-        ((paddle.ones(2), paddle.ones(2))),
+        ((paddle.ones(2), paddle.ones(2)), True),
         ((paddle.rand(2), paddle.rand(2)), False),
         (
             ([paddle.ones(2) for _ in range(2)], [paddle.ones(2) for _ in range(2)]),
@@ -181,6 +181,8 @@ def test_cumsum_still_not_supported(use_deterministic_algorithms):
 @pytest.mark.skipif(not paddle.cuda.is_available(), reason="test requires GPU")
 def test_custom_cumsum(use_deterministic_algorithms):
     """Test custom cumsum implementation."""
+    from paddlemetrics.utils.data import _cumsum
+
     device = paddle.device("cuda:1") if paddle.cuda.device_count() > 1 else paddle.device("cuda:0")
     x = paddle.arange(100).float().to(device)
     if sys.platform != "win32":
@@ -188,21 +190,23 @@ def test_custom_cumsum(use_deterministic_algorithms):
             TorchMetricsUserWarning,
             match="You are trying to use a metric in deterministic mode on GPU that.*",
         ):
-            x = paddle.arange(100).float().to(device)
+            _cumsum(x)
     else:
-        x = paddle.arange(100).float().to(device)
+        _cumsum(x)
 
 
 def _reference_topk(x, dim, k):
-    x = x.cpu().numpy()
-    one_hot = np.zeros((x.shape[0], x.shape[1]), dtype=int)
+    """Reference topk implementation using paddle.topk for consistent tie-breaking."""
+    one_hot = paddle.zeros_like(x, dtype=paddle.int64)
     if dim == 1:
         for i in range(x.shape[0]):
-            one_hot[i, np.argsort(x[i, :], kind="stable")[::-1][:k]] = 1
-        return one_hot
+            indices = paddle.topk(x[i:i+1], k=k, axis=1).indices.squeeze(0)
+            one_hot[i] = one_hot[i].put_along_axis(indices, paddle.to_tensor(1, dtype=paddle.int64), axis=0)
+        return one_hot.numpy()
     for i in range(x.shape[1]):
-        one_hot[np.argsort(x[:, i], kind="stable")[::-1][:k], i] = 1
-    return one_hot
+        indices = paddle.topk(x[:, i:i+1], k=k, axis=0).indices.squeeze(1)
+        one_hot[:, i] = one_hot[:, i].put_along_axis(indices, paddle.to_tensor(1, dtype=paddle.int64), axis=0)
+    return one_hot.numpy()
 
 
 @pytest.mark.parametrize("dtype", [paddle.float16, paddle.float32, paddle.float64])
@@ -214,7 +218,7 @@ def test_custom_topk(dtype, k, dim):
     top_k = select_topk(x, axis=dim, topk=k)
     assert top_k.shape == (100, 10)
     assert top_k.dtype == paddle.int32
-    ref = _reference_topk(x, axis=dim, k=k)
+    ref = _reference_topk(x, dim=dim, k=k)
     assert paddle.allclose(x=top_k, y=paddle.from_numpy(ref).to(paddle.int32)).item()
 
 

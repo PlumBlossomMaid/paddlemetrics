@@ -3,6 +3,7 @@ from typing import Any
 
 import paddle
 import pytest
+import torch
 from monai.metrics.hausdorff_distance import compute_hausdorff_distance as monai_hausdorff_distance
 
 from paddlemetrics.functional.segmentation.hausdorff_distance import hausdorff_distance
@@ -52,7 +53,8 @@ def reference_metric(preds, target, input_format, reduce, **kwargs: Any):
                 target = target.argmax(dim=1)
                 target = paddle.nn.functional.one_hot(target, num_classes=NUM_CLASSES).moveaxis(-1, 1)
             preds = paddle.nn.functional.one_hot(preds, num_classes=NUM_CLASSES).moveaxis(-1, 1)
-    score = monai_hausdorff_distance(preds, target, **kwargs)
+    score = monai_hausdorff_distance(torch.from_numpy(preds.numpy()), torch.from_numpy(target.numpy()), **kwargs)
+    score = paddle.to_tensor(score.detach().cpu().numpy())
     return score.mean() if reduce else score
 
 

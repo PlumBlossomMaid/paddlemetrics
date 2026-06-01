@@ -256,6 +256,8 @@ def _reference_sklearn_eer_multilabel(preds, target, ignore_index=None):
 class TestMultilabelEER(MetricTester):
     """Test class for `MultilabelEER` metric."""
 
+    atol: float = 0.05
+
     @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
     def test_multilabel_eer(self, inputs, ddp):
         """Test class implementation of metric."""

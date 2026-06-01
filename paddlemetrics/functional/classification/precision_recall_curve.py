@@ -114,7 +114,7 @@ def _binary_precision_recall_curve_tensor_validation(
         raise ValueError(
             f"Expected argument `preds` to be an floating tensor with probability/logit scores, but got tensor with dtype {preds.dtype}"
         )
-    unique_values = paddle.unique(target, axis=None)
+    unique_values = paddle.unique(target.cast("int32") if target.dtype == paddle.uint8 else target, axis=None)
     if ignore_index is None:
         check = paddle.any((unique_values != 0) & (unique_values != 1))
     else:
@@ -374,7 +374,7 @@ def _multiclass_precision_recall_curve_tensor_validation(
         raise ValueError(
             f"Expected the shape of `preds` should be (N, C, ...) and the shape of `target` should be (N, ...) but got {preds.shape} and {target.shape}"
         )
-    num_unique_values = len(paddle.unique(target, axis=None))
+    num_unique_values = len(paddle.unique(target.cast("int32") if target.dtype == paddle.uint8 else target, axis=None))
     check = num_unique_values > num_classes if ignore_index is None else num_unique_values > num_classes + 1
     if check:
         raise RuntimeError(

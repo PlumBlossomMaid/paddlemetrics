@@ -52,6 +52,7 @@ def _tschuprows_t_compute(confmat: paddle.Tensor, bias_correction: bool) -> padd
         Tschuprow's T statistic
 
     """
+    confmat = confmat.cast(paddle.float32) if not confmat.is_floating_point() else confmat
     confmat = _drop_empty_rows_and_cols(confmat)
     cm_sum = confmat.sum()
     chi_squared = _compute_chi_squared(confmat, bias_correction)
@@ -63,7 +64,7 @@ def _tschuprows_t_compute(confmat: paddle.Tensor, bias_correction: bool) -> padd
             rows_corrected,
             cols_corrected,
         ) = _compute_bias_corrected_values(phi_squared, num_rows, num_cols, cm_sum)
-        if paddle.min(rows_corrected, cols_corrected) == 1:
+        if paddle.minimum(rows_corrected, cols_corrected) == 1:
             _unable_to_use_bias_correction_warning(metric_name="Tschuprow's T")
             return paddle.tensor(float("nan"), device=confmat.place)
         tschuprows_t_value = paddle.sqrt(
@@ -73,7 +74,10 @@ def _tschuprows_t_compute(confmat: paddle.Tensor, bias_correction: bool) -> padd
         n_rows_tensor = paddle.tensor(num_rows, device=phi_squared.place)
         n_cols_tensor = paddle.tensor(num_cols, device=phi_squared.place)
         tschuprows_t_value = paddle.sqrt(phi_squared / paddle.sqrt((n_rows_tensor - 1) * (n_cols_tensor - 1)))
-    return tschuprows_t_value.clamp(0.0, 1.0)
+    return tschuprows_t_value.clamp(
+        paddle.to_tensor(0.0, place=tschuprows_t_value.place),
+        paddle.to_tensor(1.0, place=tschuprows_t_value.place),
+    )
 
 
 def tschuprows_t(

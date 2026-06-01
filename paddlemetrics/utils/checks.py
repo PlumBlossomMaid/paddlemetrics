@@ -99,7 +99,10 @@ def _check_retrieval_target_and_prediction_types(
 def _allclose_recursive(res1: Any, res2: Any, atol: float = 1e-06) -> bool:
     """Recursively asserting that two results are within a certain tolerance."""
     if isinstance(res1, paddle.Tensor):
-        return bool(paddle.allclose(res1, res2, atol=atol).item())
+        try:
+            return bool(paddle.allclose(res1, res2, atol=atol).item())
+        except (RuntimeError, ValueError):
+            return False
     if isinstance(res1, str):
         return res1 == res2
     if isinstance(res1, Sequence):
@@ -160,12 +163,12 @@ def check_forward_full_state_property(
     try:
         for _ in range(num_update_to_compare[0]):
             equal = equal & _allclose_recursive(fullstate(**input_args), partstate(**input_args))
-    except RuntimeError:
+    except (RuntimeError, ValueError):
         equal = False
     res1 = fullstate.compute()
     try:
         res2 = partstate.compute()
-    except RuntimeError:
+    except (RuntimeError, ValueError):
         equal = False
     equal = equal & _allclose_recursive(res1, res2)
     if not equal:

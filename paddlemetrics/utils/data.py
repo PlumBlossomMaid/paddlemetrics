@@ -1,11 +1,16 @@
 """Data utilities for paddlemetrics."""
 
+import sys
 from collections.abc import Sequence
 from typing import Any, Callable, List, Optional, Union
 
 import paddle
 
 METRIC_EPS = 1e-06
+
+# Module-level flag for deterministic algorithms mode.
+# Paddle does not have torch.use_deterministic_algorithms(), so we track it manually.
+_deterministic_algorithms: bool = False
 
 
 def apply_to_collection(
@@ -131,13 +136,13 @@ def select_topk(prob_tensor: paddle.Tensor, topk: int = 1, axis: int = 1) -> pad
     Returns:
         A binary tensor of the same shape as the input tensor of type ``int32``
     """
-    topk_tensor = paddle.zeros_like(prob_tensor, dtype=paddle.int64)
+    topk_tensor = paddle.zeros_like(prob_tensor, dtype=paddle.int32)
     if topk == 1:
         indices = prob_tensor.argmax(axis=axis, keepdim=True)
-        topk_tensor = topk_tensor.put_along_axis(indices, paddle.to_tensor(1, dtype=paddle.int64), axis=axis)
+        topk_tensor = topk_tensor.put_along_axis(indices, paddle.to_tensor(1, dtype=paddle.int32), axis=axis)
     else:
         indices = _top_k_with_half_precision_support(prob_tensor, k=topk, axis=axis)
-        topk_tensor = topk_tensor.put_along_axis(indices, paddle.to_tensor(1, dtype=paddle.int64), axis=axis)
+        topk_tensor = topk_tensor.put_along_axis(indices, paddle.to_tensor(1, dtype=paddle.int32), axis=axis)
     return topk_tensor
 
 
@@ -179,6 +184,18 @@ def _bincount(x: paddle.Tensor, minlength: Optional[int] = None) -> paddle.Tenso
 
 def _cumsum(x: paddle.Tensor, axis: Optional[int] = 0, dtype: Optional[paddle.dtype] = None) -> paddle.Tensor:
     """Implement cumulative summation."""
+    from paddlemetrics.utils.exceptions import PaddleMetricsUserWarning
+    from paddlemetrics.utils.prints import rank_zero_warn
+
+    is_cuda_fp_deterministic = _deterministic_algorithms and x.is_cuda and x.is_floating_point()
+    if is_cuda_fp_deterministic and sys.platform != "win32":
+        rank_zero_warn(
+            "You are trying to use a metric in deterministic mode on GPU that uses `paddle.cumsum`, which is currently"
+            " not supported. The tensor will be copied to the CPU memory to compute it and then copied back to GPU."
+            " Expect some slowdowns.",
+            PaddleMetricsUserWarning,
+        )
+        return x.cpu().cumsum(axis=axis, dtype=dtype).to(x.place)
     return paddle.cumsum(x, axis=axis, dtype=dtype)
 
 

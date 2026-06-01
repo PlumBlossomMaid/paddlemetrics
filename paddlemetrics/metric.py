@@ -593,6 +593,16 @@ class Metric(ABC, nn.Layer):
         buf = pickle.dumps(self)
         return pickle.loads(buf)
 
+    def __deepcopy__(self, memo: dict) -> "Metric":
+        """Deepcopy via CPU round-trip to avoid CUDA deepcopy crashes."""
+        import pickle
+
+        # Move to CPU, pickle, unpickle, then move back
+        device = self.device
+        buf = pickle.dumps(self)
+        clone = pickle.loads(buf)
+        return clone.to(device)
+
     # ============ Pickle / Deepcopy Support ============
 
     def __getstate__(self) -> dict[str, Any]:

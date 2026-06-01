@@ -41,6 +41,7 @@ def _generalized_dice_update(
 ) -> Tuple[paddle.Tensor, paddle.Tensor]:
     """Update the state with the current prediction and target."""
     preds, target = _segmentation_inputs_format(preds, target, include_background, num_classes, input_format)
+
     reduce_axis = list(range(2, target.ndim))
     intersection = paddle.sum(preds * target, axis=reduce_axis)
     target_sum = paddle.sum(target, axis=reduce_axis)
@@ -51,15 +52,23 @@ def _generalized_dice_update(
     elif weight_type == "linear":
         weights = paddle.ones_like(target_sum)
     elif weight_type == "square":
-        weights = 1.0 / target_sum**2
+        weights = 1.0 / (target_sum**2)
     else:
         raise ValueError(
             f"Expected argument `weight_type` to be one of 'simple', 'linear', 'square', but got {weight_type}."
         )
+
     w_shape = weights.shape
     weights_flatten = weights.flatten()
     infs = paddle.isinf(weights_flatten)
     weights_flatten[infs] = 0
+    w_max = paddle.max(weights, axis=0).reshape([1, -1]).tile([w_shape[0], 1]).flatten()
+    weights_flatten[infs] = w_max[infs]
+    weights = weights_flatten.reshape(w_shape)
+
+    numerator = 2.0 * intersection * weights
+    denominator = cardinality * weights
+    return numerator, denominator
 
 
 def _generalized_dice_compute(

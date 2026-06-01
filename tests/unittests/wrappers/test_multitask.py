@@ -68,7 +68,7 @@ def test_error_on_wrong_keys():
     wrong_key_preds = {"Classification": _classification_preds}
     wrong_key_targets = {"Classification": _classification_target}
     wrong_key_multitask_metrics = MultitaskWrapper({"Classification": BinaryAccuracy()})
-    order_dict = "" if True else "o"
+    order_dict = "o"
     with pytest.raises(
         ValueError,
         match=re.escape(

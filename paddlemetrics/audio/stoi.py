@@ -83,7 +83,7 @@ class ShortTimeObjectiveIntelligibility(Metric):
 
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update state with predictions and targets."""
-        stoi_batch = short_time_objective_intelligibility(preds, target, self.fs, self.extended, False).to(
+        stoi_batch = short_time_objective_intelligibility(preds, target, self.fs, self.extended).to(
             self.sum_stoi.place
         )
         self.sum_stoi += stoi_batch.sum()

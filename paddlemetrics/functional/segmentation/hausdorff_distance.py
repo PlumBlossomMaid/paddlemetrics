@@ -83,7 +83,7 @@ def hausdorff_distance(
         input_format,
     )
     preds, target = _segmentation_inputs_format(preds, target, include_background, num_classes, input_format)
-    distances = paddle.zeros(preds.shape[0], preds.shape[1], device=preds.place)
+    distances = paddle.zeros([preds.shape[0], preds.shape[1]], dtype=paddle.float32).to(preds.place)
     for b in range(preds.shape[0]):
         for c in range(preds.shape[1]):
             dist = edge_surface_distance(
@@ -93,5 +93,9 @@ def hausdorff_distance(
                 spacing=spacing,
                 symmetric=not directed,
             )
-            distances[b, c] = paddle.max(dist) if directed else paddle.max(dist[0].amax(), dist[1].amax())
+            if directed:
+                distances[b, c] = paddle.max(dist)
+            else:
+                # Use paddle.maximum for element-wise max of two scalars (not paddle.max which is reduction)
+                distances[b, c] = paddle.maximum(dist[0].amax(), dist[1].amax())
     return distances

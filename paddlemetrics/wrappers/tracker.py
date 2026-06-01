@@ -129,8 +129,13 @@ class MetricTracker(paddle.nn.LayerList):
                 raise ValueError("Argument `maximize` should either be a single bool or list of bool")
             if isinstance(maximize, list) and not all(isinstance(m, bool) for m in maximize):
                 raise ValueError("Argument `maximize` is list but not type of bool.")
-            if isinstance(maximize, list) and isinstance(metric, MetricCollection) and len(maximize) != len(metric):
-                raise ValueError("The len of argument `maximize` should match the length of the metric collection")
+            if isinstance(maximize, list) and isinstance(metric, MetricCollection):
+                if len(maximize) == 1:
+                    maximize = maximize * len(metric)
+                elif len(maximize) != len(metric):
+                    raise ValueError(
+                        "The len of argument `maximize` should match the length of the metric collection"
+                    )
             if isinstance(metric, Metric) and not isinstance(maximize, bool):
                 raise ValueError("Argument `maximize` should be a single bool when `metric` is a single Metric")
             self.maximize = maximize
@@ -257,9 +262,13 @@ class MetricTracker(paddle.nn.LayerList):
                 return None, None
             return None
         if isinstance(self._base_metric, Metric) and not isinstance(self._base_metric, ClasswiseWrapper):
-            fn = paddle.max if self.maximize else paddle.min
             try:
-                value, idx = fn(res, 0)
+                if self.maximize:
+                    value = paddle.max(res, 0)
+                    idx = paddle.argmax(res, 0)
+                else:
+                    value = paddle.min(res, 0)
+                    idx = paddle.argmin(res, 0)
                 if return_step:
                     return value.item(), idx.item()
                 return value.item()
@@ -276,9 +285,13 @@ class MetricTracker(paddle.nn.LayerList):
             value, idx = {}, {}
             for i, (k, v) in enumerate(res.items()):
                 try:
-                    fn = paddle.max if maximize[i] else paddle.min
-                    out = fn(v, 0)
-                    value[k], idx[k] = out[0].item(), out[1].item()
+                    if maximize[i]:
+                        out_val = paddle.max(v, 0)
+                        out_idx = paddle.argmax(v, 0)
+                    else:
+                        out_val = paddle.min(v, 0)
+                        out_idx = paddle.argmin(v, 0)
+                    value[k], idx[k] = out_val.item(), out_idx.item()
                 except (ValueError, RuntimeError) as error:
                     rank_zero_warn(
                         f"Encountered the following error when trying to get the best metric for metric {k}:{error} this is probably due to the 'best' not being defined for this metric.Returning `None` instead.",

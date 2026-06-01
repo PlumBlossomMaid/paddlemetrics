@@ -20,11 +20,15 @@ USE_PYTEST_POOL = os.getenv("USE_PYTEST_POOL", "0") == "1"
 @pytest.fixture
 def use_deterministic_algorithms():
     """Set deterministic algorithms for the test."""
+    from paddlemetrics.utils import data as _data_utils
+
     if hasattr(paddle, "use_deterministic_algorithms"):
         paddle.use_deterministic_algorithms(True)
+    _data_utils._deterministic_algorithms = True
     yield
     if hasattr(paddle, "use_deterministic_algorithms"):
         paddle.use_deterministic_algorithms(False)
+    _data_utils._deterministic_algorithms = False
 
 
 def setup_ddp(rank: int, world_size: int) -> None:

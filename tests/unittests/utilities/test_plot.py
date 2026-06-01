@@ -9,6 +9,7 @@ import pytest
 
 from paddlemetrics import MetricCollection
 from paddlemetrics.aggregation import MaxMetric, MeanMetric, MinMetric, SumMetric
+from paddlemetrics.utils.imports import _GAMMATONE_AVAILABLE, _TORCHAUDIO_AVAILABLE
 from paddlemetrics.audio import (
     ComplexScaleInvariantSignalNoiseRatio,
     ScaleInvariantSignalDistortionRatio,
@@ -333,6 +334,10 @@ _text_input_4 = lambda: [["there is a cat on the mat", "a cat is on the mat"]]
             _audio_input,
             None,
             id="speech_reverberation_modulation_energy_ratio",
+            marks=pytest.mark.skipif(
+                not (_GAMMATONE_AVAILABLE and _TORCHAUDIO_AVAILABLE),
+                reason="SRMR requires gammatone and torchaudio",
+            ),
         ),
         pytest.param(
             partial(

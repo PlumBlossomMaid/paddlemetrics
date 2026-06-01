@@ -7,6 +7,7 @@ from lightning_utilities.core.imports import RequirementCache
 
 from paddlemetrics.functional.text.sacre_bleu import AVAILABLE_TOKENIZERS, _TokenizersLiteral, sacre_bleu_score
 from paddlemetrics.text.sacre_bleu import SacreBLEUScore
+from paddlemetrics.utils.imports import _IPADIC_AVAILABLE, _MECAB_AVAILABLE
 from unittests._helpers import skip_on_connection_issues
 from unittests.text._helpers import TextTester
 from unittests.text._inputs import _inputs_multiple_references
@@ -41,7 +42,7 @@ class TestSacreBLEUScore(TextTester):
     def test_bleu_score_class(self, ddp, preds, targets, tokenize, lowercase):
         """Test class implementation of metric."""
         if _should_skip_tokenizer(tokenize):
-            pytest.skip(reason="`ko-mecab` tokenizer requires  `mecab-ko` package to be installed")
+            pytest.skip(reason=f"`{tokenize}` tokenizer requires additional packages to be installed")
         if tokenize == "flores200" or tokenize == "flores101":
             pytest.skip("flores101 and flores200 tests are flaky")
         metric_args = {"tokenize": tokenize, "lowercase": lowercase}
@@ -59,7 +60,7 @@ class TestSacreBLEUScore(TextTester):
     def test_bleu_score_functional(self, preds, targets, tokenize, lowercase):
         """Test functional implementation of metric."""
         if _should_skip_tokenizer(tokenize):
-            pytest.skip(reason="`ko-mecab` tokenizer requires  `mecab-ko` package to be installed")
+            pytest.skip(reason=f"`{tokenize}` tokenizer requires additional packages to be installed")
         if tokenize == "flores200" or tokenize == "flores101":
             pytest.skip("flores101 and flores200 tests are flaky")
         metric_args = {"tokenize": tokenize, "lowercase": lowercase}
@@ -75,7 +76,7 @@ class TestSacreBLEUScore(TextTester):
     def test_bleu_score_differentiability(self, preds, targets, tokenize, lowercase):
         """Test the differentiability of the metric, according to its `is_differentiable` attribute."""
         if _should_skip_tokenizer(tokenize):
-            pytest.skip(reason="`ko-mecab` tokenizer requires  `mecab-ko` package to be installed")
+            pytest.skip(reason=f"`{tokenize}` tokenizer requires additional packages to be installed")
         metric_args = {"tokenize": tokenize, "lowercase": lowercase}
         self.run_differentiability_test(
             preds=preds,
@@ -106,6 +107,10 @@ def test_no_and_uniform_weights_class():
     assert no_weights_score == uniform_weights_score
 
 
+@pytest.mark.skipif(
+    not (_MECAB_AVAILABLE and _IPADIC_AVAILABLE),
+    reason="this test requires `MeCab` and `ipadic` packages to be installed",
+)
 def test_tokenize_ja_mecab():
     """Test that `ja-mecab` tokenizer works on a Japanese text in alignment with the SacreBleu implementation."""
     sacrebleu = SacreBLEUScore(tokenize="ja-mecab")
@@ -132,4 +137,6 @@ def test_equivalence_of_available_tokenizers_and_annotation():
 
 
 def _should_skip_tokenizer(tokenizer: _TokenizersLiteral) -> bool:
+    if tokenizer == "ja-mecab" and not (_MECAB_AVAILABLE and _IPADIC_AVAILABLE):
+        return True
     return tokenizer == "ko-mecab" and not RequirementCache("mecab-ko")

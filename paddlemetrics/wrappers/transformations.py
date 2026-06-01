@@ -167,4 +167,4 @@ class BinaryTargetTransformer(MetricInputTransformer):
         Output assumes same type as input.
 
         """
-        return target.gt(self.threshold).to(target.dtype)
+        return target.gt(paddle.to_tensor(self.threshold)).to(target.dtype)

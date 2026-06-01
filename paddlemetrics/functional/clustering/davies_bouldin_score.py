@@ -43,5 +43,5 @@ def davies_bouldin_score(data: paddle.Tensor, labels: paddle.Tensor) -> paddle.T
         return paddle.tensor(0.0, device=data.device, dtype=paddle.float32)
     centroid_distances[centroid_distances == 0] = float("inf")
     combined_intra_dists = intra_dists.unsqueeze(0) + intra_dists.unsqueeze(1)
-    scores = (combined_intra_dists / centroid_distances).max(axis=1)[0]
+    scores = (combined_intra_dists / centroid_distances).max(axis=1)
     return scores.mean()

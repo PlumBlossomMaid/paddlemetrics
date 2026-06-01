@@ -87,7 +87,7 @@ def _auc_format_inputs(x: paddle.Tensor, y: paddle.Tensor) -> tuple[paddle.Tenso
 def _auc_compute_without_check(x: paddle.Tensor, y: paddle.Tensor, direction: float, axis: int = -1) -> paddle.Tensor:
     """Compute area under the curve using the trapezoidal rule."""
     with paddle.no_grad():
-        auc_score = paddle.trapezoid(y=y, x=x, axis=axis) * direction
+        auc_score = paddle.trapezoid(y=y.cast("float64"), x=x.cast("float64"), axis=axis) * direction
     return auc_score
 
 

@@ -19,6 +19,10 @@ def _reference_local_perplexity(preds, target, ignore_index):
     """Baseline implementation of perplexity metric based upon PyTorch Cross Entropy."""
     preds = preds.reshape(-1, preds.shape[-1])
     target = target.reshape(-1)
+    if ignore_index is not None:
+        mask = target != ignore_index
+        preds = preds[mask]
+        target = target[mask]
     cross_entropy = paddle.nn.functional.cross_entropy(input=preds, label=target)
     return paddle.exp(cross_entropy)
 

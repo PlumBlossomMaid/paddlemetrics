@@ -83,8 +83,8 @@ def test_generalized_mean(labels, p):
     for x in labels:
         print(x)
         assert np.allclose(
-            calculate_generalized_mean(x, p),
-            sklearn_generalized_average(x[0], x[1], average_method=p),
+            calculate_generalized_mean(x, p).numpy(),
+            sklearn_generalized_average(x[0].numpy(), x[1].numpy(), average_method=p),
         )
 
 

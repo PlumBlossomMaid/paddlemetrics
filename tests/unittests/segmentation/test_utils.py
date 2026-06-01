@@ -1,5 +1,6 @@
 import paddle
 import pytest
+import torch
 from monai.metrics.utils import get_code_to_measure_table
 from monai.metrics.utils import get_edge_surface_distance as monai_get_edge_surface_distance
 from monai.metrics.utils import get_mask_edges as monai_get_mask_edges
@@ -98,7 +99,7 @@ def test_binary_erosion(case, border_value, device):
         pytest.skip("CUDA device not available.")
     scierosion = scibinary_erosion(case, border_value=border_value)
     erosion = binary_erosion(case.unsqueeze(0).unsqueeze(0).to(device), border_value=border_value)
-    assert paddle.allclose(x=erosion.cpu(), y=paddle.from_numpy(scierosion).byte()).item()
+    assert paddle.allclose(x=erosion.cpu()[0, 0].cast(paddle.float32), y=paddle.from_numpy(scierosion).cast(paddle.float32)).item()
 
 
 @pytest.mark.parametrize(
@@ -192,8 +193,8 @@ def test_neighbour_table(dim, spacing):
     spacing = dim * (spacing,)
     ref_table, ref_kernel = get_code_to_measure_table(spacing)
     table, kernel = get_neighbour_tables(spacing)
-    assert paddle.allclose(x=ref_table.float(), y=table).item()
-    assert paddle.allclose(x=ref_kernel, y=kernel).item()
+    assert paddle.allclose(x=paddle.to_tensor(ref_table.float().numpy()), y=table).item()
+    assert paddle.allclose(x=paddle.to_tensor(ref_kernel.numpy()), y=kernel).item()
 
 
 @pytest.mark.parametrize(
@@ -249,9 +250,9 @@ def test_surface_distance(cases, distance_metric, spacing, device):
         spacing=spacing,
     )
     reference_res = monai_get_surface_distance(
-        preds.numpy(), target.numpy(), distance_metric=distance_metric, spacing=spacing
+        torch.from_numpy(preds.numpy()), torch.from_numpy(target.numpy()), distance_metric=distance_metric, spacing=spacing
     )
-    assert paddle.allclose(x=res.cpu(), y=paddle.from_numpy(reference_res).to(res.dtype)).item()
+    assert paddle.allclose(x=res.cpu(), y=paddle.to_tensor(reference_res.cpu().numpy()).to(res.dtype)).item()
 
 
 @pytest.mark.parametrize(
@@ -282,9 +283,9 @@ def test_mask_edges(cases, spacing, crop, device):
     if spacing is not None:
         spacing = preds.ndim * (spacing,)
     res = mask_edges(preds.to(device), target.to(device), spacing=spacing, crop=crop)
-    reference_res = monai_get_mask_edges(preds, target, spacing=spacing, crop=crop)
+    reference_res = monai_get_mask_edges(torch.from_numpy(preds.numpy()), torch.from_numpy(target.numpy()), spacing=spacing, crop=crop)
     for r1, r2 in zip(res, reference_res):
-        assert paddle.allclose(x=r1.cpu().float(), y=paddle.from_numpy(r2).float()).item()
+        assert paddle.allclose(x=r1.cpu().float(), y=paddle.to_tensor(r2.cpu().numpy()).float()).item()
 
 
 @pytest.mark.parametrize(
@@ -343,14 +344,14 @@ def test_edge_surface_distance(cases, distance_metric, symmetric, spacing, devic
         symmetric=symmetric,
     )
     _, reference_res, _ = monai_get_edge_surface_distance(
-        preds,
-        target,
+        torch.from_numpy(preds.numpy()),
+        torch.from_numpy(target.numpy()),
         spacing=tuple(spacing) if spacing is not None else spacing,
         distance_metric=distance_metric,
         symmetric=symmetric,
     )
     if symmetric:
-        assert paddle.allclose(x=res[0].cpu(), y=reference_res[0].to(res[0].dtype)).item()
-        assert paddle.allclose(x=res[1].cpu(), y=reference_res[1].to(res[1].dtype)).item()
+        assert paddle.allclose(x=res[0].cpu(), y=paddle.to_tensor(reference_res[0].detach().cpu().numpy()).cast(res[0].dtype)).item()
+        assert paddle.allclose(x=res[1].cpu(), y=paddle.to_tensor(reference_res[1].detach().cpu().numpy()).cast(res[1].dtype)).item()
     else:
-        assert paddle.allclose(x=res.cpu(), y=reference_res[0].to(res.dtype)).item()
+        assert paddle.allclose(x=res.cpu(), y=paddle.to_tensor(reference_res[0].detach().cpu().numpy()).cast(res.dtype)).item()

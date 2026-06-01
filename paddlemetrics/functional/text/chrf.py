@@ -198,7 +198,7 @@ def _get_ngram_matches(
     matching_n_grams: dict[int, paddle.Tensor] = defaultdict(lambda: paddle.tensor(0.0))
     for n in hyp_n_grams_counts:
         min_n_grams = [
-            paddle.min(ref_n_grams_counts[n][n_gram], hyp_n_grams_counts[n][n_gram]) for n_gram in hyp_n_grams_counts[n]
+            paddle.minimum(ref_n_grams_counts[n][n_gram], hyp_n_grams_counts[n][n_gram]) for n_gram in hyp_n_grams_counts[n]
         ]
         matching_n_grams[n] = sum(min_n_grams).detach().clone()
     return matching_n_grams
@@ -270,7 +270,7 @@ def _calculate_fscore(
             for n in matching_n_grams
         }
         denominator: dict[int, paddle.Tensor] = {
-            n: paddle.max(beta**2 * precision[n] + recall[n], _EPS_SMOOTHING) for n in matching_n_grams
+            n: paddle.maximum(beta**2 * precision[n] + recall[n], _EPS_SMOOTHING) for n in matching_n_grams
         }
         f_score: dict[int, paddle.Tensor] = {
             n: ((1 + beta**2) * precision[n] * recall[n] / denominator[n]) for n in matching_n_grams

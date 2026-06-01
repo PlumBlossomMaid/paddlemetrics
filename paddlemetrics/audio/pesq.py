@@ -103,7 +103,7 @@ class PerceptualEvaluationSpeechQuality(Metric):
     def update(self, preds: paddle.Tensor, target: paddle.Tensor) -> None:
         """Update state with predictions and targets."""
         pesq_batch = perceptual_evaluation_speech_quality(
-            preds, target, self.fs, self.mode, False, self.n_processes
+            preds, target, self.fs, self.mode, self.n_processes
         ).to(self.sum_pesq.place)
         self.sum_pesq += pesq_batch.sum()
         self.total += pesq_batch.size

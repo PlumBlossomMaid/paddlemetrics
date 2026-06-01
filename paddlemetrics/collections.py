@@ -509,7 +509,8 @@ class MetricCollection(paddle.nn.LayerDict):
                 isinstance(ax, Sequence) and all(isinstance(a, plt.Axes) for a in ax) and len(ax) == len(self)
             ):
                 raise ValueError(
-                    f"Expected argument `ax` to be a sequence of matplotlib axis objects, but got {type(ax)} when `together=False`"
+                    f"Expected argument `ax` to be a sequence of matplotlib axis objects with length {len(self)},"
+                    f" but got {type(ax)} when `together=False`"
                 )
         val = val or self.compute()
         if together:

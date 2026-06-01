@@ -25,6 +25,7 @@ def _conditional_entropy_compute(confmat: paddle.Tensor) -> paddle.Tensor:
         Conditional Entropy Value
 
     """
+    confmat = confmat.cast(paddle.float32) if not confmat.is_floating_point() else confmat
     confmat = _drop_empty_rows_and_cols(confmat)
     total_occurrences = confmat.sum()
     p_xy_m = confmat / total_occurrences
@@ -69,6 +70,7 @@ def _theils_u_compute(confmat: paddle.Tensor) -> paddle.Tensor:
         Theil's U statistic
 
     """
+    confmat = confmat.cast(paddle.float32) if not confmat.is_floating_point() else confmat
     confmat = _drop_empty_rows_and_cols(confmat)
     s_xy = _conditional_entropy_compute(confmat)
     total_occurrences = confmat.sum()

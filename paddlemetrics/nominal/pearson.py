@@ -97,7 +97,7 @@ class PearsonsContingencyCoefficient(Metric):
         confmat = _pearsons_contingency_coefficient_update(
             preds, target, self.num_classes, self.nan_strategy, self.nan_replace_value
         )
-        self.confmat += confmat
+        self.confmat += confmat.cast(self.confmat.dtype)
 
     def compute(self) -> paddle.Tensor:
         """Compute Pearson's Contingency Coefficient statistic."""

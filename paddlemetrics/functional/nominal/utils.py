@@ -19,6 +19,7 @@ def _nominal_input_validation(nan_strategy: str, nan_replace_value: Optional[flo
 
 def _compute_expected_freqs(confmat: paddle.Tensor) -> paddle.Tensor:
     """Compute the expected frequenceis from the provided confusion matrix."""
+    confmat = confmat.cast(paddle.float32) if not confmat.is_floating_point() else confmat
     margin_sum_rows, margin_sum_cols = confmat.sum(1), confmat.sum(0)
     return paddle.einsum("r, c -> rc", margin_sum_rows, margin_sum_cols) / confmat.sum()
 
@@ -29,6 +30,7 @@ def _compute_chi_squared(confmat: paddle.Tensor, bias_correction: bool) -> paddl
     Adapted from: https://github.com/scipy/scipy/blob/v1.9.2/scipy/stats/contingency.py.
 
     """
+    confmat = confmat.cast(paddle.float32) if not confmat.is_floating_point() else confmat
     expected_freqs = _compute_expected_freqs(confmat)
     df = expected_freqs.size - sum(expected_freqs.shape) + expected_freqs.ndim - 1
     if df == 0:
@@ -58,8 +60,10 @@ def _drop_empty_rows_and_cols(confmat: paddle.Tensor) -> paddle.Tensor:
                 [3, 4]])
 
     """
-    confmat = confmat[confmat.sum(1) != 0]
-    return confmat[:, confmat.sum(0) != 0]
+    row_mask = confmat.sum(1) != 0
+    col_mask = confmat.sum(0) != 0
+    confmat = confmat[row_mask]
+    return confmat[:, col_mask]
 
 
 def _compute_phi_squared_corrected(

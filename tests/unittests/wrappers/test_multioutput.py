@@ -20,6 +20,8 @@ seed_all(42)
 class _MultioutputMetric(Metric):
     """Test class that allows passing base metric as a class rather than its instantiation to the wrapper."""
 
+    full_state_update = False
+
     def __init__(self, base_metric_class, num_outputs: int = 1, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.metric = MultioutputWrapper(base_metric_class(**kwargs), num_outputs=num_outputs)
@@ -31,6 +33,15 @@ class _MultioutputMetric(Metric):
     def compute(self) -> paddle.Tensor:
         """Compute the R2 score between each pair of outputs and predictions."""
         return self.metric.compute()
+
+    def reset(self) -> None:
+        """Reset both own state and the inner metric."""
+        super().reset()
+        self.metric.reset()
+
+    def forward(self, *args: Any, **kwargs: Any) -> Any:
+        """Delegate forward to the inner MultioutputWrapper which handles state correctly."""
+        return self.metric(*args, **kwargs)
 
 
 num_targets = 2

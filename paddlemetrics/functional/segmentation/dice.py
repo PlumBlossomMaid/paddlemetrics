@@ -42,6 +42,14 @@ def _dice_score_update(
 ) -> tuple[paddle.Tensor, paddle.Tensor, paddle.Tensor]:
     """Update the state with the current prediction and target."""
     preds, target = _segmentation_inputs_format(preds, target, include_background, num_classes, input_format)
+    # Cast to float32 to avoid unsupported int8/uint8 multiply on GPU
+    # Paddle CUDA doesn't support int8 cast directly, go through int32 first
+    if preds.dtype in (paddle.int8, paddle.uint8):
+        preds = preds.cast(paddle.int32)
+    if target.dtype in (paddle.int8, paddle.uint8):
+        target = target.cast(paddle.int32)
+    preds = preds.cast(paddle.float32)
+    target = target.cast(paddle.float32)
     reduce_axis = list(range(2, target.ndim))
     intersection = paddle.sum(preds * target, axis=reduce_axis)
     target_sum = paddle.sum(target, axis=reduce_axis)
@@ -75,7 +83,7 @@ def _dice_score_compute(
         if not isinstance(support, paddle.Tensor):
             raise ValueError(f"Expected argument `support` to be a tensor, got: {type(support)}.")
         weights = _safe_divide(support, paddle.sum(support, axis=-1, keepdim=True), zero_division="nan")
-        nan_mask = dice.isnan().all(dim=-1)
+        nan_mask = dice.isnan().all(axis=-1)
         dice = paddle.nansum(x=dice * weights, axis=-1)
         dice[nan_mask] = paddle.nan
         return dice

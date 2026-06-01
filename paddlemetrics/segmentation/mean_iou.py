@@ -151,7 +151,7 @@ class MeanIoU(Metric):
             )
             self.add_state(
                 "num_batches",
-                default=paddle.zeros(num_out_classes, device=self.device, dtype=paddle.int32),
+                default=paddle.zeros(num_out_classes, device=self.device, dtype=paddle.float32),
                 dist_reduce_fx="sum",
             )
             self._is_initialized = True
@@ -159,10 +159,10 @@ class MeanIoU(Metric):
             preds, target, self.num_classes, self.include_background, self.input_format
         )
         score = _mean_iou_compute(intersection, union, zero_division=0.0)
-        valid_classes = union > 0
+        valid_classes = (union > 0).cast(score.dtype)
         if self.per_class:
-            self.score += (score * valid_classes).sum(dim=0)
-            self.num_batches += valid_classes.sum(dim=0)
+            self.score += (score * valid_classes).sum(axis=0)
+            self.num_batches += valid_classes.sum(axis=0)
         else:
             self.score += (score * valid_classes).sum()
             self.num_batches += valid_classes.sum()

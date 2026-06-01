@@ -26,8 +26,8 @@ def procrustes_disparity(
         )
     point_cloud1 = point_cloud1 - point_cloud1.mean(dim=1, keepdim=True)
     point_cloud2 = point_cloud2 - point_cloud2.mean(dim=1, keepdim=True)
-    point_cloud1 /= paddle.linalg.norm(point_cloud1, axis=[1, 2], keepdim=True)
-    point_cloud2 /= paddle.linalg.norm(point_cloud2, axis=[1, 2], keepdim=True)
+    point_cloud1 /= paddle.linalg.norm(point_cloud1, p="fro", axis=[1, 2], keepdim=True)
+    point_cloud2 /= paddle.linalg.norm(point_cloud2, p="fro", axis=[1, 2], keepdim=True)
     try:
         u, w, v = paddle.linalg.svd(
             x=paddle.matmul(point_cloud2.transpose(1, 2), point_cloud1).transpose(1, 2),

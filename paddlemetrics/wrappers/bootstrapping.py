@@ -25,9 +25,14 @@ def _bootstrap_sampler(size: int, sampling_strategy: str = "poisson") -> paddle.
         resampled tensor
 
     """
+    import numpy as np
+
     if sampling_strategy == "poisson":
-        # Poisson resampling not yet implemented for paddle
-        raise NotImplementedError("Poisson sampling strategy not yet implemented")
+        n = np.random.poisson(1, size=size).astype("int64")
+        return paddle.to_tensor(np.repeat(np.arange(size), n))
+    if sampling_strategy == "multinomial":
+        idx = np.random.choice(size, size=size, replace=True).astype("int64")
+        return paddle.to_tensor(idx)
 
 
 class BootStrapper(WrapperMetric):
@@ -112,7 +117,14 @@ class BootStrapper(WrapperMetric):
         else:
             raise ValueError("None of the input contained tensors, so could not determine the sampling size")
         for idx in range(self.num_bootstraps):
-            sample_idx = _bootstrap_sampler(size, sampling_strategy=self.sampling_strategy).to(self.place)
+            sample_idx = _bootstrap_sampler(size, sampling_strategy=self.sampling_strategy)
+            # Move index to same device as input tensors to avoid mixed-device index_select
+            if args:
+                sample_idx = sample_idx.to(args[0].place)
+            elif kwargs:
+                first_val = next(iter(kwargs.values()))
+                if isinstance(first_val, paddle.Tensor):
+                    sample_idx = sample_idx.to(first_val.place)
             if sample_idx.size == 0:
                 continue
             new_args = apply_to_collection(args, paddle.Tensor, paddle.index_select, axis=0, index=sample_idx)

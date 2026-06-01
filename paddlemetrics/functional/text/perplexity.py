@@ -68,8 +68,9 @@ def _perplexity_update(
     probs = paddle.nn.functional.softmax(preds.reshape(-1, preds.shape[-1]), axis=1)
     target = target.reshape(-1)
     if ignore_index is not None:
-        mask = target.ne(ignore_index)
-        target = paddle.where(target != ignore_index, target, paddle.tensor(0, device=target.place))
+        ignore_tensor = paddle.to_tensor(ignore_index, dtype=target.dtype)
+        mask = target.ne(ignore_tensor)
+        target = paddle.where(target != ignore_tensor, target, paddle.to_tensor(0, dtype=target.dtype))
     else:
         mask = paddle.ones_like(target, dtype=paddle.bool)
     probs = probs[paddle.arange(target.size), target][mask]

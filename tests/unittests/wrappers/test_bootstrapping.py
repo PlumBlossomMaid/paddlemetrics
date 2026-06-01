@@ -32,7 +32,7 @@ class TestBootStrapper(BootStrapper):
         self.out = []
         for idx in range(self.num_bootstraps):
             size = len(args[0])
-            sample_idx = _bootstrap_sampler(size, sampling_strategy=self.sampling_strategy).to(self.place)
+            sample_idx = _bootstrap_sampler(size, sampling_strategy=self.sampling_strategy).to(args[0].place)
             new_args = apply_to_collection(args, Tensor, paddle.index_select, axis=0, index=sample_idx)
             self.metrics[idx].update(*new_args)
             self.out.append(new_args)
@@ -55,7 +55,7 @@ def test_bootstrap_sampler(sampling_strategy):
     idx = _bootstrap_sampler(20, sampling_strategy=sampling_strategy)
     new_samples = old_samples[idx]
     for ns in new_samples:
-        assert ns in old_samples
+        assert (ns == old_samples).all(axis=1).any()
     found_one = _sample_checker(old_samples, new_samples, operator.eq, 2)
     assert found_one, "resampling did not work because no samples were sampled twice"
     found_zero = _sample_checker(old_samples, new_samples, operator.ne, 0)

@@ -34,9 +34,9 @@ def _binning_bucketize(
     indices = paddle.bucketize(confidences, bin_boundaries, right=True) - 1
     count_bin.scatter_add_(dim=0, index=indices, src=paddle.ones_like(confidences))
     conf_bin.scatter_add_(dim=0, index=indices, src=confidences)
-    conf_bin = paddle.nan_to_num(x=conf_bin / count_bin)
+    conf_bin = paddle.nan_to_num(x=(conf_bin / count_bin).cast("float32")).cast(conf_bin.dtype)
     acc_bin.scatter_add_(dim=0, index=indices, src=accuracies)
-    acc_bin = paddle.nan_to_num(x=acc_bin / count_bin)
+    acc_bin = paddle.nan_to_num(x=(acc_bin / count_bin).cast("float32")).cast(acc_bin.dtype)
     prop_bin = count_bin / count_bin.sum()
     return acc_bin, conf_bin, prop_bin
 
@@ -79,7 +79,7 @@ def _ce_compute(
         ce = paddle.sum(paddle.pow(acc_bin - conf_bin, 2) * prop_bin)
         if debias:
             debias_bins = acc_bin * (acc_bin - 1) * prop_bin / (prop_bin * accuracies.size()[0] - 1)
-            ce += paddle.sum(paddle.nan_to_num(x=debias_bins))
+            ce += paddle.sum(paddle.nan_to_num(x=debias_bins.cast("float32")).cast(debias_bins.dtype))
         return paddle.sqrt(ce) if ce > 0 else paddle.tensor(0)
     return ce
 

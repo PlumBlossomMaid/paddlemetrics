@@ -37,7 +37,7 @@ def _multilabel_ranking_tensor_validation(
 def _multilabel_coverage_error_update(preds: paddle.Tensor, target: paddle.Tensor) -> tuple[paddle.Tensor, int]:
     """Accumulate state for coverage error."""
     offset = paddle.zeros_like(preds)
-    offset[target == 0] = preds.amin().abs() + 10
+    offset[target == 0] = preds.cast("float32").amin().abs().cast(preds.dtype) + 10
     preds_mod = preds + offset
     preds_min = (preds_mod.min(axis=1), preds_mod.argmin(axis=1))[0]
     coverage = (preds >= preds_min[:, None]).sum(dim=1).to(paddle.float32)
@@ -199,10 +199,10 @@ def _multilabel_ranking_loss_update(preds: paddle.Tensor, target: paddle.Tensor)
     num_relevant = num_relevant[mask]
     if len(preds) == 0:
         return paddle.tensor(0.0, device=preds.place), 1
-    inverse = preds.argsort(dim=1).argsort(dim=1)
-    per_label_loss = ((num_labels - inverse) * relevant).to(paddle.float32)
-    correction = 0.5 * num_relevant * (num_relevant + 1)
-    denom = num_relevant * (num_labels - num_relevant)
+    inverse = preds.argsort(dim=1).argsort(dim=1).detach()
+    per_label_loss = ((num_labels - inverse) * relevant.cast("int64")).to(paddle.float32)
+    correction = 0.5 * num_relevant.cast("float32") * (num_relevant.cast("float32") + 1)
+    denom = num_relevant.cast("float32") * (num_labels - num_relevant).cast("float32")
     loss = (per_label_loss.sum(dim=1) - correction) / denom
     return loss.sum(), num_preds
 

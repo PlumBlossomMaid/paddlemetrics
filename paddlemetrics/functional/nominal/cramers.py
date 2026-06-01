@@ -52,6 +52,7 @@ def _cramers_v_compute(confmat: paddle.Tensor, bias_correction: bool) -> paddle.
         Cramer's V statistic
 
     """
+    confmat = confmat.cast(paddle.float32) if not confmat.is_floating_point() else confmat
     confmat = _drop_empty_rows_and_cols(confmat)
     cm_sum = confmat.sum()
     chi_squared = _compute_chi_squared(confmat, bias_correction)
@@ -63,13 +64,16 @@ def _cramers_v_compute(confmat: paddle.Tensor, bias_correction: bool) -> paddle.
             rows_corrected,
             cols_corrected,
         ) = _compute_bias_corrected_values(phi_squared, num_rows, num_cols, cm_sum)
-        if paddle.min(rows_corrected, cols_corrected) == 1:
+        if paddle.minimum(rows_corrected, cols_corrected) == 1:
             _unable_to_use_bias_correction_warning(metric_name="Cramer's V")
             return paddle.tensor(float("nan"), device=confmat.place)
-        cramers_v_value = paddle.sqrt(phi_squared_corrected / paddle.min(rows_corrected - 1, cols_corrected - 1))
+        cramers_v_value = paddle.sqrt(phi_squared_corrected / paddle.minimum(rows_corrected - 1, cols_corrected - 1))
     else:
         cramers_v_value = paddle.sqrt(phi_squared / min(num_rows - 1, num_cols - 1))
-    return cramers_v_value.clamp(0.0, 1.0)
+    return cramers_v_value.clamp(
+        paddle.to_tensor(0.0, place=cramers_v_value.place),
+        paddle.to_tensor(1.0, place=cramers_v_value.place),
+    )
 
 
 def cramers_v(
