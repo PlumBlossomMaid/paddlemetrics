@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import paddle
 import pytest
+
+properscoring = pytest.importorskip("properscoring")
 from properscoring import crps_ensemble
 
 from paddlemetrics.functional.regression.crps import continuous_ranked_probability_score
