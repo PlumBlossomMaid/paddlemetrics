@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 class PaddleMetricsUserError(Exception):
     """Error used to inform users of a wrong combination of Metric API calls."""
 

@@ -1,5 +1,7 @@
 """Import utilities for checking package availability."""
 
+from __future__ import annotations
+
 import importlib
 import shutil
 import sys

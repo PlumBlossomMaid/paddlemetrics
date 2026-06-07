@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from paddlemetrics.functional.nominal.cramers import cramers_v, cramers_v_matrix
 from paddlemetrics.functional.nominal.fleiss_kappa import fleiss_kappa
 from paddlemetrics.functional.nominal.pearson import (

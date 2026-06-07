@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from paddlemetrics.functional.regression.concordance import concordance_corrcoef
 from paddlemetrics.functional.regression.cosine_similarity import cosine_similarity
 from paddlemetrics.functional.regression.crps import continuous_ranked_probability_score

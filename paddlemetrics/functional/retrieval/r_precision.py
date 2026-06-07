@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import paddle
 
 from paddlemetrics.utils.checks import _check_retrieval_functional_inputs

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from paddlemetrics.functional.classification.accuracy import (
     accuracy,
     binary_accuracy,

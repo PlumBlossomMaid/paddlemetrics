@@ -1,7 +1,10 @@
-import paddle
-from lightning_utilities import module_available
+from __future__ import annotations
 
-if module_available("lightning"):
+from importlib import util as importlib_util
+
+import paddle
+
+if importlib_util.find_spec("lightning"):
     pass
 
 

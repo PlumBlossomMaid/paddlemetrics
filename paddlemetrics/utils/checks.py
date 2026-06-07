@@ -1,5 +1,7 @@
 """Check utilities for paddlemetrics."""
 
+from __future__ import annotations
+
 import os
 from collections.abc import Mapping, Sequence
 from functools import partial
@@ -15,6 +17,8 @@ _SKIP_SLOW_DOCTEST = bool(os.environ.get("SKIP_SLOW_DOCTEST", 0))
 
 def _try_proceed_with_timeout(timeout: int = _DOCTEST_DOWNLOAD_TIMEOUT):
     """Context manager that attempts to proceed with an operation within a timeout.
+
+from __future__ import annotations
 
     Args:
         timeout: timeout in seconds. Defaults to _DOCTEST_DOWNLOAD_TIMEOUT.

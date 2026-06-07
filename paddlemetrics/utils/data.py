@@ -1,5 +1,7 @@
 """Data utilities for paddlemetrics."""
 
+from __future__ import annotations
+
 import sys
 from collections.abc import Sequence
 from typing import Any, Callable, List, Optional, Union
@@ -21,6 +23,8 @@ def apply_to_collection(
     **kwargs: Any,
 ) -> Any:
     """Recursively apply a function to all elements of a collection matching a given dtype.
+
+from __future__ import annotations
 
     Args:
         data: the collection to apply the function to

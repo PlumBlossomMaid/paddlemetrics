@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Iterable, Sequence
 from copy import deepcopy
 from typing import Any, Optional, Union

@@ -1,5 +1,7 @@
 """Global test configuration for paddlemetrics."""
 
+from __future__ import annotations
+
 import os
 
 import paddle

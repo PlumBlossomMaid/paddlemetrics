@@ -1,9 +1,9 @@
+from __future__ import annotations
+
 from functools import partial
 
-import numpy as np
 import paddle
 import pytest
-from skimage.metrics import structural_similarity
 
 from paddlemetrics.functional.image.ssim import multiscale_structural_similarity_index_measure
 from paddlemetrics.image.ssim import MultiScaleStructuralSimilarityIndexMeasure

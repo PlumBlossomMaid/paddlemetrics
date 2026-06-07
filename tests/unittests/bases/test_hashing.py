@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 
 from unittests._helpers.testers import DummyListMetric, DummyMetric

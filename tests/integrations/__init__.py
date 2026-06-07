@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 
 _INTEGRATION_ROOT = os.path.realpath(os.path.dirname(__file__))

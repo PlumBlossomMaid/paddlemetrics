@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import sys
 
-import numpy as np
 import paddle
 import pytest
 from unittests._helpers import _IS_WINDOWS

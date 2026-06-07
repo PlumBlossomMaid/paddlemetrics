@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 from sklearn.metrics import fowlkes_mallows_score as sklearn_fowlkes_mallows_score
 

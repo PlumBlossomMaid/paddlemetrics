@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import paddle
 
 from paddlemetrics.functional.clustering.mutual_info_score import mutual_info_score

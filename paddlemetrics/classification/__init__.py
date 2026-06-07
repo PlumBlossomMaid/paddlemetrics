@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from paddlemetrics.classification.accuracy import Accuracy, BinaryAccuracy, MulticlassAccuracy, MultilabelAccuracy
 from paddlemetrics.classification.auroc import AUROC, BinaryAUROC, MulticlassAUROC, MultilabelAUROC
 from paddlemetrics.classification.average_precision import (

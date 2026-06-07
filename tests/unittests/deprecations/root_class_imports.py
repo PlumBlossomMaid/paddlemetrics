@@ -1,5 +1,7 @@
 """Test that domain metric with import from root raises deprecation warning."""
 
+from __future__ import annotations
+
 from functools import partial
 
 import pytest

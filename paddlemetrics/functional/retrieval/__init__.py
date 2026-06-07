@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from paddlemetrics.functional.retrieval.auroc import retrieval_auroc
 from paddlemetrics.functional.retrieval.average_precision import retrieval_average_precision
 from paddlemetrics.functional.retrieval.fall_out import retrieval_fall_out

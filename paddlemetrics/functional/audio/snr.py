@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import paddle
 
 from paddlemetrics.functional.audio.sdr import scale_invariant_signal_distortion_ratio

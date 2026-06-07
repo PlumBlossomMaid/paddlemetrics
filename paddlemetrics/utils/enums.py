@@ -1,5 +1,7 @@
 """Enum utilities for paddlemetrics."""
 
+from __future__ import annotations
+
 import sys
 from enum import Enum
 from typing import Any, Optional

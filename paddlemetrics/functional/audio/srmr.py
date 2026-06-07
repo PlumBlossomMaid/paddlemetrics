@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from functools import lru_cache
 from math import ceil, pi
 from typing import Optional

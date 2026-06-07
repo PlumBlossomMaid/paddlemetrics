@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import itertools
 from collections.abc import Iterator, Sequence
 from typing import Any, List, Optional, Union

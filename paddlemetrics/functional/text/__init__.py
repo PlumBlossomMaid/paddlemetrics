@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from paddlemetrics.functional.text.bleu import bleu_score
 from paddlemetrics.functional.text.cer import char_error_rate
 from paddlemetrics.functional.text.chrf import chrf_score

@@ -1,10 +1,18 @@
+from __future__ import annotations
+
+import importlib.metadata
 from functools import partial
 
 import paddle
 import pytest
-import torch
-from lightning_utilities.core.imports import RequirementCache
-from monai.metrics.generalized_dice import compute_generalized_dice
+from packaging.version import Version
+
+try:
+    import torch
+    from monai.metrics.generalized_dice import compute_generalized_dice
+    _MONAI_AVAILABLE = True
+except ImportError:
+    _MONAI_AVAILABLE = False
 
 from paddlemetrics.functional.segmentation.generalized_dice import generalized_dice_score
 from paddlemetrics.segmentation.generalized_dice import GeneralizedDiceScore
@@ -46,7 +54,14 @@ def _reference_generalized_dice(
                 target = target.argmax(dim=1)
                 target = paddle.nn.functional.one_hot(target, num_classes=NUM_CLASSES).moveaxis(-1, 1)
             preds = paddle.nn.functional.one_hot(preds, num_classes=NUM_CLASSES).moveaxis(-1, 1)
-    monai_extra_arg = {"sum_over_classes": True} if RequirementCache("monai>=1.4.0") else {}
+    monai_extra_arg = {}
+    if _MONAI_AVAILABLE:
+        try:
+            monai_v = Version(importlib.metadata.version("monai"))
+            if monai_v >= Version("1.4.0"):
+                monai_extra_arg = {"sum_over_classes": True}
+        except Exception:
+            pass
     val = compute_generalized_dice(torch.from_numpy(preds.numpy()), torch.from_numpy(target.numpy()), include_background=include_background, **monai_extra_arg)
     if reduce:
         val = val.mean()

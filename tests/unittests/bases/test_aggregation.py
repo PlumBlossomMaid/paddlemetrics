@@ -1,5 +1,7 @@
 """Tests for aggregation metrics."""
 
+from __future__ import annotations
+
 import paddle
 
 from paddlemetrics.aggregation import (

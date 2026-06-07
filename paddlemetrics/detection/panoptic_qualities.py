@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Collection, Sequence
 from typing import Any, Optional, Union
 

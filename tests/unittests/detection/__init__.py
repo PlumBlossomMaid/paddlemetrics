@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 
 from unittests import _PATH_ALL_TESTS

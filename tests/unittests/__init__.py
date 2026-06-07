@@ -1,5 +1,7 @@
 """Test utilities for paddlemetrics."""
 
+from __future__ import annotations
+
 import os
 import warnings
 from typing import NamedTuple

@@ -1,5 +1,7 @@
 """Paddlemetrics utilities."""
 
+from __future__ import annotations
+
 from paddlemetrics.utils.checks import check_forward_full_state_property
 from paddlemetrics.utils.data import (
     apply_to_collection,

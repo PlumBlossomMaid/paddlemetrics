@@ -1,5 +1,7 @@
 """Compute utilities for paddlemetrics."""
 
+from __future__ import annotations
+
 from typing import Optional, Union
 
 import paddle

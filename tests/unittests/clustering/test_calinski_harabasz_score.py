@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 from sklearn.metrics import calinski_harabasz_score as sklearn_calinski_harabasz_score
 

@@ -1,3 +1,4 @@
+from __future__ import annotations
 
 import paddle
 from typing_extensions import Literal

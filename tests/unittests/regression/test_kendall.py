@@ -1,10 +1,12 @@
-import operator
+from __future__ import annotations
+
+import importlib.metadata
 import sys
 from functools import partial
 
 import paddle
 import pytest
-from lightning_utilities.core.imports import compare_version
+from packaging.version import Version
 from scipy.stats import kendalltau
 
 from paddlemetrics.functional.regression.kendall import kendall_rank_corrcoef
@@ -125,6 +127,6 @@ class TestKendallRankCorrCoef(MetricTester):
 
 def _adjust_alternative_to_scipy(alternative):
     """Scipy<1.8.0 supports only two-sided hypothesis testing."""
-    if alternative is not None and not compare_version("scipy", operator.ge, "1.8.0"):
+    if alternative is not None and Version(importlib.metadata.version("scipy")) < Version("1.8.0"):
         return "two-sided"
     return alternative

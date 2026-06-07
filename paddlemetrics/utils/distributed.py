@@ -1,5 +1,7 @@
 """Distributed utilities for paddlemetrics."""
 
+from __future__ import annotations
+
 from typing import Any, List, Optional
 
 import paddle

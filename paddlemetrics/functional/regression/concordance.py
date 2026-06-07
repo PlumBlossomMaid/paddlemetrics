@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import paddle
 
 from paddlemetrics.functional.regression.pearson import _pearson_corrcoef_compute, _pearson_corrcoef_update

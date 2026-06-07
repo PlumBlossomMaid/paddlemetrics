@@ -1,5 +1,7 @@
 """PaddleMetrics - Machine learning metrics for PaddlePaddle."""
 
+from __future__ import annotations
+
 import logging as __logging
 import os
 

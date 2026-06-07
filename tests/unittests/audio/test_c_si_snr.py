@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import paddle
 import pytest
 from scipy.io import wavfile
