@@ -5,13 +5,11 @@ import pytest
 
 from paddlemetrics.clustering.cluster_accuracy import ClusterAccuracy
 from paddlemetrics.functional.clustering.cluster_accuracy import cluster_accuracy
-from paddlemetrics.utils.imports import _AEON_AVAILABLE, _TORCH_LINEAR_ASSIGNMENT_AVAILABLE
+from paddlemetrics.utils.imports import _AEON_AVAILABLE
 from unittests import NUM_CLASSES
 from unittests._helpers import seed_all
 from unittests._helpers.testers import MetricTester
 from unittests.clustering._inputs import _float_inputs_extrinsic, _single_target_extrinsic1, _single_target_extrinsic2
-
-_PYTORCH_LINEAR_ASSIGNMENT_AVAILABLE = True
 
 if _AEON_AVAILABLE:
     from aeon.benchmarking.metrics.clustering import clustering_accuracy_score
@@ -20,11 +18,6 @@ else:
 seed_all(42)
 
 
-@pytest.mark.skipif(not True, reason="test requires PyTorch 2.1 or higher")
-@pytest.mark.skipif(
-    not _TORCH_LINEAR_ASSIGNMENT_AVAILABLE,
-    reason="test requires torch linear assignment package",
-)
 @pytest.mark.skipif(not _AEON_AVAILABLE, reason="test requires aeon package")
 @pytest.mark.parametrize(
     ("preds", "target"),
@@ -59,11 +52,6 @@ class TestAdjustedMutualInfoScore(MetricTester):
         )
 
 
-@pytest.mark.skipif(not True, reason="test requires PyTorch 2.1 or higher")
-@pytest.mark.skipif(
-    not _TORCH_LINEAR_ASSIGNMENT_AVAILABLE,
-    reason="test requires torch linear assignment package",
-)
 def test_cluster_accuracy_sanity_check():
     """Check that metric works with the simplest possible inputs."""
     preds = paddle.tensor([0, 0, 1, 1])
@@ -73,11 +61,6 @@ def test_cluster_accuracy_sanity_check():
     assert paddle.allclose(x=res, y=paddle.tensor(1.0)).item()
 
 
-@pytest.mark.skipif(not True, reason="test requires PyTorch 2.1 or higher")
-@pytest.mark.skipif(
-    not _TORCH_LINEAR_ASSIGNMENT_AVAILABLE,
-    reason="test requires torch linear assignment package",
-)
 def test_cluster_accuracy_functional_raises_invalid_task():
     """Check that metric rejects continuous-valued inputs."""
     preds, target = _float_inputs_extrinsic

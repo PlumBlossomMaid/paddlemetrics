@@ -47,7 +47,5 @@ def _requirement_cache(req: str) -> bool:
 
 _SKLEARN_GREATER_EQUAL_1_3 = _requirement_cache("scikit-learn>=1.3.0")
 _SKLEARN_GREATER_EQUAL_1_7 = _requirement_cache("scikit-learn>=1.7.0")
-_TORCH_LESS_THAN_2_1 = _requirement_cache("torch<2.1.0")
 _TRANSFORMERS_RANGE_GE_4_50_LT_4_54 = _requirement_cache("transformers>=4.50.0,<4.54.0")
 _TRANSFORMERS_GREATER_EQUAL_4_54 = _requirement_cache("transformers>=4.54.0")
-_IS_LIGHTNING_CI = os.environ.get("LIGHTNING_CI", "0") == "1"

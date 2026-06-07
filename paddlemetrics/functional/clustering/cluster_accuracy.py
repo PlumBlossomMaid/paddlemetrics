@@ -1,24 +1,18 @@
 from __future__ import annotations
 
 import paddle
+from scipy.optimize import linear_sum_assignment
 
 from paddlemetrics.functional.classification import multiclass_confusion_matrix
 from paddlemetrics.functional.clustering.utils import check_cluster_labels
-from paddlemetrics.utils.imports import _TORCH_LINEAR_ASSIGNMENT_AVAILABLE
-
-if not _TORCH_LINEAR_ASSIGNMENT_AVAILABLE:
-    __doctest_skip__ = ["cluster_accuracy"]
 
 
 def _cluster_accuracy_compute(confmat: paddle.Tensor) -> paddle.Tensor:
-    """Computes the clustering accuracy from a confusion matrix."""
-    from torch_linear_assignment import batch_linear_assignment
-
-    confmat = confmat[None]
-    assignment = batch_linear_assignment(confmat.amax() - confmat)
-    confmat = confmat[0]
-    tps = confmat[paddle.arange(confmat.shape[0]), assignment.flatten()]
-    return tps.sum() / confmat.sum()
+    """Computes the clustering accuracy from a confusion matrix using the Hungarian algorithm."""
+    cost = -(confmat.numpy())
+    row_ind, col_ind = linear_sum_assignment(cost)
+    tps = confmat[paddle.to_tensor(row_ind), paddle.to_tensor(col_ind)].sum()
+    return tps / confmat.sum()
 
 
 def cluster_accuracy(preds: paddle.Tensor, target: paddle.Tensor, num_classes: int) -> paddle.Tensor:
@@ -32,10 +26,6 @@ def cluster_accuracy(preds: paddle.Tensor, target: paddle.Tensor, num_classes: i
     Returns:
         Scalar tensor with clustering accuracy between 0.0 and 1.0
 
-    Raises:
-        RuntimeError:
-            If `torch_linear_assignment` is not installed
-
     Example:
         >>> from paddlemetrics.functional.clustering import cluster_accuracy
         >>> preds = paddle.to_tensor([0, 0, 1, 1])
@@ -44,10 +34,6 @@ def cluster_accuracy(preds: paddle.Tensor, target: paddle.Tensor, num_classes: i
         tensor(1.000)
 
     """
-    if not _TORCH_LINEAR_ASSIGNMENT_AVAILABLE:
-        raise RuntimeError(
-            "Missing `torch_linear_assignment`. Please install it with `pip install paddlemetrics[clustering]`."
-        )
     check_cluster_labels(preds, target)
     confmat = multiclass_confusion_matrix(preds, target, num_classes=num_classes)
     return _cluster_accuracy_compute(confmat)

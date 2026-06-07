@@ -8,13 +8,11 @@ from paddle import Tensor
 from paddlemetrics.functional.classification import multiclass_confusion_matrix
 from paddlemetrics.functional.clustering.cluster_accuracy import _cluster_accuracy_compute
 from paddlemetrics.metric import Metric
-from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE, _TORCH_LINEAR_ASSIGNMENT_AVAILABLE
+from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from paddlemetrics.utils.plot import _AX_TYPE, _PLOT_OUT_TYPE
 
 if not _MATPLOTLIB_AVAILABLE:
     __doctest_skip__ = ["ClusterAccuracy.plot"]
-if not _TORCH_LINEAR_ASSIGNMENT_AVAILABLE:
-    __doctest_skip__ = ["ClusterAccuracy", "ClusterAccuracy.plot"]
 
 
 class ClusterAccuracy(Metric):
@@ -46,8 +44,6 @@ class ClusterAccuracy(Metric):
         kwargs: Additional keyword arguments, see :ref:`Metric kwargs` for more info.
 
     Raises:
-        RuntimeError:
-            If ``torch_linear_assignment`` is not installed. To install, run ``pip install paddlemetrics[clustering]``.
         ValueError
             If ``num_classes`` is not a positive integer
 
@@ -71,10 +67,6 @@ class ClusterAccuracy(Metric):
 
     def __init__(self, num_classes: int, **kwargs: Any) -> None:
         super().__init__(**kwargs)
-        if not _TORCH_LINEAR_ASSIGNMENT_AVAILABLE:
-            raise RuntimeError(
-                "Missing `torch_linear_assignment`. Please install it with `pip install paddlemetrics[clustering]`."
-            )
         if not isinstance(num_classes, int) or num_classes <= 0:
             raise ValueError("Argument `num_classes` should be a positive integer")
         self.add_state(

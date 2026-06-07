@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import paddle
 import pytest
-import torch
+
+torch = pytest.importorskip("torch")
 from monai.metrics.utils import get_code_to_measure_table
 from monai.metrics.utils import get_edge_surface_distance as monai_get_edge_surface_distance
 from monai.metrics.utils import get_mask_edges as monai_get_mask_edges
