@@ -26,6 +26,7 @@ from paddlemetrics.functional.classification.confusion_matrix import (
     multilabel_confusion_matrix,
 )
 from paddlemetrics.metric import Metric
+from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from unittests import NUM_CLASSES, THRESHOLD
 from unittests._helpers import seed_all
 from unittests._helpers.testers import MetricTester, inject_ignore_index, remove_ignore_index
@@ -399,6 +400,7 @@ class TestMultilabelConfusionMatrix(MetricTester):
             dtype=dtype,
         )
 
+    @pytest.mark.skipif(not _MATPLOTLIB_AVAILABLE, reason="matplotlib not available")
     @pytest.mark.parametrize("num_labels", [2, NUM_CLASSES])
     def test_multilabel_confusion_matrix_plot(self, num_labels, inputs):
         """Test multilabel cm plots."""
