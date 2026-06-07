@@ -3,7 +3,7 @@
 [![CI](https://github.com/PlumBlossomMaid/paddlemetrics/actions/workflows/ci.yml/badge.svg)](https://github.com/PlumBlossomMaid/paddlemetrics/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
-[![PaddlePaddle](https://img.shields.io/badge/PaddlePaddle-2.5%2B-7B00DB)](https://www.paddlepaddle.org.cn/)
+[![PaddlePaddle](https://img.shields.io/badge/PaddlePaddle-3.2%2B-7B00DB)](https://www.paddlepaddle.org.cn/)
 
 Machine learning metrics for [PaddlePaddle](https://www.paddlepaddle.org.cn/), providing a comprehensive, production-ready metric library with built-in distributed support.
 
