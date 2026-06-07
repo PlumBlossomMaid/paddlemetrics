@@ -5,6 +5,8 @@ from functools import partial
 import numpy as np
 import paddle
 import pytest
+
+netcal = pytest.importorskip("netcal")
 from netcal.metrics import ECE, MCE
 from scipy.special import expit as _np_sigmoid
 

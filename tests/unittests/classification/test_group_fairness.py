@@ -9,6 +9,8 @@ import numpy as np
 import paddle
 import pandas as pd
 import pytest
+
+fairlearn = pytest.importorskip("fairlearn")
 from fairlearn.metrics import MetricFrame, selection_rate, true_positive_rate
 from scipy.special import expit as _np_sigmoid
 
