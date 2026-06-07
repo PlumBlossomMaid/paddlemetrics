@@ -7,6 +7,8 @@ from typing import Optional
 import numpy as np
 import paddle
 import pytest
+
+permetrics = pytest.importorskip("permetrics")
 from permetrics.regression import RegressionMetric
 from sklearn.metrics import mean_absolute_error as sk_mean_absolute_error
 from sklearn.metrics import mean_absolute_percentage_error as sk_mean_abs_percentage_error
