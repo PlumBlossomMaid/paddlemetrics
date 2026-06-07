@@ -5,6 +5,8 @@ from functools import partial
 import numpy as np
 import paddle
 import pytest
+
+sewar = pytest.importorskip("sewar")
 from sewar.full_ref import scc as sewar_scc
 
 from paddlemetrics.functional.image import spatial_correlation_coefficient

@@ -6,6 +6,8 @@ from functools import partial
 import numpy as np
 import paddle
 import pytest
+
+sewar = pytest.importorskip("sewar")
 from sewar.utils import _compute_bef
 
 from paddlemetrics.functional.image.psnrb import peak_signal_noise_ratio_with_blocked_effect

@@ -5,6 +5,8 @@ from functools import partial
 import numpy as np
 import paddle
 import pytest
+
+sewar = pytest.importorskip("sewar")
 from sewar.full_ref import vifp
 
 from paddlemetrics.functional.image.vif import visual_information_fidelity
