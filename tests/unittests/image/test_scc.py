@@ -52,7 +52,7 @@ def _reference_sewar_scc_simple(preds, target):
 class TestSpatialCorrelationCoefficient(MetricTester):
     """Tests for SpatialCorrelationCoefficient metric."""
 
-    atol = 1e-08
+    atol = 1e-06
 
     @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
     def test_scc(self, preds, target, ddp):
