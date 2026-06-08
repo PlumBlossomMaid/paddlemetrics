@@ -62,10 +62,13 @@ def _reference_sklearn_fbeta_score_binary(preds, target, sk_fn, ignore_index, mu
         pred = pred.flatten()
         true = true.flatten()
         true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-        try:
-            res.append(sk_fn(true, pred, zero_division=zero_division))
-        except ValueError:
+        if len(pred) == 0:
             res.append(float(zero_division))
+        else:
+            try:
+                res.append(sk_fn(true, pred, zero_division=zero_division))
+            except ValueError:
+                res.append(float(zero_division))
     return np.stack(res)
 
 
@@ -231,7 +234,7 @@ def _reference_sklearn_fbeta_score_multiclass(
         true = true.flatten()
         true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
         if len(pred) == 0:
-            r = np.zeros(NUM_CLASSES) if average is None else 0.0
+            r = np.zeros(NUM_CLASSES) if average is None else float(zero_division)
         else:
             r = sk_fn(
                 true,

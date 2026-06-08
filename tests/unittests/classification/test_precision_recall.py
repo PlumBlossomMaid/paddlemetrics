@@ -70,10 +70,13 @@ def _reference_sklearn_precision_recall_binary(
         pred = pred.flatten()
         true = true.flatten()
         true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-        try:
-            res.append(sk_fn(true, pred, zero_division=zero_division))
-        except ValueError:
+        if len(pred) == 0:
             res.append(float(zero_division))
+        else:
+            try:
+                res.append(sk_fn(true, pred, zero_division=zero_division))
+            except ValueError:
+                res.append(float(zero_division))
     return np.stack(res)
 
 
@@ -242,7 +245,7 @@ def _reference_sklearn_precision_recall_multiclass(
         true = true.flatten()
         true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
         if len(pred) == 0:
-            r = np.zeros(num_classes) if average is None else 0.0
+            r = np.zeros(num_classes) if average is None else float(zero_division)
         else:
             r = sk_fn(
                 true,
