@@ -70,7 +70,10 @@ def _reference_sklearn_precision_recall_binary(
         pred = pred.flatten()
         true = true.flatten()
         true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-        res.append(sk_fn(true, pred, zero_division=zero_division))
+        try:
+            res.append(sk_fn(true, pred, zero_division=zero_division))
+        except ValueError:
+            res.append(float(zero_division))
     return np.stack(res)
 
 
@@ -238,8 +241,8 @@ def _reference_sklearn_precision_recall_multiclass(
         pred = pred.flatten()
         true = true.flatten()
         true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-        if len(pred) == 0 and average == "weighted":
-            r = 0.0
+        if len(pred) == 0:
+            r = np.zeros(num_classes) if average is None else 0.0
         else:
             r = sk_fn(
                 true,
@@ -638,8 +641,14 @@ def _reference_sklearn_precision_recall_multilabel_global(preds, target, sk_fn, 
     for i in range(preds.shape[1]):
         pred, true = preds[:, i].flatten(), target[:, i].flatten()
         true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-        precision_recall.append(sk_fn(true, pred, zero_division=zero_division))
-        confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
+        try:
+            precision_recall.append(sk_fn(true, pred, zero_division=zero_division))
+        except ValueError:
+            precision_recall.append(float(zero_division))
+        if true.size == 0:
+            confmat = np.zeros((2, 2))
+        else:
+            confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
         weights.append(confmat[1, 1] + confmat[1, 0])
     res = np.stack(precision_recall, axis=0)
     if average == "macro":
@@ -664,7 +673,10 @@ def _reference_sklearn_precision_recall_multilabel_local(preds, target, sk_fn, i
                 precision_recall.append(sk_fn(true, pred, zero_division=zero_division))
             except ValueError:
                 precision_recall.append(float(zero_division))
-            confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
+            if true.size == 0:
+                confmat = np.zeros((2, 2))
+            else:
+                confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
             weights.append(confmat[1, 1] + confmat[1, 0])
         else:
             scores, w = [], []
@@ -675,7 +687,10 @@ def _reference_sklearn_precision_recall_multilabel_local(preds, target, sk_fn, i
                     scores.append(sk_fn(true, pred, zero_division=zero_division))
                 except ValueError:
                     scores.append(float(zero_division))
-                confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
+                if true.size == 0:
+                    confmat = np.zeros((2, 2))
+                else:
+                    confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
                 w.append(confmat[1, 1] + confmat[1, 0])
             precision_recall.append(np.stack(scores))
             weights.append(np.stack(w))
