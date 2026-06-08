@@ -43,6 +43,8 @@ def _reference_sklearn_confusion_matrix_binary(preds, target, normalize=None, ig
             preds = sigmoid(preds)
         preds = (preds >= THRESHOLD).astype(np.uint8)
     target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
+    if target.size == 0:
+        return np.zeros((2, 2))
     return sk_confusion_matrix(y_true=target, y_pred=preds, labels=[0, 1], normalize=normalize)
 
 
@@ -147,6 +149,8 @@ def _reference_sklearn_confusion_matrix_multiclass(preds, target, normalize=None
     preds = preds.flatten()
     target = target.flatten()
     target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
+    if target.size == 0:
+        return np.zeros((NUM_CLASSES, NUM_CLASSES))
     return sk_confusion_matrix(
         y_true=target,
         y_pred=preds,

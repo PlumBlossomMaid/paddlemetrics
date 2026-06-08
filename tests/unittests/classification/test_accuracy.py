@@ -187,7 +187,10 @@ def _reference_sklearn_accuracy_multiclass(preds, target, ignore_index, multidim
         target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
         if average == "micro":
             return _reference_sklearn_accuracy(target, preds)
-        confmat = sk_confusion_matrix(target, preds, labels=list(range(NUM_CLASSES)))
+        if target.size == 0:
+            confmat = np.zeros((NUM_CLASSES, NUM_CLASSES))
+        else:
+            confmat = sk_confusion_matrix(target, preds, labels=list(range(NUM_CLASSES)))
         acc_per_class = confmat.diagonal() / confmat.sum(axis=1)
         acc_per_class[np.isnan(acc_per_class)] = 0.0
         if average == "macro":

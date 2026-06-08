@@ -41,7 +41,10 @@ def _reference_sklearn_jaccard_index_binary(preds, target, ignore_index=None, ze
             preds = sigmoid(preds)
         preds = (preds >= THRESHOLD).astype(np.uint8)
     target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
-    return sk_jaccard_index(y_true=target, y_pred=preds, zero_division=zero_division)
+    try:
+        return sk_jaccard_index(y_true=target, y_pred=preds, zero_division=zero_division)
+    except ValueError:
+        return float(zero_division)
 
 
 @pytest.mark.parametrize("inputs", _binary_cases)
@@ -145,6 +148,10 @@ def _reference_sklearn_jaccard_index_multiclass(preds, target, ignore_index=None
     preds = preds.flatten()
     target = target.flatten()
     target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
+    if target.size == 0:
+        if average is None:
+            return np.zeros(NUM_CLASSES)
+        return float(zero_division)
     if average is None:
         return sk_jaccard_index(
             y_true=target,
@@ -289,7 +296,10 @@ def _reference_sklearn_jaccard_index_multilabel(preds, target, ignore_index=None
             confmat = np.zeros((2, 2))
         else:
             confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
-        scores.append(sk_jaccard_index(true, pred, zero_division=zero_division))
+        try:
+            scores.append(sk_jaccard_index(true, pred, zero_division=zero_division))
+        except ValueError:
+            scores.append(float(zero_division))
         weights.append(confmat[1, 0] + confmat[1, 1])
     scores = np.stack(scores, axis=0)
     weights = np.stack(weights, axis=0)

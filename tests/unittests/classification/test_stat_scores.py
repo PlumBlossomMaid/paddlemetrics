@@ -48,6 +48,8 @@ def _reference_sklearn_stat_scores_binary(preds, target, ignore_index, multidim_
         preds = (preds >= THRESHOLD).astype(np.uint8)
     if multidim_average == "global":
         target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
+        if target.size == 0:
+            return np.array([0, 0, 0, 0, 0])
         tn, fp, fn, tp = sk_confusion_matrix(y_true=target, y_pred=preds, labels=[0, 1]).ravel()
         return np.array([tp, fp, tn, fn, tp + fn])
     res = []
@@ -166,7 +168,10 @@ def _reference_sklearn_stat_scores_multiclass_global(preds, target, ignore_index
     preds = preds.numpy().flatten()
     target = target.numpy().flatten()
     target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
-    confmat = sk_confusion_matrix(y_true=target, y_pred=preds, labels=list(range(NUM_CLASSES)))
+    if target.size == 0:
+        confmat = np.zeros((NUM_CLASSES, NUM_CLASSES))
+    else:
+        confmat = sk_confusion_matrix(y_true=target, y_pred=preds, labels=list(range(NUM_CLASSES)))
     tp = np.diag(confmat)
     fp = confmat.sum(0) - tp
     fn = confmat.sum(1) - tp

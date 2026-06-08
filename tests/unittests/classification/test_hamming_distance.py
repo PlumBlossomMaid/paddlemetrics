@@ -168,7 +168,10 @@ def _reference_sklearn_hamming_distance_multiclass_global(preds, target, ignore_
     target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
     if average == "micro":
         return _reference_sklearn_hamming_loss(target, preds)
-    confmat = sk_confusion_matrix(y_true=target, y_pred=preds, labels=list(range(NUM_CLASSES)))
+    if target.size == 0:
+        confmat = np.zeros((NUM_CLASSES, NUM_CLASSES))
+    else:
+        confmat = sk_confusion_matrix(y_true=target, y_pred=preds, labels=list(range(NUM_CLASSES)))
     hamming_per_class = 1 - confmat.diagonal() / confmat.sum(axis=1)
     hamming_per_class[np.isnan(hamming_per_class)] = 1.0
     if average == "macro":
@@ -193,7 +196,10 @@ def _reference_sklearn_hamming_distance_multiclass_local(preds, target, ignore_i
         if average == "micro":
             res.append(_reference_sklearn_hamming_loss(true, pred))
         else:
-            confmat = sk_confusion_matrix(true, pred, labels=list(range(NUM_CLASSES)))
+            if true.size == 0:
+                confmat = np.zeros((NUM_CLASSES, NUM_CLASSES))
+            else:
+                confmat = sk_confusion_matrix(true, pred, labels=list(range(NUM_CLASSES)))
             hamming_per_class = 1 - confmat.diagonal() / confmat.sum(axis=1)
             hamming_per_class[np.isnan(hamming_per_class)] = 1.0
             if average == "macro":
