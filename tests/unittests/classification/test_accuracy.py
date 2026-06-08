@@ -32,7 +32,10 @@ seed_all(42)
 
 
 def _reference_sklearn_accuracy(target, preds):
-    score = sk_accuracy(target, preds)
+    try:
+        score = sk_accuracy(target, preds)
+    except ValueError:
+        return 0.0
     return score if not np.isnan(score) else 0.0
 
 

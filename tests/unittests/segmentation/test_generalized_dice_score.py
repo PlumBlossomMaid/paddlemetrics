@@ -7,12 +7,11 @@ import paddle
 import pytest
 from packaging.version import Version
 
-try:
-    import torch
-    from monai.metrics.generalized_dice import compute_generalized_dice
-    _MONAI_AVAILABLE = True
-except ImportError:
-    _MONAI_AVAILABLE = False
+pytest.importorskip("monai")
+import torch
+from monai.metrics.generalized_dice import compute_generalized_dice
+
+_MONAI_AVAILABLE = True
 
 from paddlemetrics.functional.segmentation.generalized_dice import generalized_dice_score
 from paddlemetrics.segmentation.generalized_dice import GeneralizedDiceScore
