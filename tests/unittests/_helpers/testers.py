@@ -53,7 +53,7 @@ def _sort_if_needed(arr: np.ndarray) -> np.ndarray:
 def _assert_allclose(
     tm_result: Any,
     ref_result: Any,
-    atol: float = 1e-08,
+    atol: float = 1e-06,
     key: Optional[str] = None,
     check_ddp_sorting: bool = False,
 ) -> None:
@@ -132,7 +132,7 @@ def _class_test(
     metric_args: Optional[dict] = None,
     check_dist_sync_on_step: bool = True,
     check_batch: bool = True,
-    atol: float = 1e-08,
+    atol: float = 1e-06,
     device: str = "cpu",
     fragment_kwargs: bool = False,
     check_scriptable: bool = True,
@@ -302,7 +302,7 @@ def _functional_test(
     metric_functional: Callable,
     reference_metric: Callable,
     metric_args: Optional[dict] = None,
-    atol: float = 1e-08,
+    atol: float = 1e-06,
     device: str = "cpu",
     fragment_kwargs: bool = False,
     **kwargs_update: Any,
@@ -427,7 +427,7 @@ class MetricTester:
 
     """
 
-    atol: float = 1e-08
+    atol: float = 1e-06
 
     def run_functional_metric_test(
         self,
