@@ -3,7 +3,9 @@ from __future__ import annotations
 from functools import partial
 from typing import Callable
 
-import matplotlib
+import pytest
+
+matplotlib = pytest.importorskip("matplotlib")
 import matplotlib.pyplot as plt
 import numpy as np
 import paddle

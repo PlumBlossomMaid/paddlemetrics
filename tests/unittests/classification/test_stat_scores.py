@@ -55,7 +55,10 @@ def _reference_sklearn_stat_scores_binary(preds, target, ignore_index, multidim_
         pred = pred.flatten()
         true = true.flatten()
         true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-        tn, fp, fn, tp = sk_confusion_matrix(y_true=true, y_pred=pred, labels=[0, 1]).ravel()
+        if true.size == 0:
+            tn, fp, fn, tp = 0, 0, 0, 0
+        else:
+            tn, fp, fn, tp = sk_confusion_matrix(y_true=true, y_pred=pred, labels=[0, 1]).ravel()
         res.append(np.array([tp, fp, tn, fn, tp + fn]))
     return np.stack(res)
 
@@ -189,7 +192,10 @@ def _reference_sklearn_stat_scores_multiclass_local(preds, target, ignore_index,
         pred = pred.flatten()
         true = true.flatten()
         true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-        confmat = sk_confusion_matrix(y_true=true, y_pred=pred, labels=list(range(NUM_CLASSES)))
+        if true.size == 0:
+            confmat = np.zeros((NUM_CLASSES, NUM_CLASSES))
+        else:
+            confmat = sk_confusion_matrix(y_true=true, y_pred=pred, labels=list(range(NUM_CLASSES)))
         tp = np.diag(confmat)
         fp = confmat.sum(0) - tp
         fn = confmat.sum(1) - tp
@@ -552,7 +558,10 @@ def _reference_sklearn_stat_scores_multilabel(preds, target, ignore_index, multi
         for i in range(preds.shape[1]):
             pred, true = preds[:, i].flatten(), target[:, i].flatten()
             true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-            tn, fp, fn, tp = sk_confusion_matrix(true, pred, labels=[0, 1]).ravel()
+            if true.size == 0:
+                tn, fp, fn, tp = 0, 0, 0, 0
+            else:
+                tn, fp, fn, tp = sk_confusion_matrix(true, pred, labels=[0, 1]).ravel()
             stat_scores.append(np.array([tp, fp, tn, fn, tp + fn]))
         res = np.stack(stat_scores, axis=0)
         if average == "micro":
@@ -571,7 +580,10 @@ def _reference_sklearn_stat_scores_multilabel(preds, target, ignore_index, multi
         for j in range(preds.shape[1]):
             pred, true = preds[i, j], target[i, j]
             true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-            tn, fp, fn, tp = sk_confusion_matrix(true, pred, labels=[0, 1]).ravel()
+            if true.size == 0:
+                tn, fp, fn, tp = 0, 0, 0, 0
+            else:
+                tn, fp, fn, tp = sk_confusion_matrix(true, pred, labels=[0, 1]).ravel()
             scores.append(np.array([tp, fp, tn, fn, tp + fn]))
         stat_scores.append(np.stack(scores, 1))
     res = np.stack(stat_scores, 0)

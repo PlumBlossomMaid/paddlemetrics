@@ -285,7 +285,10 @@ def _reference_sklearn_jaccard_index_multilabel(preds, target, ignore_index=None
     for i in range(preds.shape[1]):
         pred, true = preds[:, i], target[:, i]
         true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-        confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
+        if true.size == 0:
+            confmat = np.zeros((2, 2))
+        else:
+            confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
         scores.append(sk_jaccard_index(true, pred, zero_division=zero_division))
         weights.append(confmat[1, 0] + confmat[1, 1])
     scores = np.stack(scores, axis=0)

@@ -209,7 +209,10 @@ def _reference_sklearn_accuracy_multiclass(preds, target, ignore_index, multidim
         if average == "micro":
             res.append(_reference_sklearn_accuracy(true, pred))
         else:
-            confmat = sk_confusion_matrix(true, pred, labels=list(range(NUM_CLASSES)))
+            if true.size == 0:
+                confmat = np.zeros((NUM_CLASSES, NUM_CLASSES))
+            else:
+                confmat = sk_confusion_matrix(true, pred, labels=list(range(NUM_CLASSES)))
             acc_per_class = confmat.diagonal() / confmat.sum(axis=1)
             acc_per_class[np.isnan(acc_per_class)] = 0.0
             if average == "macro":
@@ -576,7 +579,10 @@ def _reference_sklearn_accuracy_multilabel(preds, target, ignore_index, multidim
         for i in range(preds.shape[1]):
             pred, true = preds[:, i].flatten(), target[:, i].flatten()
             true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-            confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
+            if true.size == 0:
+                confmat = np.zeros((2, 2))
+            else:
+                confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
             accuracy.append(_reference_sklearn_accuracy(true, pred))
             weights.append(confmat[1, 1] + confmat[1, 0])
         res = np.stack(accuracy, axis=0)
@@ -596,7 +602,10 @@ def _reference_sklearn_accuracy_multilabel(preds, target, ignore_index, multidim
             pred, true = preds[i].flatten(), target[i].flatten()
             true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
             accuracy.append(_reference_sklearn_accuracy(true, pred))
-            confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
+            if true.size == 0:
+                confmat = np.zeros((2, 2))
+            else:
+                confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
             weights.append(confmat[1, 1] + confmat[1, 0])
         else:
             scores, w = [], []
@@ -604,7 +613,10 @@ def _reference_sklearn_accuracy_multilabel(preds, target, ignore_index, multidim
                 pred, true = preds[i, j], target[i, j]
                 true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
                 scores.append(_reference_sklearn_accuracy(true, pred))
-                confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
+                if true.size == 0:
+                    confmat = np.zeros((2, 2))
+                else:
+                    confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
                 w.append(confmat[1, 1] + confmat[1, 0])
             accuracy.append(np.stack(scores))
             weights.append(np.stack(w))

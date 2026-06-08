@@ -214,7 +214,10 @@ def _reference_specificity_multiclass_local(preds, target, ignore_index, average
             idx = true == ignore_index
             true = true[~idx]
             pred = pred[~idx]
-        confmat = sk_confusion_matrix(y_true=true, y_pred=pred, labels=list(range(NUM_CLASSES)))
+        if true.size == 0:
+            confmat = np.zeros((NUM_CLASSES, NUM_CLASSES))
+        else:
+            confmat = sk_confusion_matrix(y_true=true, y_pred=pred, labels=list(range(NUM_CLASSES)))
         tp = np.diag(confmat)
         fp = confmat.sum(0) - tp
         fn = confmat.sum(1) - tp
@@ -398,7 +401,10 @@ def _reference_specificity_multilabel_global(preds, target, ignore_index, averag
             idx = t == ignore_index
             t = t[~idx]
             p = p[~idx]
-        tn, fp, fn, tp = sk_confusion_matrix(t, p, labels=[0, 1]).ravel()
+        if t.size == 0:
+            tn, fp, fn, tp = 0, 0, 0, 0
+        else:
+            tn, fp, fn, tp = sk_confusion_matrix(t, p, labels=[0, 1]).ravel()
         tns.append(tn)
         fps.append(fp)
     tn = np.array(tns)
@@ -426,7 +432,10 @@ def _reference_specificity_multilabel_local(preds, target, ignore_index, average
                 idx = true == ignore_index
                 true = true[~idx]
                 pred = pred[~idx]
-            tn, fp, _, _ = sk_confusion_matrix(true, pred, labels=[0, 1]).ravel()
+            if true.size == 0:
+                tn, fp = 0, 0
+            else:
+                tn, fp, _, _ = sk_confusion_matrix(true, pred, labels=[0, 1]).ravel()
             tns.append(tn)
             fps.append(fp)
         tn = np.array(tns)

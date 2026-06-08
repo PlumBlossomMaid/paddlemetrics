@@ -333,7 +333,10 @@ def _reference_sklearn_hamming_distance_multilabel_global(preds, target, ignore_
     for i in range(preds.shape[1]):
         pred, true = preds[:, i].flatten(), target[:, i].flatten()
         true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-        confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
+        if true.size == 0:
+            confmat = np.zeros((2, 2))
+        else:
+            confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
         hamming.append(_reference_sklearn_hamming_loss(true, pred))
         weights.append(confmat[1, 1] + confmat[1, 0])
     res = np.stack(hamming, axis=0)
@@ -362,7 +365,10 @@ def _reference_sklearn_hamming_distance_multilabel_local(preds, target, ignore_i
                 pred, true = preds[i, j], target[i, j]
                 true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
                 scores.append(_reference_sklearn_hamming_loss(true, pred))
-                confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
+                if true.size == 0:
+                    confmat = np.zeros((2, 2))
+                else:
+                    confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
                 w.append(confmat[1, 1] + confmat[1, 0])
             hamming.append(np.stack(scores))
             weights.append(np.stack(w))

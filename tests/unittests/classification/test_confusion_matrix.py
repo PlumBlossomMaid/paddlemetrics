@@ -304,7 +304,10 @@ def _reference_sklearn_confusion_matrix_multilabel(preds, target, normalize=None
     for i in range(preds.shape[1]):
         pred, true = preds[:, i], target[:, i]
         true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-        confmat.append(sk_confusion_matrix(true, pred, normalize=normalize, labels=[0, 1]))
+        if true.size == 0:
+            confmat.append(np.zeros((2, 2)))
+        else:
+            confmat.append(sk_confusion_matrix(true, pred, normalize=normalize, labels=[0, 1]))
     return np.stack(confmat, axis=0)
 
 
