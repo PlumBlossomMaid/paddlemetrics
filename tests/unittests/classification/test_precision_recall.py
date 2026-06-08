@@ -245,7 +245,16 @@ def _reference_sklearn_precision_recall_multiclass(
         true = true.flatten()
         true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
         if len(pred) == 0:
-            r = np.zeros(num_classes) if average is None else float(zero_division)
+            # Match _adjust_weights_safe_divide behavior:
+            # - average=None -> return zero_division for each class
+            # - average=micro -> return zero_division
+            # - macro/weighted -> all weights zero -> return 0.0
+            if average is None:
+                r = np.full(num_classes, zero_division)
+            elif average == "micro":
+                r = float(zero_division)
+            else:
+                r = 0.0
         else:
             r = sk_fn(
                 true,

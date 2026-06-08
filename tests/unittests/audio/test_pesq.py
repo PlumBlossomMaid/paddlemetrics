@@ -4,8 +4,9 @@ from functools import partial
 
 import paddle
 import pytest
-from pesq import pesq as pesq_backend
 from scipy.io import wavfile
+
+pesq_backend = pytest.importorskip("pesq").pesq
 
 from paddlemetrics.audio import PerceptualEvaluationSpeechQuality
 from paddlemetrics.functional.audio import perceptual_evaluation_speech_quality

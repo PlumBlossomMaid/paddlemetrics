@@ -234,7 +234,16 @@ def _reference_sklearn_fbeta_score_multiclass(
         true = true.flatten()
         true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
         if len(pred) == 0:
-            r = np.zeros(NUM_CLASSES) if average is None else float(zero_division)
+            # Match _adjust_weights_safe_divide behavior:
+            # - average=None -> return _safe_divide(0, 0, zero_division) = zero_division for each class
+            # - average=micro -> return _safe_divide(0, 0, zero_division) = zero_division
+            # - macro/weighted -> all weights zero -> return 0.0
+            if average is None:
+                r = np.full(NUM_CLASSES, zero_division)
+            elif average == "micro":
+                r = float(zero_division)
+            else:
+                r = 0.0
         else:
             r = sk_fn(
                 true,

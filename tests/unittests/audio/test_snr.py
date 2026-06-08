@@ -4,7 +4,8 @@ from functools import partial
 
 import paddle
 import pytest
-from mir_eval.separation import bss_eval_images as mir_eval_bss_eval_images
+
+mir_eval_bss_eval_images = pytest.importorskip("mir_eval").separation.bss_eval_images
 
 from paddlemetrics.audio import SignalNoiseRatio
 from paddlemetrics.functional.audio import signal_noise_ratio

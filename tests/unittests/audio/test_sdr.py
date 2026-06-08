@@ -5,8 +5,9 @@ from functools import partial
 import numpy as np
 import paddle
 import pytest
-from mir_eval.separation import bss_eval_sources
 from scipy.io import wavfile
+
+bss_eval_sources = pytest.importorskip("mir_eval").separation.bss_eval_sources
 
 from paddlemetrics.audio import SignalDistortionRatio
 from paddlemetrics.functional import signal_distortion_ratio

@@ -6,6 +6,9 @@ from typing import Any
 import paddle
 import pytest
 
+pytest.importorskip("librosa")
+pytest.importorskip("requests")
+
 from paddlemetrics.audio.nisqa import NonIntrusiveSpeechQualityAssessment
 from paddlemetrics.functional.audio.nisqa import non_intrusive_speech_quality_assessment
 from unittests._helpers.testers import MetricTester
