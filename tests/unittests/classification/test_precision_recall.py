@@ -660,7 +660,10 @@ def _reference_sklearn_precision_recall_multilabel_local(preds, target, sk_fn, i
         if average == "micro":
             pred, true = preds[i].flatten(), target[i].flatten()
             true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-            precision_recall.append(sk_fn(true, pred, zero_division=zero_division))
+            try:
+                precision_recall.append(sk_fn(true, pred, zero_division=zero_division))
+            except ValueError:
+                precision_recall.append(float(zero_division))
             confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
             weights.append(confmat[1, 1] + confmat[1, 0])
         else:
@@ -668,7 +671,10 @@ def _reference_sklearn_precision_recall_multilabel_local(preds, target, sk_fn, i
             for j in range(preds.shape[1]):
                 pred, true = preds[i, j], target[i, j]
                 true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-                scores.append(sk_fn(true, pred, zero_division=zero_division))
+                try:
+                    scores.append(sk_fn(true, pred, zero_division=zero_division))
+                except ValueError:
+                    scores.append(float(zero_division))
                 confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
                 w.append(confmat[1, 1] + confmat[1, 0])
             precision_recall.append(np.stack(scores))

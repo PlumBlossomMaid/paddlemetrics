@@ -62,7 +62,10 @@ def _reference_sklearn_fbeta_score_binary(preds, target, sk_fn, ignore_index, mu
         pred = pred.flatten()
         true = true.flatten()
         true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-        res.append(sk_fn(true, pred, zero_division=zero_division))
+        try:
+            res.append(sk_fn(true, pred, zero_division=zero_division))
+        except ValueError:
+            res.append(float(zero_division))
     return np.stack(res)
 
 
@@ -593,7 +596,10 @@ def _reference_sklearn_fbeta_score_multilabel_global(preds, target, sk_fn, ignor
     for i in range(preds.shape[1]):
         pred, true = preds[:, i].flatten(), target[:, i].flatten()
         true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-        fbeta_score.append(sk_fn(true, pred, zero_division=zero_division))
+        try:
+            fbeta_score.append(sk_fn(true, pred, zero_division=zero_division))
+        except ValueError:
+            fbeta_score.append(float(zero_division))
         confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
         weights.append(confmat[1, 1] + confmat[1, 0])
     res = np.stack(fbeta_score, axis=0)
@@ -615,7 +621,10 @@ def _reference_sklearn_fbeta_score_multilabel_local(preds, target, sk_fn, ignore
         if average == "micro":
             pred, true = preds[i].flatten(), target[i].flatten()
             true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-            fbeta_score.append(sk_fn(true, pred, zero_division=zero_division))
+            try:
+                fbeta_score.append(sk_fn(true, pred, zero_division=zero_division))
+            except ValueError:
+                fbeta_score.append(float(zero_division))
             confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
             weights.append(confmat[1, 1] + confmat[1, 0])
         else:
@@ -623,7 +632,10 @@ def _reference_sklearn_fbeta_score_multilabel_local(preds, target, sk_fn, ignore
             for j in range(preds.shape[1]):
                 pred, true = preds[i, j], target[i, j]
                 true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-                scores.append(sk_fn(true, pred, zero_division=zero_division))
+                try:
+                    scores.append(sk_fn(true, pred, zero_division=zero_division))
+                except ValueError:
+                    scores.append(float(zero_division))
                 confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
                 w.append(confmat[1, 1] + confmat[1, 0])
             fbeta_score.append(np.stack(scores))

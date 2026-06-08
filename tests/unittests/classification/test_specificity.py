@@ -70,7 +70,10 @@ def _reference_specificity_binary(preds, target, ignore_index, multidim_average)
             idx = true == ignore_index
             true = true[~idx]
             pred = pred[~idx]
-        tn, fp, _, _ = sk_confusion_matrix(y_true=true, y_pred=pred, labels=[0, 1]).ravel()
+        if true.size == 0:
+            tn, fp = 0, 0
+        else:
+            tn, fp, _, _ = sk_confusion_matrix(y_true=true, y_pred=pred, labels=[0, 1]).ravel()
         res.append(_calc_specificity(tn, fp))
     return np.stack(res)
 
