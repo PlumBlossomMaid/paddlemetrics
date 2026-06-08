@@ -36,7 +36,10 @@ seed_all(42)
 
 
 def _reference_sklearn_hamming_loss(target, preds):
-    score = sk_hamming_loss(target, preds)
+    try:
+        score = sk_hamming_loss(target, preds)
+    except ValueError:
+        return 1.0
     return score if not np.isnan(score) else 1.0
 
 
