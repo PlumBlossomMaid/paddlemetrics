@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import sys
 
-import numpy as np
 import paddle
 import pytest
 from unittests._helpers import _IS_WINDOWS
@@ -196,15 +197,23 @@ def test_custom_cumsum(use_deterministic_algorithms):
 
 
 def _reference_topk(x, dim, k):
-    """Reference topk implementation using paddle.topk for consistent tie-breaking."""
+    """Reference topk implementation using argsort for consistent tie-breaking with select_topk."""
     one_hot = paddle.zeros_like(x, dtype=paddle.int64)
     if dim == 1:
         for i in range(x.shape[0]):
-            indices = paddle.topk(x[i:i+1], k=k, axis=1).indices.squeeze(0)
-            one_hot[i] = one_hot[i].put_along_axis(indices, paddle.to_tensor(1, dtype=paddle.int64), axis=0)
+            row = x[i : i + 1]
+            if row.dtype == paddle.float16 and not paddle.device.is_compiled_with_cuda():
+                indices = paddle.argsort(row, axis=1, stable=True).flip(axis=1)[:, :k]
+            else:
+                indices = paddle.topk(row, k=k, axis=1).indices
+            one_hot[i] = one_hot[i].put_along_axis(indices.squeeze(0), paddle.to_tensor(1, dtype=paddle.int64), axis=0)
         return one_hot.numpy()
     for i in range(x.shape[1]):
-        indices = paddle.topk(x[:, i:i+1], k=k, axis=0).indices.squeeze(1)
+        col = x[:, i : i + 1]
+        if col.dtype == paddle.float16 and not paddle.device.is_compiled_with_cuda():
+            indices = paddle.argsort(col, axis=0, stable=True).flip(axis=0)[:k].squeeze(1)
+        else:
+            indices = paddle.topk(col, k=k, axis=0).indices.squeeze(1)
         one_hot[:, i] = one_hot[:, i].put_along_axis(indices, paddle.to_tensor(1, dtype=paddle.int64), axis=0)
     return one_hot.numpy()
 

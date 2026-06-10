@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 from copy import deepcopy
 from functools import partial
@@ -8,6 +10,7 @@ import pytest
 from paddle import Tensor
 
 from paddlemetrics import Metric
+from paddlemetrics.utils.distributed import _simple_gather_all_tensors
 from paddlemetrics.utils.exceptions import PaddleMetricsUserError
 from unittests import NUM_PROCESSES, USE_PYTEST_POOL
 from unittests._helpers import _IS_WINDOWS, seed_all

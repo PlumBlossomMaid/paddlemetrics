@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from paddlemetrics.functional.clustering.adjusted_mutual_info_score import adjusted_mutual_info_score
 from paddlemetrics.functional.clustering.adjusted_rand_score import adjusted_rand_score
 from paddlemetrics.functional.clustering.calinski_harabasz_score import calinski_harabasz_score

@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 from collections.abc import Sequence
 from functools import partial
+from importlib import util as importlib_util
 
 import paddle
 import pytest
-from lightning_utilities.core.imports import RequirementCache
 
 from paddlemetrics.functional.text.sacre_bleu import AVAILABLE_TOKENIZERS, _TokenizersLiteral, sacre_bleu_score
 from paddlemetrics.text.sacre_bleu import SacreBLEUScore
@@ -120,7 +122,7 @@ def test_tokenize_ja_mecab():
 
 
 @pytest.mark.skipif(
-    not RequirementCache("mecab-ko"),
+    not importlib_util.find_spec("mecab_ko"),
     reason="this test requires `mecab-ko` package to be installed",
 )
 def test_tokenize_ko_mecab():
@@ -139,4 +141,4 @@ def test_equivalence_of_available_tokenizers_and_annotation():
 def _should_skip_tokenizer(tokenizer: _TokenizersLiteral) -> bool:
     if tokenizer == "ja-mecab" and not (_MECAB_AVAILABLE and _IPADIC_AVAILABLE):
         return True
-    return tokenizer == "ko-mecab" and not RequirementCache("mecab-ko")
+    return tokenizer == "ko-mecab" and not importlib_util.find_spec("mecab_ko")

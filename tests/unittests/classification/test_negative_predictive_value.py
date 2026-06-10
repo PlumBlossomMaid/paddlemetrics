@@ -1,9 +1,13 @@
+from __future__ import annotations
+
 from functools import partial
 
 import numpy as np
 import paddle
 import pytest
 from scipy.special import expit as _np_sigmoid
+
+
 def sigmoid(x):
     if isinstance(x, paddle.Tensor):
         return paddle.nn.functional.sigmoid(x)
@@ -66,7 +70,10 @@ def _reference_negative_predictive_value_binary(preds, target, ignore_index, mul
             idx = true == ignore_index
             true = true[~idx]
             pred = pred[~idx]
-        tn, _, fn, _ = sk_confusion_matrix(y_true=true, y_pred=pred, labels=[0, 1]).ravel()
+        if true.size == 0:
+            tn, fn = 0, 0
+        else:
+            tn, _, fn, _ = sk_confusion_matrix(y_true=true, y_pred=pred, labels=[0, 1]).ravel()
         res.append(_calc_negative_predictive_value(tn, fn))
     return np.stack(res)
 
@@ -207,7 +214,10 @@ def _reference_negative_predictive_value_multiclass_local(preds, target, ignore_
             idx = true == ignore_index
             true = true[~idx]
             pred = pred[~idx]
-        confmat = sk_confusion_matrix(y_true=true, y_pred=pred, labels=list(range(NUM_CLASSES)))
+        if true.size == 0:
+            confmat = np.zeros((NUM_CLASSES, NUM_CLASSES))
+        else:
+            confmat = sk_confusion_matrix(y_true=true, y_pred=pred, labels=list(range(NUM_CLASSES)))
         tp = np.diag(confmat)
         fp = confmat.sum(0) - tp
         fn = confmat.sum(1) - tp
@@ -375,7 +385,10 @@ def _reference_negative_predictive_value_multilabel_global(preds, target, ignore
             idx = t == ignore_index
             t = t[~idx]
             p = p[~idx]
-        tn, _, fn, _ = sk_confusion_matrix(t, p, labels=[0, 1]).ravel()
+        if t.size == 0:
+            tn, fn = 0, 0
+        else:
+            tn, _, fn, _ = sk_confusion_matrix(t, p, labels=[0, 1]).ravel()
         tns.append(tn)
         fns.append(fn)
     tn = np.array(tns)
@@ -403,7 +416,10 @@ def _reference_negative_predictive_value_multilabel_local(preds, target, ignore_
                 idx = true == ignore_index
                 true = true[~idx]
                 pred = pred[~idx]
-            tn, _, fn, _ = sk_confusion_matrix(true, pred, labels=[0, 1]).ravel()
+            if true.size == 0:
+                tn, fn = 0, 0
+            else:
+                tn, _, fn, _ = sk_confusion_matrix(true, pred, labels=[0, 1]).ravel()
             tns.append(tn)
             fns.append(fn)
         tn = np.array(tns)

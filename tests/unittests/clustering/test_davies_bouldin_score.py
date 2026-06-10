@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 from sklearn.metrics import davies_bouldin_score as sklearn_davies_bouldin_score
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import paddle
 
 from paddlemetrics.wrappers.feature_share import NetworkCache

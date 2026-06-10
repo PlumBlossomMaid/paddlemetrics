@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import paddle
 import pytest
 from sklearn.metrics import adjusted_rand_score as sklearn_adjusted_rand_score

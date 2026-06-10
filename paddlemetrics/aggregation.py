@@ -13,6 +13,8 @@
 # limitations under the License.
 """Aggregation metrics for summarizing streams of values."""
 
+from __future__ import annotations
+
 import warnings
 from typing import Any, Callable
 

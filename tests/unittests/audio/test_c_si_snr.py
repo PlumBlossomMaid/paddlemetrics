@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+import os
+
 import paddle
 import pytest
 from scipy.io import wavfile
@@ -49,6 +53,8 @@ class TestComplexSISNR(MetricTester):
 
 def test_on_real_audio():
     """Test that metric works as expected on real audio signals."""
+    if not os.path.exists(_SAMPLE_AUDIO_SPEECH) or not os.path.exists(_SAMPLE_AUDIO_SPEECH_BAB_DB):
+        pytest.skip("Test audio files not found")
     rate, ref = wavfile.read(_SAMPLE_AUDIO_SPEECH)
     rate, deg = wavfile.read(_SAMPLE_AUDIO_SPEECH_BAB_DB)
     ref = paddle.tensor(ref, dtype=paddle.float32)

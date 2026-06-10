@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import paddle
 import pytest
 from sklearn.metrics import mutual_info_score as sklearn_mutual_info_score

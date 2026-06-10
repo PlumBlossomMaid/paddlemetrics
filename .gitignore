@@ -34,3 +34,4 @@ Thumbs.db
 *.tmp
 *.bak
 _cache-references/
+.venv_ci/  

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 from functools import partial
 from typing import Any, Optional
@@ -5,6 +7,10 @@ from typing import Any, Optional
 import numpy as np
 import paddle
 import pytest
+
+pytest.importorskip("librosa")
+pytest.importorskip("onnxruntime")
+pytest.importorskip("requests")
 
 from paddlemetrics.audio.dnsmos import DeepNoiseSuppressionMeanOpinionScore
 from paddlemetrics.functional.audio.dnsmos import DNSMOS_DIR, _load_session, deep_noise_suppression_mean_opinion_score

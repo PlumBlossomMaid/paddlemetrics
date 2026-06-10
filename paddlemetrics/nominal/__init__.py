@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from paddlemetrics.nominal.cramers import CramersV
 from paddlemetrics.nominal.fleiss_kappa import FleissKappa
 from paddlemetrics.nominal.pearson import PearsonsContingencyCoefficient

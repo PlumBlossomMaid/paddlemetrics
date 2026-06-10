@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 from functools import partial
 from typing import Any
 
 import paddle
 import pytest
-import torch
+
+torch = pytest.importorskip("torch")
 from monai.metrics.hausdorff_distance import compute_hausdorff_distance as monai_hausdorff_distance
 
 from paddlemetrics.functional.segmentation.hausdorff_distance import hausdorff_distance

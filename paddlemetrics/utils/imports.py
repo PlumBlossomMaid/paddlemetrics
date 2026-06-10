@@ -1,5 +1,7 @@
 """Import utilities for checking package availability."""
 
+from __future__ import annotations
+
 import importlib
 import shutil
 import sys
@@ -94,7 +96,6 @@ _MECAB_KO_AVAILABLE = module_available("mecab_ko")
 _MECAB_KO_DIC_AVAILABLE = module_available("mecab_ko_dic")
 _IPADIC_AVAILABLE = module_available("ipadic")
 _SENTENCEPIECE_AVAILABLE = module_available("sentencepiece")
-_TORCH_LINEAR_ASSIGNMENT_AVAILABLE = False  # PyTorch-specific
 _AEON_AVAILABLE = module_available("aeon")
 _PYTDC_AVAILABLE = module_available("pyTDC")
 _TORCH_VMAF_AVAILABLE = False  # PyTorch-specific

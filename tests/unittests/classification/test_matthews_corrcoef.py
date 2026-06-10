@@ -1,9 +1,16 @@
+from __future__ import annotations
+
 from functools import partial
 
 import numpy as np
 import paddle
 import pytest
 from scipy.special import expit as _np_sigmoid
+
+# bfloat16 test is skipped on CPU because Paddle CPU does not support bfloat16 add kernel
+_SUPPORTS_BFLOAT16 = hasattr(paddle, "bfloat16") and paddle.device.is_compiled_with_cuda()
+
+
 def sigmoid(x):
     if isinstance(x, paddle.Tensor):
         return paddle.nn.functional.sigmoid(x)
@@ -377,6 +384,7 @@ def test_wrapper_class(metric, kwargs, base_metric=MatthewsCorrCoef):
         assert isinstance(instance, Metric)
 
 
+@pytest.mark.skipif(not _SUPPORTS_BFLOAT16, reason="bfloat16 not supported on CPU")
 def test_matthews_corrcoef_reduce():
     """Test the corner cases of extremely rare events."""
     confmat_tp_zero = paddle.tensor([[19392673, 1], [76216, 0]]).to(paddle.bfloat16)

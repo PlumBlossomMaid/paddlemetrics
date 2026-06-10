@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 from functools import partial
 from typing import NamedTuple
 
 import paddle
 import pytest
-import sewar
+
+sewar = pytest.importorskip("sewar")
 from paddle import Tensor
 
 from paddlemetrics.functional import relative_average_spectral_error

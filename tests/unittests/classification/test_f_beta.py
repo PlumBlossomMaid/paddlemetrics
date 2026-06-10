@@ -1,9 +1,13 @@
+from __future__ import annotations
+
 from functools import partial
 
 import numpy as np
 import paddle
 import pytest
 from scipy.special import expit as _np_sigmoid
+
+
 def sigmoid(x):
     if isinstance(x, paddle.Tensor):
         return paddle.nn.functional.sigmoid(x)
@@ -58,7 +62,13 @@ def _reference_sklearn_fbeta_score_binary(preds, target, sk_fn, ignore_index, mu
         pred = pred.flatten()
         true = true.flatten()
         true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-        res.append(sk_fn(true, pred, zero_division=zero_division))
+        if len(pred) == 0:
+            res.append(float(zero_division))
+        else:
+            try:
+                res.append(sk_fn(true, pred, zero_division=zero_division))
+            except ValueError:
+                res.append(float(zero_division))
     return np.stack(res)
 
 
@@ -223,8 +233,17 @@ def _reference_sklearn_fbeta_score_multiclass(
         pred = pred.flatten()
         true = true.flatten()
         true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-        if len(pred) == 0 and average == "weighted":
-            r = 0.0
+        if len(pred) == 0:
+            # Match _adjust_weights_safe_divide behavior:
+            # - average=None -> return _safe_divide(0, 0, zero_division) = zero_division for each class
+            # - average=micro -> return _safe_divide(0, 0, zero_division) = zero_division
+            # - macro/weighted -> all weights zero -> return 0.0
+            if average is None:
+                r = np.full(NUM_CLASSES, zero_division)
+            elif average == "micro":
+                r = float(zero_division)
+            else:
+                r = 0.0
         else:
             r = sk_fn(
                 true,
@@ -589,8 +608,14 @@ def _reference_sklearn_fbeta_score_multilabel_global(preds, target, sk_fn, ignor
     for i in range(preds.shape[1]):
         pred, true = preds[:, i].flatten(), target[:, i].flatten()
         true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-        fbeta_score.append(sk_fn(true, pred, zero_division=zero_division))
-        confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
+        try:
+            fbeta_score.append(sk_fn(true, pred, zero_division=zero_division))
+        except ValueError:
+            fbeta_score.append(float(zero_division))
+        if true.size == 0:
+            confmat = np.zeros((2, 2))
+        else:
+            confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
         weights.append(confmat[1, 1] + confmat[1, 0])
     res = np.stack(fbeta_score, axis=0)
     if average == "macro":
@@ -611,16 +636,28 @@ def _reference_sklearn_fbeta_score_multilabel_local(preds, target, sk_fn, ignore
         if average == "micro":
             pred, true = preds[i].flatten(), target[i].flatten()
             true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-            fbeta_score.append(sk_fn(true, pred, zero_division=zero_division))
-            confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
+            try:
+                fbeta_score.append(sk_fn(true, pred, zero_division=zero_division))
+            except ValueError:
+                fbeta_score.append(float(zero_division))
+            if true.size == 0:
+                confmat = np.zeros((2, 2))
+            else:
+                confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
             weights.append(confmat[1, 1] + confmat[1, 0])
         else:
             scores, w = [], []
             for j in range(preds.shape[1]):
                 pred, true = preds[i, j], target[i, j]
                 true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-                scores.append(sk_fn(true, pred, zero_division=zero_division))
-                confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
+                try:
+                    scores.append(sk_fn(true, pred, zero_division=zero_division))
+                except ValueError:
+                    scores.append(float(zero_division))
+                if true.size == 0:
+                    confmat = np.zeros((2, 2))
+                else:
+                    confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
                 w.append(confmat[1, 1] + confmat[1, 0])
             fbeta_score.append(np.stack(scores))
             weights.append(np.stack(w))

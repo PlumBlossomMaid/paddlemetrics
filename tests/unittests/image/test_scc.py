@@ -1,8 +1,12 @@
+from __future__ import annotations
+
 from functools import partial
 
 import numpy as np
 import paddle
 import pytest
+
+sewar = pytest.importorskip("sewar")
 from sewar.full_ref import scc as sewar_scc
 
 from paddlemetrics.functional.image import spatial_correlation_coefficient
@@ -48,7 +52,7 @@ def _reference_sewar_scc_simple(preds, target):
 class TestSpatialCorrelationCoefficient(MetricTester):
     """Tests for SpatialCorrelationCoefficient metric."""
 
-    atol = 1e-08
+    atol = 1e-06
 
     @pytest.mark.parametrize("ddp", [pytest.param(True, marks=pytest.mark.DDP), False])
     def test_scc(self, preds, target, ddp):

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from paddlemetrics.functional.pairwise.cosine import pairwise_cosine_similarity
 from paddlemetrics.functional.pairwise.euclidean import pairwise_euclidean_distance
 from paddlemetrics.functional.pairwise.linear import pairwise_linear_similarity

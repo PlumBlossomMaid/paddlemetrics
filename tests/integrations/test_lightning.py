@@ -1,10 +1,12 @@
+from __future__ import annotations
+
+from importlib import util as importlib_util
 from unittest import mock
 
 import paddle
 import pytest
-from lightning_utilities import module_available
 
-if module_available("lightning"):
+if importlib_util.find_spec("lightning"):
     from integrations.lightning.boring_model import BoringModel
 from paddlemetrics import MetricCollection
 from paddlemetrics.aggregation import SumMetric
@@ -12,7 +14,7 @@ from paddlemetrics.classification import BinaryAccuracy, BinaryAveragePrecision,
 from paddlemetrics.regression import MeanAbsoluteError, MeanSquaredError
 from paddlemetrics.wrappers import ClasswiseWrapper, MinMaxMetric, MultitaskWrapper
 
-pytestmark = pytest.mark.skipif(not module_available("lightning"), reason="lightning not available")
+pytestmark = pytest.mark.skipif(not importlib_util.find_spec("lightning"), reason="lightning not available")
 
 
 class DiffMetric(SumMetric):
@@ -43,9 +45,6 @@ def test_metric_lightning(tmpdir):
                 raise ValueError("Sum and computed value must be equal")
             self.sum = 0.0
             self.metric.reset()
-
-    model = TestModel()
-    model.val_dataloader = None
 
 
 def test_metrics_reset(tmpdir):
@@ -118,8 +117,6 @@ def test_metrics_reset(tmpdir):
         acc.reset.reset_mock()
         ap.reset.assert_called_once()
         ap.reset.reset_mock()
-
-    model = TestModel()
 
 
 def test_metric_lightning_log(tmpdir):
@@ -224,8 +221,6 @@ def test_metric_lightning_log(tmpdir):
             )
             return self.step(x)
 
-    model = TestModel()
-
 
 def test_metric_collection_lightning_log(tmpdir):
     """Test that MetricCollection works with Lightning modules."""
@@ -248,8 +243,6 @@ def test_metric_collection_lightning_log(tmpdir):
         def on_train_epoch_end(self):
             metric_vals = self.metric.compute()
             self.log_dict({f"{k}_epoch": v for k, v in metric_vals.items()})
-
-    model = TestModel()
 
 
 def test_task_wrapper_lightning_logging(tmpdir):
@@ -287,8 +280,6 @@ def test_task_wrapper_lightning_logging(tmpdir):
             self.log_dict(self.multitask_collection, on_epoch=True)
             return self.step(batch)
 
-    model = TestModel()
-
 
 def test_scriptable(tmpdir):
     """Test that lightning modules can still be scripted even if metrics cannot."""
@@ -305,8 +296,6 @@ def test_scriptable(tmpdir):
             self.sum += x.sum()
             self.log("sum", self.metric, on_epoch=True, on_step=False)
             return self.step(x)
-
-    model = TestModel()
 
 
 def test_dtype_in_pl_module_transfer(tmpdir):
@@ -349,8 +338,6 @@ def test_collection_classwise_lightning_integration(tmpdir):
             self.log_dict(self.val_metrics.compute(), on_step=False, on_epoch=True)
             self.val_metrics.reset()
 
-    model = TestModel()
-
 
 def test_collection_minmax_lightning_integration(tmpdir):
     """Check the integration of MinMaxWrapper, MetricCollection and LightningModule.
@@ -387,5 +374,3 @@ def test_collection_minmax_lightning_integration(tmpdir):
         def on_validation_epoch_end(self):
             self.log_dict(self.val_metrics.compute(), on_step=False, on_epoch=True)
             self.val_metrics.reset()
-
-    model = TestModel()

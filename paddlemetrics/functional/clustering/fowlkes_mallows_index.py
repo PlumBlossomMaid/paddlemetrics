@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import paddle
 
 from paddlemetrics.functional.clustering.utils import calculate_contingency_matrix, check_cluster_labels

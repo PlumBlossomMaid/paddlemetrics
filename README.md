@@ -1,6 +1,6 @@
 # PaddleMetrics
 
-[![CI](https://github.com/PlumBlossomMaid/paddlemetrics/actions/workflows/ci.yml/badge.svg)](https://github.com/PlumBlossomMaid/paddlemetrics/actions/workflows/ci.yml)
+[![CI](https://github.com/PlumBlossomMaid/paddlemetrics/actions/workflows/ci-tests.yml/badge.svg)](https://github.com/PlumBlossomMaid/paddlemetrics/actions/workflows/ci-tests.yml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
 [![PaddlePaddle](https://img.shields.io/badge/PaddlePaddle-3.2%2B-7B00DB)](https://www.paddlepaddle.org.cn/)

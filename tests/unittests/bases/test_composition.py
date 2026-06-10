@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from operator import neg, pos
 from typing import Any
 

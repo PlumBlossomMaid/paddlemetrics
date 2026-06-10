@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from paddlemetrics.wrappers.bootstrapping import BootStrapper
 from paddlemetrics.wrappers.classwise import ClasswiseWrapper
 from paddlemetrics.wrappers.feature_share import FeatureShare

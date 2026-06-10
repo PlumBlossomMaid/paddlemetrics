@@ -1,15 +1,18 @@
+from __future__ import annotations
+
 from functools import partial
 
 import numpy as np
 import paddle
 import pytest
-from mir_eval.separation import bss_eval_sources
 from scipy.io import wavfile
+
+bss_eval_sources = pytest.importorskip("mir_eval").separation.bss_eval_sources
 
 from paddlemetrics.audio import SignalDistortionRatio
 from paddlemetrics.functional import signal_distortion_ratio
 from unittests import _Input
-from unittests._helpers import _IS_LIGHTNING_CI, seed_all
+from unittests._helpers import seed_all
 from unittests._helpers.testers import MetricTester
 from unittests.audio import _SAMPLE_AUDIO_SPEECH, _SAMPLE_AUDIO_SPEECH_BAB_DB, _SAMPLE_NUMPY_ISSUE_895
 
@@ -46,7 +49,6 @@ class TestSDR(MetricTester):
     atol = 0.01
 
     @pytest.mark.parametrize("ddp", [pytest.param(True, marks=[pytest.mark.DDP]), False])
-    @pytest.mark.skipif(_IS_LIGHTNING_CI, reason="test too slow and unreliable on Lightning CI")
     def test_sdr(self, preds, target, ddp):
         """Test class implementation of metric."""
         self.run_class_metric_test(

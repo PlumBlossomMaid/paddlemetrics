@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from paddlemetrics.functional.segmentation.dice import dice_score
 from paddlemetrics.functional.segmentation.generalized_dice import generalized_dice_score
 from paddlemetrics.functional.segmentation.hausdorff_distance import hausdorff_distance

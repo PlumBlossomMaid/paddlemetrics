@@ -1,11 +1,14 @@
+from __future__ import annotations
+
 from functools import partial
 from typing import NamedTuple
 
-import matplotlib
+import pytest
+
+matplotlib = pytest.importorskip("matplotlib")
 import matplotlib.pyplot as plt
 import numpy as np
 import paddle
-import pytest
 from paddle import Tensor
 
 from paddlemetrics.functional.multimodal.lve import lip_vertex_error

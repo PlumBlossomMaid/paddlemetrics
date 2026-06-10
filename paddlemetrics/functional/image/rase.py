@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import paddle
 
 from paddlemetrics.functional.image.rmse_sw import _rmse_sw_compute, _rmse_sw_update

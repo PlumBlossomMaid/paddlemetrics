@@ -1,3 +1,4 @@
+from __future__ import annotations
 
 from typing import Any
 
@@ -7,7 +8,7 @@ import pytest
 from unittests import BATCH_SIZE, EXTRA_DIM, NUM_BATCHES, NUM_CLASSES, _GroupInput, _Input
 from unittests._helpers import seed_all
 
-seed_all(1)
+seed_all(42)
 
 
 def _inv_sigmoid(x: paddle.Tensor) -> paddle.Tensor:

@@ -1,9 +1,13 @@
+from __future__ import annotations
+
 from functools import partial
 
 import numpy as np
 import paddle
 import pytest
 from scipy.special import expit as _np_sigmoid
+
+
 def sigmoid(x):
     if isinstance(x, paddle.Tensor):
         return paddle.nn.functional.sigmoid(x)
@@ -32,7 +36,10 @@ seed_all(42)
 
 
 def _reference_sklearn_hamming_loss(target, preds):
-    score = sk_hamming_loss(target, preds)
+    try:
+        score = sk_hamming_loss(target, preds)
+    except ValueError:
+        return 1.0
     return score if not np.isnan(score) else 1.0
 
 
@@ -164,7 +171,10 @@ def _reference_sklearn_hamming_distance_multiclass_global(preds, target, ignore_
     target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
     if average == "micro":
         return _reference_sklearn_hamming_loss(target, preds)
-    confmat = sk_confusion_matrix(y_true=target, y_pred=preds, labels=list(range(NUM_CLASSES)))
+    if target.size == 0:
+        confmat = np.zeros((NUM_CLASSES, NUM_CLASSES))
+    else:
+        confmat = sk_confusion_matrix(y_true=target, y_pred=preds, labels=list(range(NUM_CLASSES)))
     hamming_per_class = 1 - confmat.diagonal() / confmat.sum(axis=1)
     hamming_per_class[np.isnan(hamming_per_class)] = 1.0
     if average == "macro":
@@ -189,7 +199,10 @@ def _reference_sklearn_hamming_distance_multiclass_local(preds, target, ignore_i
         if average == "micro":
             res.append(_reference_sklearn_hamming_loss(true, pred))
         else:
-            confmat = sk_confusion_matrix(true, pred, labels=list(range(NUM_CLASSES)))
+            if true.size == 0:
+                confmat = np.zeros((NUM_CLASSES, NUM_CLASSES))
+            else:
+                confmat = sk_confusion_matrix(true, pred, labels=list(range(NUM_CLASSES)))
             hamming_per_class = 1 - confmat.diagonal() / confmat.sum(axis=1)
             hamming_per_class[np.isnan(hamming_per_class)] = 1.0
             if average == "macro":
@@ -329,7 +342,10 @@ def _reference_sklearn_hamming_distance_multilabel_global(preds, target, ignore_
     for i in range(preds.shape[1]):
         pred, true = preds[:, i].flatten(), target[:, i].flatten()
         true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-        confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
+        if true.size == 0:
+            confmat = np.zeros((2, 2))
+        else:
+            confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
         hamming.append(_reference_sklearn_hamming_loss(true, pred))
         weights.append(confmat[1, 1] + confmat[1, 0])
     res = np.stack(hamming, axis=0)
@@ -358,7 +374,10 @@ def _reference_sklearn_hamming_distance_multilabel_local(preds, target, ignore_i
                 pred, true = preds[i, j], target[i, j]
                 true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
                 scores.append(_reference_sklearn_hamming_loss(true, pred))
-                confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
+                if true.size == 0:
+                    confmat = np.zeros((2, 2))
+                else:
+                    confmat = sk_confusion_matrix(true, pred, labels=[0, 1])
                 w.append(confmat[1, 1] + confmat[1, 0])
             hamming.append(np.stack(scores))
             weights.append(np.stack(w))

@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 from functools import partial
 from typing import Optional
 
 import paddle
 import pytest
-import torch
+
+torch = pytest.importorskip("torch")
 from monai.metrics.meaniou import compute_iou
 
 from paddlemetrics.functional.segmentation.mean_iou import mean_iou

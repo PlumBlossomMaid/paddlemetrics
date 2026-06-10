@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Generator, Sequence
 from itertools import product
 from math import ceil, floor, sqrt

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from math import log
 from typing import Any, List, Optional, Sequence, Union, cast
 

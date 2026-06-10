@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from paddlemetrics.functional.image.d_lambda import spectral_distortion_index
 from paddlemetrics.functional.image.ergas import error_relative_global_dimensionless_synthesis
 from paddlemetrics.functional.image.gradients import image_gradients

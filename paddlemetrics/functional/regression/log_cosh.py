@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import paddle
 
 from paddlemetrics.functional.regression.utils import _check_data_shape_to_num_outputs

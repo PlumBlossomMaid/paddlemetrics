@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 from functools import partial
 from typing import Callable
 
-import matplotlib
+import pytest
+
+matplotlib = pytest.importorskip("matplotlib")
 import matplotlib.pyplot as plt
 import numpy as np
 import paddle
@@ -9,7 +13,6 @@ import pytest
 
 from paddlemetrics import MetricCollection
 from paddlemetrics.aggregation import MaxMetric, MeanMetric, MinMetric, SumMetric
-from paddlemetrics.utils.imports import _GAMMATONE_AVAILABLE, _TORCHAUDIO_AVAILABLE
 from paddlemetrics.audio import (
     ComplexScaleInvariantSignalNoiseRatio,
     ScaleInvariantSignalDistortionRatio,
@@ -155,6 +158,7 @@ from paddlemetrics.text import (
     WordInfoLost,
     WordInfoPreserved,
 )
+from paddlemetrics.utils.imports import _GAMMATONE_AVAILABLE, _TORCHAUDIO_AVAILABLE
 from paddlemetrics.utils.plot import _get_col_row_split
 from paddlemetrics.wrappers import (
     BootStrapper,

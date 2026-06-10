@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from paddlemetrics.regression.concordance import ConcordanceCorrCoef
 from paddlemetrics.regression.cosine_similarity import CosineSimilarity
 from paddlemetrics.regression.crps import ContinuousRankedProbabilityScore

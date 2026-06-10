@@ -1,5 +1,7 @@
 """Tests for the core Metric base class."""
 
+from __future__ import annotations
+
 import pickle
 
 import paddle

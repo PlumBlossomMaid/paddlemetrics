@@ -40,6 +40,7 @@ audio = [
 classification = [
     "scipy>1.0.0",
     "scikit-learn>1.5.0",
+    "fairlearn>=0.9.0",
 ]
 detection = [
     "pycocotools>2.0.0",
@@ -47,6 +48,7 @@ detection = [
 image = [
     "scipy>1.0.0",
     "scikit-image>=0.19.0",
+    "sewar>=0.4.1",
 ]
 text = [
     "nltk>3.8.1",
@@ -60,11 +62,14 @@ multimodal = [
 nominal = [
     "scipy>1.0.0",
     "pandas>1.4.0",
+    "statsmodels>=0.14.0",
 ]
 clustering = []
 segmentation = []
 regression = [
     "scipy>1.0.0",
+    "properscoring>=0.1",
+    "permetrics>=1.0.0",
 ]
 retrieval = []
 visual = [
@@ -108,10 +113,21 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 120
 target-version = "py39"
+exclude = ["build", ".eggs", "__pycache__"]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I"]
+select = ["E", "F", "W", "I", "FA"]
 ignore = ["E501"]
+# FA102: The `from __future__ import annotations` import is required in files with
+#        PEP 604-style annotations (e.g., `str | None`).
+# FA100: Missing `from __future__ import annotations` import.
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["FA102", "E402", "E731", "F841", "F401", "E721", "W291"]
+"paddlemetrics/__init__.py" = ["E402"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["paddlemetrics"]
 
 [tool.coverage.run]
 source = ["paddlemetrics"]

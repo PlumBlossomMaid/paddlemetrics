@@ -1,5 +1,7 @@
 """Paddlemetrics functional API."""
 
+from __future__ import annotations
+
 from paddlemetrics.functional.audio import (
     complex_scale_invariant_signal_noise_ratio,
     permutation_invariant_training,

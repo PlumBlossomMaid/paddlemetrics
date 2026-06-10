@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from paddlemetrics.audio.pit import PermutationInvariantTraining
 from paddlemetrics.audio.sdr import (
     ScaleInvariantSignalDistortionRatio,

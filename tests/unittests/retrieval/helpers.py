@@ -1,3 +1,4 @@
+from __future__ import annotations
 
 from functools import partial
 from itertools import chain
@@ -71,7 +72,7 @@ def get_group_indexes(indexes: Union[paddle.Tensor, np.ndarray]) -> list[Union[p
         [tensor([0, 1, 2]), tensor([3, 4, 5, 6])]
 
     """
-    structure, dtype = (tensor, paddle.long) if isinstance(indexes, paddle.Tensor) else (np.array, np.int64)
+    structure, dtype = (paddle.to_tensor, paddle.long) if isinstance(indexes, paddle.Tensor) else (np.array, np.int64)
     res = {}
     for i, _id in enumerate(indexes):
         _id = _id.item()

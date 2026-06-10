@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from paddlemetrics.image.d_lambda import SpectralDistortionIndex
 from paddlemetrics.image.ergas import ErrorRelativeGlobalDimensionlessSynthesis
 from paddlemetrics.image.psnr import PeakSignalNoiseRatio

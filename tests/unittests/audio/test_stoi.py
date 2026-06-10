@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 from functools import partial
 
 import paddle
 import pytest
-from pystoi import stoi as stoi_backend
 from scipy.io import wavfile
+
+stoi_backend = pytest.importorskip("pystoi").stoi
 
 from paddlemetrics.audio import ShortTimeObjectiveIntelligibility
 from paddlemetrics.functional.audio import short_time_objective_intelligibility

@@ -1,9 +1,13 @@
+from __future__ import annotations
+
 from functools import partial
 
 import numpy as np
 import paddle
 import pytest
 from scipy.special import expit as _np_sigmoid
+
+
 def sigmoid(x):
     if isinstance(x, paddle.Tensor):
         return paddle.nn.functional.sigmoid(x)
@@ -22,6 +26,7 @@ from paddlemetrics.functional.classification.confusion_matrix import (
     multilabel_confusion_matrix,
 )
 from paddlemetrics.metric import Metric
+from paddlemetrics.utils.imports import _MATPLOTLIB_AVAILABLE
 from unittests import NUM_CLASSES, THRESHOLD
 from unittests._helpers import seed_all
 from unittests._helpers.testers import MetricTester, inject_ignore_index, remove_ignore_index
@@ -38,6 +43,8 @@ def _reference_sklearn_confusion_matrix_binary(preds, target, normalize=None, ig
             preds = sigmoid(preds)
         preds = (preds >= THRESHOLD).astype(np.uint8)
     target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
+    if target.size == 0:
+        return np.zeros((2, 2))
     return sk_confusion_matrix(y_true=target, y_pred=preds, labels=[0, 1], normalize=normalize)
 
 
@@ -142,6 +149,8 @@ def _reference_sklearn_confusion_matrix_multiclass(preds, target, normalize=None
     preds = preds.flatten()
     target = target.flatten()
     target, preds = remove_ignore_index(target=target, preds=preds, ignore_index=ignore_index)
+    if target.size == 0:
+        return np.zeros((NUM_CLASSES, NUM_CLASSES))
     return sk_confusion_matrix(
         y_true=target,
         y_pred=preds,
@@ -299,7 +308,10 @@ def _reference_sklearn_confusion_matrix_multilabel(preds, target, normalize=None
     for i in range(preds.shape[1]):
         pred, true = preds[:, i], target[:, i]
         true, pred = remove_ignore_index(target=true, preds=pred, ignore_index=ignore_index)
-        confmat.append(sk_confusion_matrix(true, pred, normalize=normalize, labels=[0, 1]))
+        if true.size == 0:
+            confmat.append(np.zeros((2, 2)))
+        else:
+            confmat.append(sk_confusion_matrix(true, pred, normalize=normalize, labels=[0, 1]))
     return np.stack(confmat, axis=0)
 
 
@@ -395,6 +407,7 @@ class TestMultilabelConfusionMatrix(MetricTester):
             dtype=dtype,
         )
 
+    @pytest.mark.skipif(not _MATPLOTLIB_AVAILABLE, reason="matplotlib not available")
     @pytest.mark.parametrize("num_labels", [2, NUM_CLASSES])
     def test_multilabel_confusion_matrix_plot(self, num_labels, inputs):
         """Test multilabel cm plots."""
