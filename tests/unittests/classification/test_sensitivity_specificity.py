@@ -181,7 +181,7 @@ class TestBinarySensitivityAtSpecificity(MetricTester):
                 pred,
                 true,
                 min_specificity=min_specificity,
-                thresholds=paddle.linspace(0, 1, 100),
+                thresholds=paddle.linspace(0, 1, 1000),
             )
             assert paddle.allclose(x=r1, y=r2).item()
 
@@ -342,7 +342,7 @@ class TestMulticlassSensitivityAtSpecificity(MetricTester):
                 true,
                 num_classes=NUM_CLASSES,
                 min_specificity=min_specificity,
-                thresholds=paddle.linspace(0, 1, 100),
+                thresholds=paddle.linspace(0, 1, 1000),
             )
             assert all(paddle.allclose(x=r1[i], y=r2[i]).item() for i in range(len(r1)))
 
@@ -498,7 +498,7 @@ class TestMultilabelSensitivityAtSpecificity(MetricTester):
                 true,
                 num_labels=NUM_CLASSES,
                 min_specificity=min_specificity,
-                thresholds=paddle.linspace(0, 1, 100),
+                thresholds=paddle.linspace(0, 1, 1000),
             )
             assert all(paddle.allclose(x=r1[i], y=r2[i]).item() for i in range(len(r1)))
 

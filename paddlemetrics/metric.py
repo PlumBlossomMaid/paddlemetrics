@@ -529,6 +529,7 @@ class Metric(ABC, nn.Layer):
         self,
         state_dict: dict[str, Any],
         use_structured_name: bool = True,
+        **kwargs: Any,
     ) -> tuple[list[str], list[str]]:
         # Load buffer states
         missing_keys = []
@@ -556,6 +557,7 @@ class Metric(ABC, nn.Layer):
         missing_keys: list[str],
         unexpected_keys: list[str],
         error_msgs: list[str],
+        assign: bool = False,
     ) -> None:
         for key in self._defaults:
             name = prefix + key
