@@ -448,13 +448,13 @@ _mc_k_preds6 = paddle.tensor(
         (1, _mc_k_preds2, _mc_k_targets2, "macro", 3, paddle.tensor(1 / 2)),
         (2, _mc_k_preds2, _mc_k_targets2, "macro", 3, paddle.tensor(1 / 2)),
         pytest.param(5, _mc_k_preds3, _mc_k_targets3, "macro", 10, paddle.tensor(0.5198), marks=pytest.mark.xfail(
-            reason="expected value from torch RNG, needs recomputation for paddle.rand")),
+            strict=False, reason="cross-platform RNG mismatch: expected values need recomputation for paddle.rand")),
         pytest.param(5, _mc_k_preds3, _mc_k_targets3, "micro", 10, paddle.tensor(0.5195), marks=pytest.mark.xfail(
-            reason="expected value from torch RNG, needs recomputation for paddle.rand")),
+            strict=False, reason="cross-platform RNG mismatch: expected values need recomputation for paddle.rand")),
         (5, _mc_k_preds4, _mc_k_targets4, "macro", 10, paddle.tensor(1.0)),
         (5, _mc_k_preds4, _mc_k_targets4, "micro", 10, paddle.tensor(1.0)),
         pytest.param(5, _mc_k_preds5, _mc_k_targets5, "micro", 10, paddle.tensor(0.48), marks=pytest.mark.xfail(
-            reason="expected value from torch RNG, needs recomputation for paddle.rand")),
+            strict=False, reason="cross-platform RNG mismatch: expected values need recomputation for paddle.rand")),
     ],
 )
 def test_top_k(k, preds, target, average, num_classes, expected):
