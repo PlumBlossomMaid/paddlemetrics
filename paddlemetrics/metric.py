@@ -79,15 +79,21 @@ def _apply_to_collection(
 
 
 def _gather_all_tensors(tensor: Tensor, group: ProcessGroup | None = None) -> list[Tensor]:
+    """Gather tensors from all processes, with support for uneven shapes.
+
+    Uses the full gather_all_tensors from utils.distributed for uneven shape support.
+    Falls back to simple all_gather for uniform shapes.
+    """
     if not dist.is_initialized():
         return [tensor]
     group = group or dist.get_world_group()
     world_size = dist.get_world_size(group)
     if world_size == 1:
         return [tensor]
-    tensor_list = [paddle.zeros_like(tensor) for _ in range(world_size)]
-    dist.all_gather(tensor_list, tensor, group=group)
-    return tensor_list
+
+    # Use the full gather_all_tensors from utils.distributed which handles uneven shapes
+    from paddlemetrics.utils.distributed import gather_all_tensors as _full_gather
+    return _full_gather(tensor, group=group)
 
 
 def _distributed_available() -> bool:
@@ -441,13 +447,27 @@ class Metric(ABC, nn.Layer):
         group = process_group or self._process_group
         self._cache = self._copy_state_dict()
 
-        for name in self._defaults:
-            state = getattr(self, name)
+        # Pre-concatenate dim_zero_cat list states to reduce all_gather calls
+        input_dict = {name: getattr(self, name) for name, reduce_fn in self._reductions.items()}
+        for name, reduce_fn in self._reductions.items():
+            state = input_dict[name]
+            # Pre-concatenate list states for dim_zero_cat (TorchMetrics optimization)
+            if reduce_fn == _dim_zero_cat and isinstance(state, list) and len(state) > 1:
+                input_dict[name] = [_dim_zero_cat(state)]
+            # Handle empty list state: create empty tensor on correct device
+            if (
+                reduce_fn == _dim_zero_cat
+                and isinstance(state, list)
+                and len(state) == 0
+            ):
+                input_dict[name] = [paddle.to_tensor([], dtype=self.dtype)]
+
+        for name, reduce_fn in self._reductions.items():
+            state = input_dict.get(name)
             if state is None:
                 continue
             if isinstance(state, paddle.Tensor):
                 gathered = sync_fn(state, group=group)
-                reduce_fn = self._reductions[name]
                 if reduce_fn is not None:
                     reduced = reduce_fn(paddle.stack(gathered))
                 else:
@@ -461,7 +481,6 @@ class Metric(ABC, nn.Layer):
                         all_elements.extend(elem_gathered)
                     else:
                         all_elements.append(elem)
-                reduce_fn = self._reductions[name]
                 if reduce_fn is not None:
                     if all_elements and isinstance(all_elements[0], paddle.Tensor):
                         reduced = reduce_fn(paddle.stack(all_elements))
